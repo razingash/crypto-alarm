@@ -1,9 +1,11 @@
 from datetime import datetime
 
-from sqlalchemy import mapped_column, String, Float, DateTime
+from sqlalchemy import String, Float, DateTime
+from sqlalchemy.orm import mapped_column
 
 from core.models.base import Base
 
+__all__ = ["CryptoPrice", "CryptoHistory"]
 
 class CryptoPrice(Base):
     symbol = mapped_column(String(10), nullable=False, index=True, unique=True)

@@ -1,7 +1,7 @@
 import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy import pool
+from sqlalchemy import pool, text
 
 from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -38,6 +38,14 @@ async def run_migrations_online() -> None:
                 connection=conn, target_metadata=target_metadata, compare_type=True
             )
         )
+        '''
+        await connection.execute(
+            text("""
+                    CREATE TABLE IF NOT EXISTS alembic_version (
+                        version_num VARCHAR(32) NOT NULL PRIMARY KEY
+                    )
+                    """)
+        )'''
         await connection.run_sync(
             lambda sync_connection: context.run_migrations()
         )

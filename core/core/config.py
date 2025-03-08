@@ -18,6 +18,7 @@ PG_USER = getenv('DB_USER')
 PG_PASSWORD = getenv('DB_PASSWORD')
 PG_HOST = getenv('DB_HOST')
 PG_PORT = getenv('DB_PORT')
+
 POSTGRE_URL = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_NAME}"
 
 # mongoDB

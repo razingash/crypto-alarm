@@ -3,6 +3,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from core.models.base import Base
 
+
+__all__ = ["TriggerSimple"]
 #class TriggersHistory(Base):
 #    pass
 

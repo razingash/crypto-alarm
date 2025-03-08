@@ -10,16 +10,12 @@ def main():
 
     subparsers.add_parser('initialization', help='initialize databases')
     subparsers.add_parser('makemigrations', help='make migrations')
-    subparsers.add_parser('migrate', help='apply migrations')
 
     args = parser.parse_args()
     if args.command == 'makemigrations':
         command = import_module('commands.makemigrations')
         command.command_makemigrations()
-    elif args.command == 'migrate':
-        command = import_module('commands.migrate')
-        command.command_migrate()
-    elif args.command == 'makemigrations':
+    elif args.command == 'initialization':
         command = import_module('commands.initialization')
         command.command_initialization()
 
