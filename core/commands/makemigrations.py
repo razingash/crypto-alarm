@@ -1,38 +1,39 @@
-import alembic.util.exc
+import asyncpg
+
 from asyncio import run as asyncio_run
-from alembic import command
-from alembic.config import Config
 from colorama import Style, Fore
-from sqlalchemy import inspect
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from commands.utils import is_database_exists
-from core.config import POSTGRE_URL
+from core.config import PG_USER, PG_HOST, PG_PORT, PG_PASSWORD, PG_NAME, POSTGRE_URL
 from core.models import Base
 
 
 def command_makemigrations():
-    asyncio_run(async_makemigrations())
+    asyncio_run(makemigrations())
 
-async def async_makemigrations():
-    await is_database_exists()
 
+async def makemigrations() -> None:
     try:
-        alembic_cfg = Config("alembic.ini")
-        command.upgrade(alembic_cfg, "head")
-        command.revision(alembic_cfg, message=None, autogenerate=True)
-        await create_tables()
-    except alembic.util.exc.CommandError:
-        print('old migrations were found')
-    else:
-        print(Style.BRIGHT + Fore.GREEN + 'success')
+        conn = await asyncpg.connect(f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/postgres")
+        databases = await conn.fetch("SELECT datname FROM pg_database")
+        db_names = [db['datname'] for db in databases]
+
+        if PG_NAME not in db_names:
+            print(Fore.LIGHTYELLOW_EX + f"Database '{PG_NAME}' isn't detected and will be created")
+            await conn.execute(f'CREATE DATABASE "{PG_NAME}" OWNER "{PG_USER}"')
+            print(Fore.LIGHTBLACK_EX + "Database created successfully")
+            await init_db()
+        else:
+            print(Fore.LIGHTWHITE_EX + "Database already exists, if you want to change models you need to recreate db,"
+                                       " because alembic can't work with asynchronous postgress")
+        await conn.close()
+    except Exception as e:
+        print(e)
 
 
-async def create_tables():
-    engine = create_async_engine(POSTGRE_URL, echo=True)
-
-    async with engine.connect() as conn:
-        existing_tables = await conn.run_sync(lambda sync_conn: inspect(sync_conn).get_table_names())
-
-        if not existing_tables:
-            await conn.run_sync(Base.metadata.create_all)
+async def init_db() -> None:
+    engine_new = create_async_engine(POSTGRE_URL, echo=True)
+    async with engine_new.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    await engine_new.dispose()
+    print(Style.BRIGHT + Fore.GREEN + 'success')
