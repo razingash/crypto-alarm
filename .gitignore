@@ -3,3 +3,4 @@ alembic/versions/*.py
 alembic/__pycache__
 alembic/versions/__pycache__
 readme.md
+.env

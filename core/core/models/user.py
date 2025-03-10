@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import Boolean, String, DateTime
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from core.models.base import Base
 
@@ -13,5 +13,7 @@ class User(Base):
     isPremiun: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
     since: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     to: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+
+    triggers: Mapped[list["TriggerExitingPrice"]] = relationship("TriggerExitingPrice", back_populates="owner")
 
     __tablename__ = "user_user"

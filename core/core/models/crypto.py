@@ -5,7 +5,7 @@ from sqlalchemy.orm import mapped_column
 
 from core.models.base import Base
 
-__all__ = ["CryptoPrice", "CryptoHistory"]
+__all__ = ["CryptoPrice"]
 
 class CryptoPrice(Base):
     symbol = mapped_column(String(10), nullable=False, index=True, unique=True)
@@ -24,6 +24,8 @@ class CryptoPrice(Base):
         return f"<CryptoPrice {self.symbol} - {self.price}>"
 
 
+"""
+MongoDB
 class CryptoHistory(Base):
     symbol = mapped_column(String(10), nullable=False, index=True)
     price = mapped_column(Float, nullable=False)
@@ -33,4 +35,4 @@ class CryptoHistory(Base):
 
     def __repr__(self):
         return f"<CryptoHistory {self.symbol} - {self.price} at {self.timestamp}>"
-
+"""
