@@ -14,6 +14,9 @@ class User(Base):
     since: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     to: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
+    access_tokens: Mapped[list["AccessToken"]] = relationship("AccessToken", back_populates="user")
+    refresh_token: Mapped["RefreshToken"] = relationship("RefreshToken", back_populates="user", uselist=False)
+
     triggers: Mapped[list["TriggerExitingPrice"]] = relationship("TriggerExitingPrice", back_populates="owner")
 
     __tablename__ = "user_user"

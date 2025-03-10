@@ -9,17 +9,17 @@ router = APIRouter()
 
 @router.get(path='https://api.binance.com/api/v3/ping')
 async def get_apiv3_accessibility():
-    """проверяет доступен ли api/v3"""
+    """x-mbx-used-weight: weigth=4 | проверяет доступен ли api/v3"""
     pass
 
 @router.get(path='https://api.binance.com/api/v3/ticker/price?symbol={symbol}', response_model=TickerCurrentPriceResponse)
 async def get_ticker_current_price(): # ситуативный апи, думаю лучше всего его не использовать(для такого лучше будет вебсокет)
-    """цена конкретной валюты"""
+    """x-mbx-used-weight: weigth=4 | цена конкретной валюты"""
     pass
 
 @router.get(path="https://api.binance.com/api/v3/ticker/24hr?symbol={symbol}", response_model=Ticker24hrResponse)
 async def get_price_change_24h():
-    """изменение процентного значения за 24 часа"""
+    """x-mbx-used-weight: weigth=8 |  изменение процентного значения за 24 часа"""
     pass
 
 
