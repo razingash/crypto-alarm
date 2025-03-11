@@ -4,13 +4,28 @@ from uvicorn import run as uvicorn_run
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
+from apps.binance.external_router import BinanceAPI
+from core.controller import controller
+from core.middlewares import WeightTrackingMiddleware
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("START")
     yield
     print("END")
 
+
 app = FastAPI(lifespan=lifespan)
+middleware_binance_api_weight = WeightTrackingMiddleware(app=app, rate_limiter=controller)
+binance_api = BinanceAPI(controller=controller, middleware=middleware_binance_api_weight)
+
+
+@app.on_event("startup")
+async def startup_event():
+    await controller.start()
+    await binance_api.check_and_update_weights()
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Run FastAPI server")

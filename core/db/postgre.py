@@ -7,7 +7,6 @@ from db.base import AbstractRepository
 class PostgresDatabase(AbstractRepository):
     def __init__(self):
         self.engine = create_async_engine(POSTGRE_URL, echo=True)
-
         self.session_factory = async_sessionmaker(
             bind=self.engine,
             autoflush=False,

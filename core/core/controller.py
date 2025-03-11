@@ -18,6 +18,10 @@ class BinanceAPIController:
         self.last_reset_time = time.time()
         self.lock = asyncio.Lock()
         self.queue = asyncio.Queue()
+        self.lock = asyncio.Lock()
+        self.queue = asyncio.Queue()
+
+    async def start(self):
         asyncio.create_task(self.reset_loop())
         asyncio.create_task(self.process_queue())
 
@@ -39,10 +43,16 @@ class BinanceAPIController:
         """Управляет лимитом и выполняет запрос. Если лимит превышен, запрос ставится в очередь."""
         async with self.lock:
             if self.current_weight + weight > self.max_weight:
-                custom_logger.log_with_path(1, f"reached the limit for Binance API. Current weight:  {self.current_weight}")
+                custom_logger.log_with_path(
+                    level=1,
+                    msg=f"reached the limit for Binance API. Current weight:  {self.current_weight}",
+                    path="ApiLimits.log"
+                )
                 await self.queue.put(lambda: request_func())
                 return None
 
             self.current_weight += weight
 
         return await request_func()
+
+controller = BinanceAPIController()
