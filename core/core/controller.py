@@ -1,6 +1,8 @@
 import asyncio
 import time
 
+from core.logger import custom_logger
+
 
 # проверить логи, возможно предел будет пробиватся, если нет то повысить до 6000
 
@@ -37,7 +39,7 @@ class BinanceAPIController:
         """Управляет лимитом и выполняет запрос. Если лимит превышен, запрос ставится в очередь."""
         async with self.lock:
             if self.current_weight + weight > self.max_weight:
-                print(f" Лимит достигнут! Запрос добавлен в очередь. Текущий вес: {self.current_weight}")
+                custom_logger.log_with_path(1, f"reached the limit for Binance API. Current weight:  {self.current_weight}")
                 await self.queue.put(lambda: request_func())
                 return None
 
