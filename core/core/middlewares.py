@@ -2,33 +2,31 @@ from urllib.request import Request
 
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from core.controller import BinanceAPIController
 from core.endpoints import endpoints
 from core.logger import custom_logger
 
 
 class WeightTrackingMiddleware(BaseHTTPMiddleware):
     """Мидлвейр для динамической актуализации весов"""
-    def __init__(self, app, rate_limiter: BinanceAPIController):
+    def __init__(self, app):
         super().__init__(app)
-        self.rate_limiter = rate_limiter
         self.update_mode = False
-        self.updated_endpoints = set()
+        self.pending_endpoints = set()
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
 
         if self.update_mode:
-            endpoint = request.url.path
-            print(f'update mode: {endpoint}')
+            endpoint = request.url.path # full_url?
+            print(f'update mode: {endpoint}', request.full_url, request.full_url.path, request.url)
 
-            if endpoint not in self.updated_endpoints:
+            if endpoint not in self.pending_endpoints:
                 used_weight = response.headers.get("X-MBX-API-WEIGHT", "0")
 
                 try:
                     used_weight = int(used_weight)
                 except ValueError:
-                    used_weight = 0
+                    used_weight = 0 # скорее всего не 0
 
                 current_weight = endpoints[endpoint]
 
@@ -40,13 +38,16 @@ class WeightTrackingMiddleware(BaseHTTPMiddleware):
                         path="endpoints.log"
                     )
 
-                self.updated_endpoints.add(endpoint)
+                self.pending_endpoints.discard(endpoint)
+
+                if not self.pending_endpoints:
+                    self.disable_update_mode()
 
         return response
 
     def enable_update_mode(self):
         self.update_mode = True
-        self.updated_endpoints.clear()
+        self.pending_endpoints = set(endpoints.keys())
 
     def disable_update_mode(self):
         self.update_mode = False

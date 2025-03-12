@@ -20,7 +20,6 @@ class BinanceAPIController:
 
         self.lock = asyncio.Lock()
         self.queue = asyncio.Queue()
-        self.pending_requests = set()
         self.queue_event = None
 
     async def start(self, queue_event):
@@ -68,6 +67,7 @@ class BinanceAPIController:
                 return None
 
             self.current_weight += weight
+            print(self.current_weight)
 
         return await request_func()
 

@@ -7,7 +7,7 @@ from core.middlewares import WeightTrackingMiddleware
 
 
 class BinanceAPI:
-    """апи для получения триггеров"""
+    """апи для получения триггеров и их запуск"""
     BASE_URL = "https://api.binance.com/api"
 
     def __init__(self, controller: BinanceAPIController, middleware: WeightTrackingMiddleware):
@@ -30,8 +30,7 @@ class BinanceAPI:
         return await self.controller.request_with_limit(weight, request)
 
     async def check_and_update_weights(self): # можно сделать из этой функции команду, и использовать после инициализации
-        """Функция для корректировки весов, если Binance изменил их"""
-        """Актуализирует веса эндпоинтов, вызывая мидлвейр."""
+        """Функция для постепенной корректировки весов"""
         print("Запуск актуализации весов через мидлвейр...")
         self.middleware.enable_update_mode()
 
@@ -43,7 +42,7 @@ class BinanceAPI:
         )
 
     # ситуативный апи, думаю лучше всего его не использовать(для такого лучше будет вебсокет, даже в доке так пишут)
-    async def get_ticker_current_price(self, symbol):
+    async def get_ticker_current_price(self, symbol=None):
         """цена конкретной валюты"""
         await self.get(
             endpoint="/v3/ticker/price",

@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from apps.binance.external_router import BinanceAPI
 from core.controller import controller
 from core.middlewares import WeightTrackingMiddleware
+from core.orchestrator import BinanceAPIOrchestrator
 
 
 @asynccontextmanager
@@ -18,12 +19,15 @@ async def lifespan(app: FastAPI):
     await controller.start(app.state.queue_event)
     await binance_api.check_and_update_weights()
 
+    orchestrator = BinanceAPIOrchestrator(binance_api)
+    await orchestrator.start()
+
     yield
     print("END")
 
 
 app = FastAPI(lifespan=lifespan)
-middleware_binance_api_weight = WeightTrackingMiddleware(app=app, rate_limiter=controller)
+middleware_binance_api_weight = WeightTrackingMiddleware(app=app)
 binance_api = BinanceAPI(controller=controller, middleware=middleware_binance_api_weight)
 
 
