@@ -36,7 +36,7 @@ class BinanceAPI:
         self.middleware.enable_update_mode()
 
     async def get_apiv3_accessibility(self):
-        """x-mbx-used-weight: weigth=4 | проверяет доступен ли api/v3"""
+        """проверяет доступен ли api/v3"""
         await self.get(
             endpoint='/v3/ping',
             weight=endpoints.get("/v3/ping")
@@ -44,7 +44,7 @@ class BinanceAPI:
 
     # ситуативный апи, думаю лучше всего его не использовать(для такого лучше будет вебсокет, даже в доке так пишут)
     async def get_ticker_current_price(self, symbol):
-        """x-mbx-used-weight: weigth=4 | цена конкретной валюты"""
+        """цена конкретной валюты"""
         await self.get(
             endpoint="/v3/ticker/price",
             weight=endpoints.get("/v3/ticker/price"),
@@ -54,7 +54,7 @@ class BinanceAPI:
 
     async def get_price_change_24h(self, symbol=None):
         # если без атрибутов то стоимость будет 80, но данных будет намного больше, проверить как часто обновляются данные
-        """x-mbx-used-weight: weigth=8 |  изменение процентного значения за 24 часа"""
+        """изменение процентного значения за 24 часа"""
         await self.get(
             endpoint="/v3/ticker/24hr",
             weight=endpoints.get("/v3/ticker/24hr"),

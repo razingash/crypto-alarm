@@ -16,12 +16,15 @@ class BinanceAPIController:
         self.max_weight = max_weight # на самом деле лимит 6000, но лучше сделать поправку на асинхронность
         self.current_weight = 0
         self.last_reset_time = time.time()
-        self.lock = asyncio.Lock()
-        self.queue = asyncio.Queue()
-        self.lock = asyncio.Lock()
-        self.queue = asyncio.Queue()
+        self.pending_requests = set()
 
-    async def start(self):
+        self.lock = asyncio.Lock()
+        self.queue = asyncio.Queue()
+        self.pending_requests = set()
+        self.queue_event = None
+
+    async def start(self, queue_event):
+        self.queue_event = queue_event
         asyncio.create_task(self.reset_loop())
         asyncio.create_task(self.process_queue())
 
@@ -35,9 +38,21 @@ class BinanceAPIController:
     async def process_queue(self):
         """Обрабатывает очередь запросов (если лимит был превышен)"""
         while True:
-            request = await self.queue.get()
-            await request()
-            self.queue.task_done()
+            await self.queue_event.wait()
+
+            async with self.lock:
+                if self.queue.empty():
+                    self.queue_event.clear()
+                    continue
+
+                request_func, weight = await self.queue.get()
+                self.pending_requests.discard(request_func)
+
+            await request_func()
+
+            async with self.lock:
+                self.current_weight += weight
+                self.queue.task_done()
 
     async def request_with_limit(self, weight: int, request_func):
         """Управляет лимитом и выполняет запрос. Если лимит превышен, запрос ставится в очередь."""
@@ -48,7 +63,8 @@ class BinanceAPIController:
                     msg=f"reached the limit for Binance API. Current weight:  {self.current_weight}",
                     path="ApiLimits.log"
                 )
-                await self.queue.put(lambda: request_func())
+                await self.queue.put((request_func, weight))
+                self.queue_event.set()
                 return None
 
             self.current_weight += weight

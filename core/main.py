@@ -1,3 +1,4 @@
+import asyncio
 from argparse import ArgumentParser
 from uvicorn import run as uvicorn_run
 
@@ -12,6 +13,11 @@ from core.middlewares import WeightTrackingMiddleware
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("START")
+
+    app.state.queue_event = asyncio.Event()
+    await controller.start(app.state.queue_event)
+    await binance_api.check_and_update_weights()
+
     yield
     print("END")
 
@@ -19,12 +25,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 middleware_binance_api_weight = WeightTrackingMiddleware(app=app, rate_limiter=controller)
 binance_api = BinanceAPI(controller=controller, middleware=middleware_binance_api_weight)
-
-
-@app.on_event("startup")
-async def startup_event():
-    await controller.start()
-    await binance_api.check_and_update_weights()
 
 
 if __name__ == "__main__":
