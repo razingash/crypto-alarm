@@ -15,7 +15,7 @@ def command_makemigrations():
 async def makemigrations() -> None:
     try:
         conn = await asyncpg.connect(f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/postgres")
-        databases = await conn.get("SELECT datname FROM pg_database")
+        databases = await conn.fetch("SELECT datname FROM pg_database")
         db_names = [db['datname'] for db in databases]
 
         if PG_NAME not in db_names:
@@ -36,4 +36,4 @@ async def init_db() -> None:
     async with engine_new.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     await engine_new.dispose()
-    print(Style.BRIGHT + Fore.GREEN + 'success')
+    print(Style.BRIGHT + Fore.GREEN + 'Database created successfully')

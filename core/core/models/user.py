@@ -16,7 +16,6 @@ class User(Base):
 
     access_tokens: Mapped[list["AccessToken"]] = relationship("AccessToken", back_populates="user")
     refresh_token: Mapped["RefreshToken"] = relationship("RefreshToken", back_populates="user", uselist=False)
-
-    triggers: Mapped[list["TriggerExitingPrice"]] = relationship("TriggerExitingPrice", back_populates="owner")
+    triggers: Mapped[list["TriggerFormula"]] = relationship("TriggerFormula", back_populates="owner")
 
     __tablename__ = "user_user"

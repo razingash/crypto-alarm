@@ -1,9 +1,9 @@
-from sqlalchemy import Float, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, SmallInteger, ForeignKey, Integer, Boolean
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from core.models.base import BaseTrigger
+from core.models.base import Base
 
-__all__ = ["TriggerExitingPrice"]
+__all__ = ["TriggerFormula", "TriggerFormulaComponent"]
 
 """
 MongoDB
@@ -11,15 +11,21 @@ class TriggersHistory(Base):
     pass
 """
 
-class TriggerExitingPrice(BaseTrigger):
-    """триггер пробития порога, должен срабатывать когда будет пробитие порога цены, is_percentage влияет на то будет
-    ли это работать для процентного значения или фиксирования цены"""
-    min_price: Mapped[float] = mapped_column(Float, nullable=False)
-    max_price: Mapped[float] = mapped_column(Float, nullable=False)
-    fixed_price: Mapped[float] = mapped_column(Float, nullable=False)  # сделать дефолтным, чтобы оно само устанавливалось в самом начале
-    is_percentage: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
-    __tablename__ = "trigger_exiting_price"
+class TriggerFormula(Base):
+    owner_id: Mapped[int] = mapped_column(Integer, ForeignKey("user_user.id"), nullable=False)
+    is_notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False) # тут могут быть баги при большой нагрузке
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    formula: Mapped[str] = mapped_column(String, nullable=False)
+    components: Mapped[list["TriggerFormulaComponent"]] = relationship("TriggerFormulaComponent", back_populates="owner")
+
+    __tablename__ = "trigger_formula"
 
 
-# также нужна модель для "скачка" но это уже будет алгоритмическая торговля так что лучше не делать
+class TriggerFormulaComponent(Base):
+    """брать во внимание только компоненты с amount > 1"""
+    component: Mapped[str] = mapped_column(String, nullable=False)
+    amount: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=1, index=True)
+    # amount должен повышатся и понижатся в зависимости от количества указывающих на него is_active
+
+    __tablename__ = "trigger_formula_component"
