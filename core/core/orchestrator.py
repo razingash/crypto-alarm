@@ -30,4 +30,3 @@ class BinanceAPIOrchestrator:
         while True:
             await asyncio.sleep(60)
             await self.binance_api.get_apiv3_accessibility()
-

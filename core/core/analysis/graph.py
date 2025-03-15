@@ -3,10 +3,16 @@ from collections import defaultdict, deque
 
 from sympy import sympify, lambdify, Mul, Add, preorder_traversal
 
-# добавить функцию  для всех формул подвязаных под переменную(тут возможно новый класс)
+
 class DependencyGraph:
     """
+    Горячее хранилище активных выражений; хранит выражения в виде графа зависимостей
     Если будет время и желание добавить метод поиска циклических зависимостей - он вряд ли нужен
+
+    1) функцию для всех формул подвязаных под переменную(тут возможно новый класс)
+    2) попробовать сделать чтобы ID формулы было равно ID из базы данных
+    2) улучшить добавление(можно позже, чтобы учитывало числа, -> тригонометрию -> скобки -> циклические выражения(самое трудное) ->)
+    3) оптимизировать добавление (можно позже)
     """
 
     def __init__(self):
@@ -15,7 +21,7 @@ class DependencyGraph:
         self.compiled = {}  # {ID формулы -> скомпилированная функция}
         self.values = {}  # {переменная -> текущее значение}
         self.cache = {}  # Кэш для промежуточных результатов
-        self.formula_ids = {}  # Formula: ID | нужно чтобы нормально удалять их | (2)
+        self.formula_ids = {}  # Formula: ID | нужно чтобы нормально удалять их
         self.subexpression_weights = defaultdict(int) # {подвыражение -> количество повторений}
 
     def add_formula(self, formula_str) -> None: # слишком медленная
@@ -29,14 +35,13 @@ class DependencyGraph:
             self.formulas[formula_id] = expr
             self.formula_ids[str(expr)] = formula_id
 
-            # Разбираем выражение на подвыражения
+            # разбивка на подвыражения
             for subexpr in preorder_traversal(expr):
-                if subexpr.is_Atom:
-                    continue  # Пропускаем числа и переменные
+                if subexpr.is_Atom: # numbers and expressions are excluded
+                    continue
                 self.graph[str(subexpr)].add(formula_id)
-                self.subexpression_weights[str(subexpr)] += 1  # Учитываем частоту встречаемости
+                self.subexpression_weights[str(subexpr)] += 1
 
-            # Компилируем формулу
             variables = list(expr.free_symbols)
             self.compiled[formula_id] = lambdify(variables, expr, "numpy")
 

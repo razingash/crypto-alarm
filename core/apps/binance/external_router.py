@@ -1,7 +1,6 @@
 import httpx
 
 from apps.binance.schemas import Ticker24hrResponse, TickerCurrentPriceResponse
-from core.analysis.storage import VariableStorage
 from core.controller import BinanceAPIController
 from core.endpoints import endpoints
 from core.middlewares import WeightTrackingMiddleware
@@ -11,11 +10,10 @@ class BinanceAPI:
     """апи для получения триггеров и их запуск"""
     BASE_URL = "https://api.binance.com/api"
 
-    def __init__(self, controller: BinanceAPIController, middleware: WeightTrackingMiddleware, storage: VariableStorage):
+    def __init__(self, controller: BinanceAPIController, middleware: WeightTrackingMiddleware):
         self.client = httpx.AsyncClient()
         self.controller = controller
         self.middleware = middleware
-        self.storage = storage
 
     async def get(self, endpoint: str, weight: int, response_model=None, params: dict = None):
         async def request():
