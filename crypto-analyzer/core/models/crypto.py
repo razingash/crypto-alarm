@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import String, Float, DateTime
 from sqlalchemy.orm import mapped_column, Mapped
 
-from core.models.base import Base
+from core.models import Base
 
 __all__ = ["CryptoPrice"]
 
