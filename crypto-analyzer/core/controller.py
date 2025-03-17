@@ -61,7 +61,7 @@ class BinanceAPIController:
                 custom_logger.log_with_path(
                     level=1,
                     msg=f"reached the limit for Binance API. Current weight:  {self.current_weight}",
-                    path="ApiLimits.log"
+                    filename="ApiLimits.log"
                 )
                 await self.queue.put((request_func, weight))
                 self.queue_event.set()

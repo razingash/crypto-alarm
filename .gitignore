@@ -5,4 +5,7 @@ alembic/versions/__pycache__
 readme.md
 .env
 crypto-analyzer/logs/
+crypto-analyzer/tests/.pytest_cache
 frontend/node_modules
+crypto-gateway/logs
+

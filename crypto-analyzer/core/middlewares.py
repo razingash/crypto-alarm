@@ -35,7 +35,7 @@ class WeightTrackingMiddleware(BaseHTTPMiddleware):
                     custom_logger.log_with_path(
                         level=3,
                         msg=f"Endpoint updated {endpoint}: {current_weight} -> {used_weight}",
-                        path="endpoints.log"
+                        filename="endpoints.log"
                     )
 
                 self.pending_endpoints.discard(endpoint)

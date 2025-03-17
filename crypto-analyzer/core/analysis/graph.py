@@ -1,20 +1,23 @@
 import hashlib
 from collections import defaultdict, deque
 
-from sympy import sympify, lambdify, Mul, Add, preorder_traversal
+from sympy import sympify, lambdify, Mul, Add, preorder_traversal, Symbol
 
+from core.logger import custom_logger
 
+"""
+!!!
+изменить evaluate_subexpression и evaluate_formula потому что sympify().subs() возвращает разные типы в зависимости от того
+как отработает
+"""
 class DependencyGraph:
     """
     Горячее хранилище активных выражений; хранит выражения в виде графа зависимостей
-    Если будет время и желание добавить метод поиска циклических зависимостей - он вряд ли нужен
-
-    1) функцию для всех формул подвязаных под переменную(тут возможно новый класс)
-    2) попробовать сделать чтобы ID формулы было равно ID из базы данных
+    0) сделать чтобы float хранился в адекватном виде с двумя знаками после запятой
+    1) попробовать сделать чтобы ID формулы было равно ID из базы данных
     2) улучшить добавление(можно позже, чтобы учитывало числа, -> тригонометрию -> скобки -> циклические выражения(самое трудное) ->)
     3) оптимизировать добавление (можно позже)
     """
-
     def __init__(self):
         self.graph = defaultdict(set)  # {переменная -> набор формул, которые от неё зависят}
         self.formulas = {}  # {ID формулы -> символьное выражение}
@@ -44,27 +47,47 @@ class DependencyGraph:
 
             variables = list(expr.free_symbols)
             self.compiled[formula_id] = lambdify(variables, expr, "numpy")
-
-            print(f"Добавлена формула: {formula_str} (ID={formula_id})")
+        except RuntimeError as e: # возможно добавить больше конкретики
+            custom_logger.log_with_path(
+                level=2,
+                msg=f"Recursion error due to a too heavy formula, it is necessary to either increase the recursion"
+                    f"limit or reduce the permissible severity of the formulas:  {formula_str} \nError\n {e}",
+                filename="Graph.log"
+            )
+            print('опасная формула')
         except Exception as e:
             print(f"Ошибка в формуле '{formula_str}': {e}")
 
     def remove_formula(self, formula_str) -> None:
-        """Удаляет формулу из графа и все с ней связанное"""
+        """Удаляет формулу из графа и все связанные подвыражения"""
         try:
             expr = sympify(formula_str, evaluate=False)
             formula_id = self.formula_ids.get(str(expr))
+
             if formula_id is None:
+                custom_logger.log_with_path(
+                    level=2,
+                    msg=f"The formula was not found, most likely due to a bug in the code, or asynchronous approach:  {formula_str}",
+                    filename="Graph.log"
+                )
                 print(f"Формула '{formula_str}' не найдена.")
                 return
 
-            variables = list(expr.free_symbols)
-            for var in variables:
-                if formula_id in self.graph[str(var)]:
-                    self.graph[str(var)].remove(formula_id)
-
             del self.formulas[formula_id]
             del self.compiled[formula_id]
+            del self.formula_ids[str(expr)]
+
+            for subexpr, formula_ids in list(self.graph.items()):
+                if formula_id in formula_ids:
+                    self.graph[subexpr].remove(formula_id)
+                    if not self.graph[subexpr]:
+                        del self.graph[subexpr]
+
+            # удаление подвыражений, если не используются
+            for subexpr in list(self.subexpression_weights.keys()):
+                if subexpr in self.graph:
+                    continue
+                del self.subexpression_weights[subexpr]
 
             print(f"Удалена формула: {formula_str}")
         except Exception as e:
@@ -116,7 +139,7 @@ class DependencyGraph:
         и будет иметь сложность O(n), как и топологический(проверить потом что быстрее работает) )
         """
 
-    def evaluate_subexpression(self, subexpr):
+    def evaluate_subexpression(self, subexpr): # возвращает float или bool, зависит от sympify().subs()
         """Вычисляет значение подвыражения с учетом кэша"""
         expr = sympify(subexpr)
         vars_values = {str(var): self.values.get(str(var), 0) for var in expr.free_symbols}
@@ -125,7 +148,7 @@ class DependencyGraph:
         if cache_key in self.cache:
             return self.cache[cache_key]
 
-        result = expr.subs(vars_values).evalf()
+        result = expr.subs(vars_values)
         self.cache[cache_key] = result
         return result
 
@@ -143,12 +166,42 @@ class DependencyGraph:
         # подставление
         return expr.subs(subexpr_values).evalf()
 
-    def get_all_dependencies(self, var_name):
-        """Возвращает все формулы, которые зависят от переменной"""
-        return self.graph.get(var_name, set())
-
-    def get_formula_result_by_id(self, formula_id):
+    def get_formula_result_by_id(self, formula_id) -> int:  # возможно не нужна
         """Возвращает результат вычисления формулы"""
+
+    def evaluate_variable_impact(self, var_name) -> dict: # отслеживать влияние подвыражения смысла пока не вижу, но лишним не будет
+        """Оценивает влияние переменной на все выражения и подвыражения."""
+        impact = defaultdict(int)
+        var_symbol = Symbol(var_name)
+
+        # подвыражения
+        for subexpr, count in self.subexpression_weights.items():
+            expr_id = self.formula_ids.get(subexpr, None)
+            if expr_id is not None:
+                expr_sympy = self.formulas[expr_id]
+                if var_symbol in expr_sympy.free_symbols:
+                    impact[subexpr] += count
+
+        # формулы
+        affected_formulas = set()
+        for subexpr, formula_ids in self.graph.items():
+            if any(var_symbol in self.formulas[f].free_symbols for f in formula_ids):
+                affected_formulas.update(formula_ids)
+
+        # обновка
+        for formula_id in affected_formulas:
+            expr_sympy = self.formulas[formula_id]
+            if var_symbol in expr_sympy.free_symbols:
+                impact[str(expr_sympy)] += 1
+
+        return dict(impact)
+
+    def is_formula_triggered(self, formula_id) -> bool:
+        """возвращает булево значение выражения"""
+        '''
+        позже может быть использована для пересчета "забущенных" выражений.
+         Нужно сделать функцию для перерасчета сразу всех значений или улучшить обновление(более вероятно)
+        '''
         expr = self.formulas[formula_id]
         func = self.compiled[formula_id]
 
