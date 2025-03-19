@@ -1,0 +1,31 @@
+
+.field__new_formula {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.area__new_formula {
+    display: flex;
+    flex-direction: column;
+    row-gap: 20px;
+    align-items: flex-end;
+}
+
+.formula_input {
+    min-width: 300px;
+    background: #000;
+    color: #fff;
+}
+
+.formula__apply_button {
+    width: fit-content;
+    padding: 7px 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    background: #0d0d0d;
+    color: #ffffff;
+    border: 1px solid #fff;
+    font-family: sans-serif;
+    font-weight: 700;
+}

@@ -1,0 +1,51 @@
+
+export const defaultKeyboard = [
+    {
+        label: 'Basic',
+        rows: [
+            [
+                '[7]',
+                '[8]',
+                '[9]',
+                '\\div',
+                '[separator-5]',
+                {class: 'small', latex: '\\frac{#@}{#0}'},
+                {class: 'small', latex: '\\begin{pmatrix}#0\\\\#0\\end{pmatrix}'},
+                '\\left\\lvert #0 \\right\\rvert',
+                '\\sqrt{#@}',
+            ],
+            [
+                '[4]',
+                '[5]',
+                '[6]',
+                '\\times',
+                '[separator-5]',
+                '\\lt',
+                '\\le',
+                '#@^{#?}',
+                '#@^2',
+            ],
+            [
+                '1',
+                '[2]',
+                '[3]',
+                '-',
+                '[separator-5]',
+                '\\gt',
+                '\\ge',
+                {label: '[backspace]', width: 2, shift: null},
+            ],
+            [
+                '0',
+                '.',
+                '=',
+                '+',
+                '[separator-5]',
+                '(',
+                ')',
+                {label: '[left]', shift: null},
+                {label: '[right]', shift: null},
+            ],
+        ],
+    },
+]
