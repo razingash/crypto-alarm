@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto-gateway/crypto-gateway/internal/db"
+	"crypto-gateway/crypto-gateway/internal/routes"
 	"log"
 
 	"github.com/gofiber/fiber/v3"
@@ -8,10 +10,9 @@ import (
 
 func main() {
 	app := fiber.New()
+	db.InitDB()
 
-	app.Get("/", func(c fiber.Ctx) error {
-		return c.SendString("Fiber v3 работает!")
-	})
+	routes.SetupAuthRoutes(app)
 
-	log.Fatal(app.Listen(":3001"))
+	log.Fatal(app.Listen(":8001"))
 }

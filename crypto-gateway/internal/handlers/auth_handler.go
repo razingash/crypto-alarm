@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto-gateway/crypto-gateway/internal/auth"
 	"crypto-gateway/crypto-gateway/internal/db"
 	"time"
@@ -23,21 +24,23 @@ func Register(c fiber.Ctx) error {
 		return err
 	}
 
-	accessToken, err := auth.GenerateAccessToken(user.UUID)
-	if err != nil {
-		return err
-	}
+	accessToken := auth.GenerateAccessToken(user.UUID)
+	refreshToken := auth.GenerateRefreshToken(user.UUID)
 
-	refreshToken, err := auth.GenerateRefreshToken(user.UUID)
-	if err != nil {
-		return err
-	}
-
-	_, err = db.DB.Exec(`INSERT INTO access_tokens (user_uuid, token, expires_at, created_at) 
-							VALUES ($1, $2, $3, $4)`,
+	_, err = db.DB.Exec(context.Background(), `
+		INSERT INTO access_tokens (user_uuid, token, expires_at, created_at) 
+		VALUES ($1, $2, $3, $4)`,
 		user.UUID, accessToken, time.Now().Add(15*time.Minute), time.Now())
 	if err != nil {
-		return err
+		return nil
+	}
+
+	_, err = db.DB.Exec(context.Background(), `
+		INSERT INTO refresh_tokens (user_uuid, token, expires_at, created_at) 
+		VALUES ($1, $2, $3, $4)`,
+		user.UUID, refreshToken, time.Now().Add(24*time.Hour), time.Now())
+	if err != nil {
+		return nil
 	}
 
 	return c.JSON(fiber.Map{

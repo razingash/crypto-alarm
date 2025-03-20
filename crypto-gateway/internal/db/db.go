@@ -2,23 +2,30 @@ package db
 
 import (
 	"crypto-gateway/crypto-gateway/config"
-	"database/sql"
 	"fmt"
 	"log"
+
+	"context"
+
+	"github.com/jackc/pgx/v5"
 )
 
-var (
-	DB *sql.DB
-)
+var DB *pgx.Conn
 
 func InitDB() {
 	var err error
-	DB, err = sql.Open("postgres", config.Database_Url)
+
+	connConfig, err := pgx.ParseConfig(config.Database_Url)
+	if err != nil {
+		log.Fatalf("Ошибка при парсинге строки подключения: %v", err)
+	}
+
+	DB, err = pgx.ConnectConfig(context.Background(), connConfig)
 	if err != nil {
 		log.Fatalf("Ошибка при подключении к базе данных: %v", err)
 	}
 
-	err = DB.Ping()
+	err = DB.Ping(context.Background())
 	if err != nil {
 		log.Fatalf("Ошибка пинга базы данных: %v", err)
 	}

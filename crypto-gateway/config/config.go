@@ -58,7 +58,7 @@ func LoadConfig() {
 	// сейчас без ORM, поэтому не будет возможности подключится асинхронно, в самом конце сделать асинхронное подключение
 	// чтобы сверить скорости
 	Database_Url = fmt.Sprintf(
-		"postgresql://%v:%v@%v:%v/%v",
+		"postgresql://%v:%v@%v:%v/%v?sslmode=disable",
 		Database_User, Database_Password, Database_Host, Database_Port, Database_Name,
 	)
 }
