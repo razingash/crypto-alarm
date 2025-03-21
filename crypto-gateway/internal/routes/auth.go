@@ -11,8 +11,8 @@ import (
 func SetupAuthRoutes(app *fiber.App) {
 	authGroup := app.Group("/api/v1/auth")
 
-	authGroup.Post("/register", handlers.Register, middlewares.ValidateRegisterInfo)
-	//authGroup.Post("/login", handlers.Login)
+	authGroup.Post("/register", handlers.Register, middlewares.ValidateAuthenticationInfo)
+	authGroup.Post("/login", handlers.Login, middlewares.ValidateAuthenticationInfo)
 	//authGroup.Post("/refresh", handlers.RefreshToken)
 	//authGroup.Post("/validate", handlers.ValidateToken)
 

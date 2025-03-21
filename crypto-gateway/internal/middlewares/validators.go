@@ -1,17 +1,12 @@
 package middlewares
 
 import (
-	"log"
-
 	"github.com/gofiber/fiber/v3"
 )
 
-func ValidateRegisterInfo(c fiber.Ctx) error {
+func ValidateAuthenticationInfo(c fiber.Ctx) error {
 	username := c.FormValue("username")
 	password := c.FormValue("password")
-
-	log.Println("Username:", username)
-	log.Println("Password:", password)
 
 	if len(username) < 6 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

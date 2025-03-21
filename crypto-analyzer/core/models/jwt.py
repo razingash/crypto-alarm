@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
-from core.models import Base
+from core.models.base import Base
 
 """
 These models are used in the GO 'JWT' service. here they are only because in this service
