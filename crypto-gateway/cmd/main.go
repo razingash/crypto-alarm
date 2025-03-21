@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto-gateway/crypto-gateway/config"
 	"crypto-gateway/crypto-gateway/internal/db"
 	"crypto-gateway/crypto-gateway/internal/routes"
 	"log"
@@ -9,6 +10,8 @@ import (
 )
 
 func main() {
+	config.LoadConfig()
+
 	app := fiber.New()
 	db.InitDB()
 

@@ -1,11 +1,10 @@
 package db
 
 import (
+	"context"
 	"crypto-gateway/crypto-gateway/config"
 	"fmt"
 	"log"
-
-	"context"
 
 	"github.com/jackc/pgx/v5"
 )
