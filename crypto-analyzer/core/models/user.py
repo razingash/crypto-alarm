@@ -9,8 +9,11 @@ from core.models.base import Base
 __all__ = ["User", ]
 
 class User(Base):
-    uuid: Mapped[str] = mapped_column(String(36), default=lambda: str(uuid4()), unique=True)
-    isPremiun: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    uuid: Mapped[str] = mapped_column(String(36), default=lambda: str(uuid4()), unique=True, index=True)
+    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    password: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    registered_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    ispremium: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
     since: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     to: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 

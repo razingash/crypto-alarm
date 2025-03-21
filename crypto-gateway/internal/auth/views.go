@@ -11,18 +11,17 @@ type User struct {
 	Password string
 }
 
-func RegisterUser(username, password string) (*User, error) {
+func RegisterUser(username string, password string) (*User, error) {
 	hashedPassword, err := HashPassword(password)
 	if err != nil {
 		return nil, err
 	}
-
 	var userUUID string
 
 	err2 := db.DB.QueryRow(context.Background(), `
-		INSERT INTO user_user (uuid, password, created_at) 
-		VALUES (gen_random_uuid(), $1, $2) 
-		RETURNING uuid`, hashedPassword, time.Now()).Scan(&userUUID)
+		INSERT INTO user_user (uuid, username, password, registered_date, ispremium) 
+		VALUES (gen_random_uuid(), $1, $2, $3, $4) 
+		RETURNING uuid`, username, hashedPassword, time.Now(), false).Scan(&userUUID)
 	if err2 != nil {
 		return nil, err2
 	}
