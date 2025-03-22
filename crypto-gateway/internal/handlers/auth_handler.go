@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto-gateway/crypto-gateway/internal/auth"
 	"crypto-gateway/crypto-gateway/internal/db"
+	"encoding/json"
 	"log"
 	"strings"
 	"time"
@@ -51,8 +52,8 @@ func Register(c fiber.Ctx) error {
 	}
 
 	_, err = db.DB.Exec(context.Background(), `
-		INSERT INTO refresh_tokens (user_uuid, token, expires_at, created_at) 
-		VALUES ($1, $2, $3, $4)`,
+		INSERT INTO refresh_tokens (user_uuid, token, expires_at, created_at, revoked) 
+		VALUES ($1, $2, $3, $4, false)`,
 		user.UUID, refreshToken, time.Now().Add(24*time.Hour), time.Now())
 	if err != nil {
 		return nil
@@ -95,22 +96,22 @@ func Login(c fiber.Ctx) error {
 		}
 	}
 
-	accessToken := auth.GenerateAccessToken(user.UUID)
-	refreshToken := auth.GenerateRefreshToken(user.UUID)
+	accessToken := auth.GenerateAccessToken(user.UUID)   // 10 минут
+	refreshToken := auth.GenerateRefreshToken(user.UUID) // 1 день
 
 	var err error
 	_, err = db.DB.Exec(context.Background(), `
 		INSERT INTO access_tokens (user_uuid, token, expires_at, created_at) 
 		VALUES ($1, $2, $3, $4)`,
-		user.UUID, accessToken, time.Now().Add(15*time.Minute), time.Now())
+		user.UUID, accessToken, time.Now().Add(10*time.Minute), time.Now())
 	if err != nil {
 		log.Println("Error inserting access token:", err)
 		return nil
 	}
 
 	_, err = db.DB.Exec(context.Background(), `
-		INSERT INTO refresh_tokens (user_uuid, token, expires_at, created_at) 
-		VALUES ($1, $2, $3, $4)`,
+		INSERT INTO refresh_tokens (user_uuid, token, expires_at, created_at, revoked) 
+		VALUES ($1, $2, $3, $4, false)`,
 		user.UUID, refreshToken, time.Now().Add(24*time.Hour), time.Now())
 	if err != nil {
 		log.Println("Error inserting access token:", err)
@@ -120,5 +121,49 @@ func Login(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
+	})
+}
+
+// позже добавить учет черного списка
+func ValidateToken(c fiber.Ctx) error {
+	// both refresh and access
+	var body struct {
+		Token string `json:"token"`
+	}
+
+	if err := json.Unmarshal(c.Body(), &body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid JSON",
+		})
+	}
+
+	isTokenValid := auth.ValidateToken(body.Token)
+
+	return c.JSON(fiber.Map{
+		"isTokenValid": isTokenValid,
+	})
+}
+
+func RefreshAccessToken(c fiber.Ctx) error {
+	var body struct {
+		Token string `json:"token"`
+	}
+
+	if err := json.Unmarshal(c.Body(), &body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid JSON",
+		})
+	}
+
+	errCode, newAccessToken := auth.GetNewAccessToken(body.Token)
+
+	if errCode == 1 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid refresh token",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"token": newAccessToken,
 	})
 }

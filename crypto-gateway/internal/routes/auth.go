@@ -12,9 +12,9 @@ func SetupAuthRoutes(app *fiber.App) {
 	authGroup := app.Group("/api/v1/auth")
 
 	authGroup.Post("/register", handlers.Register, middlewares.ValidateAuthenticationInfo)
-	authGroup.Post("/login", handlers.Login, middlewares.ValidateAuthenticationInfo)
-	//authGroup.Post("/refresh", handlers.RefreshToken)
-	//authGroup.Post("/validate", handlers.ValidateToken)
+	authGroup.Post("/token", handlers.Login, middlewares.ValidateAuthenticationInfo)
+	authGroup.Post("/token/verify", handlers.ValidateToken)
+	authGroup.Post("/token/refresh", handlers.RefreshAccessToken)
 
 	// protected := authGroup.Group("/protected", auth.JWT())
 	// protected.Get("/", handlers.Protected)
