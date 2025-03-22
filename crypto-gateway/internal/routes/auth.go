@@ -1,7 +1,6 @@
 package routes
 
 import (
-	//"crypto-gateway/crypto-gateway/internal/auth"
 	"crypto-gateway/crypto-gateway/internal/handlers"
 	"crypto-gateway/crypto-gateway/internal/middlewares"
 
@@ -15,7 +14,5 @@ func SetupAuthRoutes(app *fiber.App) {
 	authGroup.Post("/token", handlers.Login, middlewares.ValidateAuthenticationInfo)
 	authGroup.Post("/token/verify", handlers.ValidateToken)
 	authGroup.Post("/token/refresh", handlers.RefreshAccessToken)
-
-	// protected := authGroup.Group("/protected", auth.JWT())
-	// protected.Get("/", handlers.Protected)
+	authGroup.Post("/logout", handlers.Logout, middlewares.ValidateAuthorization)
 }

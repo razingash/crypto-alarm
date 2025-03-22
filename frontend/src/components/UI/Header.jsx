@@ -13,10 +13,10 @@ const Header = () => {
                         <>
                         <Link to={"/profile"} className={"header__item"}>Profile</Link>
                         <Link to={"/profile/strategies"} className={"header__item"}>Strategies</Link>
+                            <Link to={"/new-strategy"} className={"header__item"}>New strategy</Link>
                         </>
                     )}
                     <Link to={"#"} className={"header__item"}>Settings</Link>
-                    <Link to={"/new-strategy"} className={"header__item"}>New strategy</Link>
                     {isAuth ? (
                         <div onClick={async () => await logout()} className={"header__item"}>log out</div>
                     ) : (

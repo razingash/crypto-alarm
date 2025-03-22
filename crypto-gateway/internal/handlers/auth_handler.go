@@ -15,13 +15,10 @@ import (
 // возможно сделать структуру лучше - сейчас похожа на кал
 
 func Register(c fiber.Ctx) error {
-	var body struct {
+	body := c.Locals("body").(struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
-	}
-
-	body.Username = c.FormValue("username")
-	body.Password = c.FormValue("password")
+	})
 
 	user, err := auth.RegisterUser(body.Username, body.Password)
 	if err != nil {
@@ -66,13 +63,10 @@ func Register(c fiber.Ctx) error {
 }
 
 func Login(c fiber.Ctx) error {
-	var body struct {
+	body := c.Locals("body").(struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
-	}
-
-	body.Username = c.FormValue("username")
-	body.Password = c.FormValue("password")
+	})
 
 	errCode, user := auth.LoginUser(body.Username, body.Password)
 	if errCode != 0 {
@@ -166,4 +160,35 @@ func RefreshAccessToken(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"token": newAccessToken,
 	})
+}
+
+func Logout(c fiber.Ctx) error {
+	var body struct {
+		Token string `json:"token"`
+	}
+	userUUID := c.Locals("userUUID").(string)
+
+	if err := json.Unmarshal(c.Body(), &body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid JSON",
+		})
+	}
+
+	isTokenValid := auth.ValidateRefreshToken(body.Token)
+	if !isTokenValid {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+
+	var err error
+	_, err = db.DB.Exec(context.Background(), `
+		UPDATE refresh_tokens
+		SET revoked = true
+		WHERE user_uuid = $1
+	`, userUUID)
+
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.SendStatus(fiber.StatusOK)
 }

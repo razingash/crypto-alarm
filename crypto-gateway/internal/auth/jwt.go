@@ -55,21 +55,26 @@ func GenerateRefreshToken(userUUID string) string {
 }
 
 // получает uuid из полезной нагрузки токена доступа, должен быть передан свалидированный токен
-func ExtractUUID(payload string) (string, int) {
-	payloadBytes, err := base64.RawURLEncoding.DecodeString(payload)
-	if err != nil {
-		return "", 1 // errors.New("failed to decode payload")
-	}
+func ExtractUUID(token string) (string, int) {
+	parts := strings.Split(token, ".")
+	if len(parts) == 3 {
+		if ValidateAccessToken(parts) {
+			payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
+			if err != nil {
+				return "", 1 // errors.New("failed to decode payload")
+			}
 
-	// Десериализуем полезную нагрузку в структуру Payload
-	var payloadData Payload
-	err = json.Unmarshal(payloadBytes, &payloadData)
-	if err != nil {
-		return "", 2 // errors.New("failed to unmarshal payload")
-	}
+			var payloadData Payload
+			err = json.Unmarshal(payloadBytes, &payloadData)
+			if err != nil {
+				return "", 2 // errors.New("failed to unmarshal payload")
+			}
 
-	// Возвращаем UUID пользователя из полезной нагрузки
-	return payloadData.Sub, 0
+			// Возвращаем UUID пользователя из полезной нагрузки
+			return payloadData.Sub, 0
+		}
+	}
+	return "", 3 // неизвестная ошибка
 }
 
 func ValidateToken(token string) bool {

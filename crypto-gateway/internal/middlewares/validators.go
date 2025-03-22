@@ -1,24 +1,36 @@
 package middlewares
 
 import (
+	"encoding/json"
+
 	"github.com/gofiber/fiber/v3"
 )
 
 func ValidateAuthenticationInfo(c fiber.Ctx) error {
-	username := c.FormValue("username")
-	password := c.FormValue("password")
+	var body struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
 
-	if len(username) < 6 {
+	if err := json.Unmarshal(c.Body(), &body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Username must be at least 6 characters long",
+			"error": "Invalid JSON",
 		})
 	}
 
-	if len(password) < 6 {
+	if len(body.Username) < 5 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Password must be at least 6 characters long",
+			"username": "Username must be at least 6 characters long",
 		})
 	}
+
+	if len(body.Password) < 5 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"password": "Password must be at least 6 characters long",
+		})
+	}
+
+	c.Locals("body", body)
 
 	return c.Next()
 }

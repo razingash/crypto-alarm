@@ -18,6 +18,7 @@
     color: #fff;
     border-radius: 16px;
     margin: 0 4px;
+    width: 320px;
 }
 
 .auth__header {
@@ -28,6 +29,10 @@
 
 .auth__item {
     cursor: pointer;
+}
+
+.auth__item.active {
+    color: var(--lines);
 }
 
 .field__auth {
@@ -93,6 +98,10 @@
     width: 80px;
     justify-content: center;
     white-space: nowrap;
+}
+
+.cell__error {
+    color: #ff3a75;
 }
 
 .button__submit:active {

@@ -9,7 +9,6 @@ const UserStrategy = lazy(() => import("../pages/profile/UserStrategy"))
 
 export const publicRotes = [
     {path: "/", component: <Main/>, key: "main"},
-    {path: "/new-strategy/", component: <NewStrategy/>, key: "new-strategy"},
 ]
 
 export const unprivateRotes = [
@@ -17,6 +16,7 @@ export const unprivateRotes = [
 ]
 
 export const privateRotes = [
+    {path: "/new-strategy/", component: <NewStrategy/>, key: "new-strategy"},
     {path: "/profile/", component: <Profile/>, key: "profile", children: [
         {path: "/profile/strategies/", component: <UserStrategies/>, key: "user-strategies"},
         {path: "/profile/strategy/", component: <UserStrategy/>, key: "strategy"}

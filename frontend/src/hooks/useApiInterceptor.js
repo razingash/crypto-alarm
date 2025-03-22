@@ -3,7 +3,7 @@ import {useEffect} from "react";
 import {useAuth} from "./context/useAuth";
 
 //later change
-export const baseURL = process.env.REACT_APP_BASE_URL || 'http://localhost:8000/api/v1';
+export const baseURL = process.env.REACT_APP_BASE_URL || 'http://localhost:8001/api/v1';
 
 const apiClient = axios.create ({
     baseURL: baseURL,
@@ -29,7 +29,7 @@ export const useApiInterceptors = () => {
         const responseInterceptorId = apiClient.interceptors.response.use(
             (response) => response,async (error) => {
                 const originalRequest = error.config;
-                if (error.response.status === 401 && !originalRequest._retry) { // perhaps requests like 204 will raise errors
+                if (error.response.status === 401 && !originalRequest._retry) {
                     originalRequest._retry = true;
                     const accessToken = await refreshAccessToken();
                     apiClient.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
