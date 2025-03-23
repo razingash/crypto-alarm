@@ -29,7 +29,7 @@ export const useApiInterceptors = () => {
         const responseInterceptorId = apiClient.interceptors.response.use(
             (response) => response,async (error) => {
                 const originalRequest = error.config;
-                if (error.response.status === 401 && !originalRequest._retry) {
+                if (error.response.status === 401 && !originalRequest._retry) { // тут иногда может быть микробаг из-за того что не ?.status
                     originalRequest._retry = true;
                     const accessToken = await refreshAccessToken();
                     apiClient.defaults.headers.common.Authorization = `Bearer ${accessToken}`;

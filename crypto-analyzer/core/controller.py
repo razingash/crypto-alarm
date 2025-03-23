@@ -68,7 +68,6 @@ class BinanceAPIController:
                 return None
 
             self.current_weight += weight
-            print(self.current_weight)
 
         return await request_func()
 

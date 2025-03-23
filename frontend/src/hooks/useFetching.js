@@ -14,7 +14,7 @@ export const useFetching = (callback, delay=0, maxRetries=1) => {
             setIsLoading(true);
             return await callback(...args);
         } catch (e) {
-            console.log(e?.status, e)
+            console.log(e)
             console.log(e?.response?.data)
             setError(e?.response?.data || e?.message);
             setRetryCount(prev => prev + 1);

@@ -1,27 +1,45 @@
 from datetime import datetime
 
-from sqlalchemy import String, Float, DateTime
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy import String, DateTime, Boolean, ForeignKey, Integer
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from core.models.base import Base
 
-__all__ = ["CryptoPrice"]
+__all__ = ["CryptoApi", "CryptoParams"]
 
-class CryptoPrice(Base):
-    symbol: Mapped[str] = mapped_column(String(10), nullable=False, index=True, unique=True)
-    name: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
-    price: Mapped[float] = mapped_column(Float, nullable=False)
-    market_cap: Mapped[float] = mapped_column(Float)  # Рыночная капитализация
-    volume_24h: Mapped[float] = mapped_column(Float)  # Объём торгов | может быть спекулятивным параметром
-    percent_change_1h: Mapped[float] = mapped_column(Float)
-    percent_change_24h: Mapped[float] = mapped_column(Float)
-    percent_change_7d: Mapped[float] = mapped_column(Float)
+"""
+crypto-analizer:
+    1) система актуализации (в FormulaLoader)
+        - работает путем периодической проверки в FormulaLoader(но скорее всего это можно сделать лучше)
+    2) контроль над ними с помощью хуков
+crypto-gateway:
+    1) получение доступных переменных подвязанных под апи, для заполнения данных о актуальных переменных для клавиатуры
+"""
+
+class CryptoApi(Base):
+    """список доступных апи"""
+    api: Mapped[str] = mapped_column(String(500), nullable=False, unique=True, index=True)
+    is_actual: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    last_updated: Mapped[bool] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    params = relationship("CryptoParams", back_populates="crypto_api", cascade="all, delete-orphan")
+
+    __tablename__ = "crypto_api"
+
+
+class CryptoParams(Base):
+    """
+    доступные на данный момент параметры апи, сделать чтобы они обновлялись по триггерам
+    """
+    parameter: Mapped[str] = mapped_column(String(500), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     last_updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    excluded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    __tablename__ = "crypto_prices"
+    crypto_api_id: Mapped[int] = mapped_column(Integer, ForeignKey("crypto_api.id", ondelete="CASCADE"), nullable=False)
+    crypto_api = relationship("CryptoApi", back_populates="params")
 
-    def __repr__(self):
-        return f"<CryptoPrice {self.symbol} - {self.price}>"
+    __tablename__ = "crypto_params"
 
 
 """

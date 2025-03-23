@@ -1,4 +1,3 @@
-
 export const defaultKeyboard = [
     {
         label: 'Basic',
@@ -46,6 +45,18 @@ export const defaultKeyboard = [
                 {label: '[left]', shift: null},
                 {label: '[right]', shift: null},
             ],
+        ],
+    },
+    {
+        label: '/v3/ticker/24hr',
+        rows: [
+            ["nodata"]
+        ],
+    },
+    {
+        label: '/v3/ticker/price',
+        rows: [
+            ["nodata"]
         ],
     },
 ]

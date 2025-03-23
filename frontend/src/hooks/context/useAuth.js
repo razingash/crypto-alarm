@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }) => {
         if (refreshToken) {
             const result = await fetchVerifiedToken(refreshToken);
             if (result != null) { // all good
-                return true
+                return result?.isValid === true;
             } else { // error, so exit
                 return false
             }

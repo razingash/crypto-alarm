@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto-gateway/crypto-gateway/internal/db"
 	"database/sql"
+	"log"
 	"time"
 )
 
@@ -45,10 +46,10 @@ func LoginUser(username string, password string) (int, *User) {
 		FROM user_user 
 		WHERE username = $1
 	`, username).Scan(&userUUID, &userPassword)
-
+	log.Println(err)
 	if err == sql.ErrNoRows {
 		return ErrCodeUserNotFound, nil
-	} else if err != nil { // не найден пользователь с таким логином
+	} else if err != nil { // не найден пользователь с таким логином | тут херня
 		return ErrCodeDBError, nil
 	}
 

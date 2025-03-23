@@ -57,8 +57,8 @@ func Register(c fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+		"access":  accessToken,
+		"refresh": refreshToken,
 	})
 }
 
@@ -113,8 +113,8 @@ func Login(c fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+		"access":  accessToken,
+		"refresh": refreshToken,
 	})
 }
 
@@ -134,7 +134,7 @@ func ValidateToken(c fiber.Ctx) error {
 	isTokenValid := auth.ValidateToken(body.Token)
 
 	return c.JSON(fiber.Map{
-		"isTokenValid": isTokenValid,
+		"isValid": isTokenValid,
 	})
 }
 
@@ -158,7 +158,7 @@ func RefreshAccessToken(c fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"token": newAccessToken,
+		"access": newAccessToken,
 	})
 }
 

@@ -1,6 +1,5 @@
 import httpx
 
-from apps.binance.schemas import Ticker24hrResponse, TickerCurrentPriceResponse
 from core.controller import BinanceAPIController
 from core.endpoints import endpoints
 from core.middlewares import WeightTrackingMiddleware
@@ -47,7 +46,6 @@ class BinanceAPI:
         await self.get(
             endpoint="/v3/ticker/price",
             weight=endpoints.get("/v3/ticker/price"),
-            response_model=TickerCurrentPriceResponse,
             params={"symbol": symbol}
         )
 
@@ -57,7 +55,6 @@ class BinanceAPI:
         await self.get(
             endpoint="/v3/ticker/24hr",
             weight=endpoints.get("/v3/ticker/24hr"),
-            response_model=Ticker24hrResponse,
             params={"symbol": symbol}
         )
 

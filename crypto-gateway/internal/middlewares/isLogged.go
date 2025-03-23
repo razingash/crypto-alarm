@@ -10,6 +10,7 @@ import (
 // used to check whether the user is authorized
 func ValidateAuthorization(c fiber.Ctx) error {
 	authHeader := c.Get("Authorization")
+
 	if authHeader == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Authorization header is missing",

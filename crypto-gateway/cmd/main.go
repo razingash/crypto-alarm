@@ -5,6 +5,7 @@ import (
 	"crypto-gateway/crypto-gateway/internal/db"
 	"crypto-gateway/crypto-gateway/internal/routes"
 	"log"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
@@ -22,9 +23,21 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	app.Use(func(c fiber.Ctx) error {
+		start := time.Now()
+
+		err := c.Next()
+		duration := time.Since(start)
+
+		log.Printf("Request to %s %s took %v", c.Method(), c.OriginalURL(), duration)
+
+		return err
+	})
+
 	db.InitDB()
 
 	routes.SetupAuthRoutes(app)
+	routes.SetupTriggersRoutes(app)
 
 	log.Fatal(app.Listen(":8001"))
 }
