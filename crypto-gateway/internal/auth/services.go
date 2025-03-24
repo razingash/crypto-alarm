@@ -4,8 +4,6 @@ import (
 	"context"
 	"crypto-gateway/crypto-gateway/internal/db"
 	"database/sql"
-	"log"
-	"time"
 )
 
 const (
@@ -24,14 +22,11 @@ func RegisterUser(username string, password string) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	var userUUID string
 
-	err2 := db.DB.QueryRow(context.Background(), `
-		INSERT INTO user_user (uuid, username, password, registered_date, ispremium) 
-		VALUES (gen_random_uuid(), $1, $2, $3, $4) 
-		RETURNING uuid`, username, hashedPassword, time.Now(), false).Scan(&userUUID)
-	if err2 != nil {
-		return nil, err2
+	userUUID, err := db.CreateUser(username, hashedPassword)
+
+	if err != nil {
+		return nil, err
 	}
 
 	return &User{UUID: userUUID}, nil
@@ -46,10 +41,10 @@ func LoginUser(username string, password string) (int, *User) {
 		FROM user_user 
 		WHERE username = $1
 	`, username).Scan(&userUUID, &userPassword)
-	log.Println(err)
+
 	if err == sql.ErrNoRows {
 		return ErrCodeUserNotFound, nil
-	} else if err != nil { // не найден пользователь с таким логином | тут херня
+	} else if err != nil {
 		return ErrCodeDBError, nil
 	}
 

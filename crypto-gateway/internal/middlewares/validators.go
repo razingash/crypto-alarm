@@ -18,13 +18,13 @@ func ValidateAuthenticationInfo(c fiber.Ctx) error {
 		})
 	}
 
-	if len(body.Username) < 5 {
+	if len(body.Username) < 6 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"username": "Username must be at least 6 characters long",
 		})
 	}
 
-	if len(body.Password) < 5 {
+	if len(body.Password) < 6 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"password": "Password must be at least 6 characters long",
 		})

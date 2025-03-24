@@ -5,9 +5,7 @@ import (
 	"crypto-gateway/crypto-gateway/internal/auth"
 	"crypto-gateway/crypto-gateway/internal/db"
 	"encoding/json"
-	"log"
 	"strings"
-	"time"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -40,18 +38,12 @@ func Register(c fiber.Ctx) error {
 	accessToken := auth.GenerateAccessToken(user.UUID)
 	refreshToken := auth.GenerateRefreshToken(user.UUID)
 
-	_, err = db.DB.Exec(context.Background(), `
-		INSERT INTO access_tokens (user_uuid, token, expires_at, created_at) 
-		VALUES ($1, $2, $3, $4)`,
-		user.UUID, accessToken, time.Now().Add(15*time.Minute), time.Now())
+	err = db.SaveAccessToken(user.UUID, accessToken)
 	if err != nil {
 		return nil
 	}
 
-	_, err = db.DB.Exec(context.Background(), `
-		INSERT INTO refresh_tokens (user_uuid, token, expires_at, created_at, revoked) 
-		VALUES ($1, $2, $3, $4, false)`,
-		user.UUID, refreshToken, time.Now().Add(24*time.Hour), time.Now())
+	err = db.SaveRefreshToken(user.UUID, refreshToken)
 	if err != nil {
 		return nil
 	}
@@ -94,21 +86,13 @@ func Login(c fiber.Ctx) error {
 	refreshToken := auth.GenerateRefreshToken(user.UUID) // 1 день
 
 	var err error
-	_, err = db.DB.Exec(context.Background(), `
-		INSERT INTO access_tokens (user_uuid, token, expires_at, created_at) 
-		VALUES ($1, $2, $3, $4)`,
-		user.UUID, accessToken, time.Now().Add(10*time.Minute), time.Now())
+	err = db.SaveAccessToken(user.UUID, accessToken)
 	if err != nil {
-		log.Println("Error inserting access token:", err)
 		return nil
 	}
 
-	_, err = db.DB.Exec(context.Background(), `
-		INSERT INTO refresh_tokens (user_uuid, token, expires_at, created_at, revoked) 
-		VALUES ($1, $2, $3, $4, false)`,
-		user.UUID, refreshToken, time.Now().Add(24*time.Hour), time.Now())
+	err = db.SaveRefreshToken(user.UUID, refreshToken)
 	if err != nil {
-		log.Println("Error inserting access token:", err)
 		return nil
 	}
 

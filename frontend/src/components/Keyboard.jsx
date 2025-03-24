@@ -21,22 +21,28 @@ const Keyboard = () => {
             }
         }
         void loadData();
-    }, [keyBoardError])
+    }, [keyBoardError]);
 
     useLayoutEffect(() => {
         const mfe = new MathfieldElement();
         mfe.setAttribute("virtual-keyboard-mode", "manual");
         mfe.setAttribute("virtual-keyboards", "numeric high-school-keyboard");
 
-        window.mathVirtualKeyboard.layouts = defaultKeyboard
+        window.mathVirtualKeyboard.layouts = defaultKeyboard.map((layout) => {
+            const params = keyboard[layout.label];
+            if (params) { // добавить в клаву скролл по Y или найти способ еще одного переключателя
+                layout.rows = [[...params]];
+            }
+            return layout;
+        });
 
         if (ref.current) {
             ref.current.appendChild(mfe);
         }
 
-    }, [])
+    }, [keyboard, isKeyboardLoading]);
 
-    return <math-field className={"formula_input"} ref={ref}/>;
+    return <math-field className={"formula_input"} ref={ref} />;
 };
 
 export default Keyboard;
