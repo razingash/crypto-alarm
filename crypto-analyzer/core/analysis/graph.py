@@ -13,15 +13,9 @@ from core.logger import custom_logger
 class DependencyGraph:
     """
     Горячее хранилище активных выражений; хранит выражения в виде графа зависимостей
-    0) сделать чтобы float хранился в адекватном виде с двумя знаками после запятой
-    1) попробовать сделать чтобы ID формулы было равно ID из базы данных
-    2) улучшить добавление(можно позже, чтобы учитывало числа, -> тригонометрию -> скобки -> циклические выражения(самое трудное) ->)
-    3) оптимизировать добавление (можно позже)
+    1) улучшить добавление(можно позже, чтобы учитывало числа, -> тригонометрию -> скобки -> циклические выражения(самое трудное) ->)
+    2) оптимизировать добавление (можно позже)
     """
-    # Добавить метод который будет выключать заданную переменную в графе путем:
-    # 1) искать заданную переменную в графе и если она есть вырубать и очищать её и все подвязанные стратегии
-    # - а перед этим надо сделать чтобы формулы пользователей были подвязаны под их ID из базы данных чтобы потом быстрее
-    # их деактивировать в базе данных(но тут надо будет проверить)
 
     def __init__(self):
         self.graph = defaultdict(set)  # {переменная -> набор формул, которые от неё зависят}
@@ -32,14 +26,13 @@ class DependencyGraph:
         self.formula_ids = {}  # Formula: ID | нужно чтобы нормально удалять их
         self.subexpression_weights = defaultdict(int) # {подвыражение -> количество повторений}
 
-    def add_formula(self, formula_str) -> None: # слишком медленная
+    def add_formula(self, formula: str, formula_id: int) -> None: # слишком медленная
         """Добавляет формулу в граф зависимостей"""
         try:
-            expr = sympify(formula_str, evaluate=False)
+            expr = sympify(formula, evaluate=False)
             if not hasattr(expr, "free_symbols"):
-                raise ValueError(f"Incorrect expression: {formula_str}")
+                raise ValueError(f"Incorrect expression: {formula}")
 
-            formula_id = len(self.formulas)
             self.formulas[formula_id] = expr
             self.formula_ids[str(expr)] = formula_id
 
@@ -56,12 +49,12 @@ class DependencyGraph:
             custom_logger.log_with_path(
                 level=2,
                 msg=f"Recursion error due to a too heavy formula, it is necessary to either increase the recursion"
-                    f"limit or reduce the permissible severity of the formulas:  {formula_str} \nError\n {e}",
+                    f"limit or reduce the permissible severity of the formulas:  {formula} \nError\n {e}",
                 filename="Graph.log"
             )
             print('опасная формула')
         except Exception as e:
-            print(f"Ошибка в формуле '{formula_str}': {e}")
+            print(f"Ошибка в формуле '{formula}': {e}")
 
     def remove_formula(self, formula_str) -> None:
         """Удаляет формулу из графа и все связанные подвыражения"""
@@ -97,6 +90,49 @@ class DependencyGraph:
             print(f"Удалена формула: {formula_str}")
         except Exception as e:
             print(f"Ошибка при удалении формулы '{formula_str}': {e}")
+
+    def remove_variable(self, variable_str: str) -> list:
+        """
+        удаляет переменную и все подвязанные формулы и подвыражения\n
+        используется в случае если на Binance уберут какой-нибудь параметр или валюту\n
+        возвращает список ID удаленных формул
+        """
+        try:
+            variable = sympify(variable_str)
+            if variable_str not in self.values:
+                print(f"Переменная '{variable_str}' не найдена.")
+                return []
+
+            # выборка связанных формул
+            dependent_formulas = set()
+            for formula_id, formula in self.formulas.items():
+                if variable in formula.free_symbols:
+                    dependent_formulas.add(formula_id)
+
+            if not dependent_formulas:
+                print(f"Нет формул, зависящих от переменной '{variable_str}'.")
+                return []
+
+            removed_formula_ids = list(dependent_formulas)
+
+            # удаление подвязаных формул
+            for formula_id in dependent_formulas:
+                formula = self.formulas[formula_id]
+                self.remove_formula(str(formula))
+
+            del self.values[variable_str]
+
+            # удаление подвыражений
+            for subexpr in list(self.subexpression_weights.keys()):
+                if variable_str in subexpr:
+                    del self.subexpression_weights[subexpr]
+
+            print(f"Переменная '{variable_str}' и все связанные формулы и подвыражения удалены.")
+            return removed_formula_ids
+
+        except Exception as e:
+            print(f"Ошибка при удалении переменной '{variable_str}': {e}")
+            return []
 
     def update_variables_topological_Kahn(self, updates) -> None:
         """
@@ -205,7 +241,8 @@ class DependencyGraph:
         """возвращает булево значение выражения"""
         '''
         позже может быть использована для пересчета "забущенных" выражений.
-         Нужно сделать функцию для перерасчета сразу всех значений или улучшить обновление(более вероятно)
+         Нужно сделать функцию для перерасчета сразу всех значений или еще одну функцию обновления(более вероятно)
+         чтобы одна вызывалась чаще и отвечала за приоретные выражения а другая за остальные
         '''
         expr = self.formulas[formula_id]
         func = self.compiled[formula_id]
