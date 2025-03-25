@@ -77,6 +77,42 @@ body {
     margin: 70px 20px 20px 20px;
 }
 
+/*loading effect*/
+.loading__spinner {
+    animation: rotate 2s linear infinite;
+    top: 50%;
+    left: 50%;
+    width: 150px;
+    height: 150px;
+}
+.spinner__stroke {
+    stroke: url(#gradient);
+    stroke-linecap: round;
+    animation: dash 1.5s ease-in-out infinite;
+    stroke-width: 2px;
+    fill: none;
+}
+
+@keyframes rotate {
+    100% {
+        transform:rotate(360deg);
+    }
+}
+@keyframes dash {
+    0% {
+        stroke-dasharray: 1, 150;
+        stroke-dashoffset: 0;
+    }
+    50% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -35;
+    }
+    100% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -124;
+    }
+}
+
 @media (max-width: 768px){
     .section__main {
         margin: 56px 10px 20px 10px;

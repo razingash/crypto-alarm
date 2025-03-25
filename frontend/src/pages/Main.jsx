@@ -1,10 +1,9 @@
 import React from 'react';
+import KeyboardV2 from "../components/KeyboardV2";
 
 const Main = () => {
     return (
-        <div>
-
-        </div>
+        <KeyboardV2/>
     );
 };
 
