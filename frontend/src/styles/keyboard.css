@@ -4,18 +4,19 @@
 }
 
 .formula__keyboard {
-    background: var(--container-background);
+    /*background: var(--container-background);*/
+    background: #141414;
     color: #fff;
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
-    padding: 20px;
-    max-height: 45vh; /*надстройка, если будет не хватать места в начале попробовать это убрать*/
+    padding: 20px 0 10px 0;
 }
 
 .keyboard__labels {
     display: flex;
+    padding: 0 20px;
 }
 
 .labels__before, .labels__right {
@@ -62,6 +63,124 @@
     width: 100%;
     max-width: 400px;
 }
+
+/* статическая(базовая) клавиатура*/
+
+.basic_keyboard__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.basic_keyboard__row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.basic_keyboard__item {
+    background: #1f2022;
+    height: 42px;
+    max-width: 92px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 24px;
+}
+
+.sep-1 {
+    all: initial;
+    height: 42px;
+}
+
+.row_button {
+    display: flex;
+    align-items: center;
+}
+
+.button__sqrt {
+    margin-top: 4px;
+}
+
+.module-left, .module-right {
+    width: 2px;
+    height: 20px;
+    background: #fff;
+}
+.module-left {
+    margin-right: 1px;
+}
+.module-right {
+    margin-left: 1px;
+}
+
+.fraction {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.span {
+    width: 10px;
+    height: 1px;
+    background: #fff;
+    margin: -2px 0;
+}
+
+.square {
+    font-size: 15px;
+}
+
+.selected_element {
+    width: 8px;
+    font-size: 6px;
+    background: #2070bb;
+    color: #2070bb;
+    margin-bottom: 4px;
+}
+.selected_element_v2 {
+    width: 12px;
+    height: 12px;
+    background: #2070bb;
+    color: #2070bb;
+    margin: 2px 0 2px 4px;
+}
+.selected_element_v3 {
+    width: 12px;
+    height: 12px;
+    background: #2070bb;
+    color: #2070bb;
+}
+.button_rank {
+    margin: 0 0 18px 2px;
+    font-size: 16px;
+}
+
+.backspace {
+    max-width: calc(92px * 2 + 8px); /* basic_keyboard__item max-width * 2 + gap(8px) */
+    width: calc(100% * 2 + 8px + 42px); /* basic_keyboard__item width * 2 + gap(8px) + sep-1 width(42px)*/
+    justify-content: flex-end;
+    flex-direction: row;
+}
+.backspace__item {
+    padding-right: 5px;
+}
+
+.backspace, .swap-left, .swap-right {
+    background: #3e3e41;
+}
+
+.basic_keyboard__list, .dynamic_keyboard__list {
+    padding: 0 20px;
+}
+
+/* динамическая клавиатура */
 
 .cross_field {
     position: absolute;
@@ -135,21 +254,21 @@
     box-shadow: none;
 }
 
-.keyboard__list {
+.dynamic_keyboard__list {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 20px;
 }
 
-.keyboard__item {
-    background: #454545;
+.dynamic_keyboard__item {
+    background: #2c2c2d;
     padding: 6px;
     border-radius: 3px;
     cursor: pointer;
 }
 
-.keyboard__no_results {
+.dynamic_keyboard__no_results {
     margin-top: 5px;
 }
 
@@ -160,5 +279,38 @@
     .labels__list {
         overflow-x: auto;
         margin: 0 0 10px 0;
+    }
+
+    .basic_keyboard__row, .basic_keyboard__list {
+        gap: 2px;
+    }
+    .backspace {
+        max-width: calc(92px * 2 + 2px);
+        width: calc(100% * 2 + 2px + 42px);
+    }
+    .button_rank {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 500px) {
+    .basic_keyboard__item {
+        font-size: 15px;
+    }
+    .module-left, .module-right {
+        width: 1px;
+        height: 14px;
+    }
+    .button_rank {
+        margin: 0 0 14px 0;
+    }
+    .selected_element_v2 {
+        width: 9px;
+        height: 9px;
+        margin: 2px 0 2px 2px;
+    }
+    .selected_element_v3 {
+        width: 9px;
+        height: 9px;
     }
 }

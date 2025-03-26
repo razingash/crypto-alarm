@@ -1,13 +1,18 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import "../styles/keyboard.css"
 import AdaptiveLoading from "./UI/AdaptiveLoading";
+import {defaultKeyboardV2} from "../utils/keyboard";
+import {currencies} from "../utils/currencies";
 
 /*
-1) прокрутка верхней херни
-2) разделить на модули базовой клавиатуры и динамической
+- добавить пагинацию для динамической клавиатуры
+- сделать чтобы шрифт уменьшался с экраном - как вообще без понятия
+- сделать кнопки 2 вложенности
 
+- сделать латекс поле для интерпретации формул
+- оптимизировать эту фигню - сделать чтобы базовый вариант спавнился тут а динамические кэшировались, чтобы клавиатура не лагала
+- сделать чтобы клава вылазила когда надо будет
 */
-
 const KeyboardV2 = () => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [searchKey, setSearchKey] = useState("");
@@ -17,20 +22,8 @@ const KeyboardV2 = () => {
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
 
-    const availableLabels = [
-        "Basic", "complain", "pastoral", "funny", "company", "sedate", "legal", "selective", "daily", "cemetery", "bat",
-        "current", "untidy", "groan", "reproduce", "squash", "woman", "adhesive", "earthy", "abnormal", "flashy",
-        "tumble", "dogs", "dazzling", "meddle", "driving", "scintillating", "powerful", "famous", "feeling", "jump",
-        "observe", "home", "craven", "selfish", "null", "naughty", "wiry", "soggy", "damage", "right", "six", "cannon"
-        , "tomatoes", "impulse", "roll", "ripe", "rainstorm", "bizarre", "combative", "exchange", "town", "ghost",
-        "hose", "striped", "slave", "saw", "texture", "courageous", "vulgar", "boy"
-    ]
-
-    const availableFields = useMemo(() => [
-        "1 test item", "2 test item", "3 test item", "4 test item", "5 test item", "6 test item",
-        "7 test item", "8 test item", "9 test item", "10 test item", "11 test item", "12 test item",
-        "13 test item", "14 test item",
-    ], []);
+    const availableLabels = defaultKeyboardV2.map(item => item.label);
+    const selectedKeyboard = defaultKeyboardV2[selectedIndex];
 
     useEffect(() => {
         //поиск начинается спустя 500мс после того как пользователь закончит вводить инфу
@@ -43,11 +36,11 @@ const KeyboardV2 = () => {
     }, [searchKey]);
 
     const filteredFields = useMemo(() => {
-        if (!delayedSearchKey) return availableFields;
-        return availableFields.filter(item =>
+        if (!delayedSearchKey) return currencies;
+        return currencies.filter(item =>
             item.toLowerCase().includes(delayedSearchKey.toLowerCase())
         );
-    }, [delayedSearchKey, availableFields]);
+    }, [delayedSearchKey, currencies]);
 
     useEffect(() => {
         if (delayedSearchKey.length > 0) {
@@ -126,7 +119,63 @@ const KeyboardV2 = () => {
                     </div>
                     <div className={"labels__right"} onClick={() => scrollToNearestElement("right")}>&#187;</div>
                 </div>
-                <div className={"keyboard__choices"}>
+                {selectedKeyboard.type === "basic" ? (
+                    <div className="basic_keyboard__list">
+                        {selectedKeyboard.rows.map((row, rowIndex) => (
+                            <div key={rowIndex} className="basic_keyboard__row">
+                                {row.map((item, itemIndex) => (
+                                    <div key={itemIndex}
+                                        className={`basic_keyboard__item ${typeof item === "object" && item.class ? item.class : ""}`}
+                                    >
+                                        {item.id === "frac" ? (
+                                        <div className={"fraction"}>
+                                            <div className={"selected_element"}>▢</div>
+                                            <div className={"span"}></div>
+                                            <div className={"square"}>▢</div>
+                                        </div>
+                                        ) : item.id === "matrix" ? (
+                                        <div className={"row_button"}>
+                                        <div>(</div>
+                                        <div className={"fraction"}>
+                                            <div className={"square"}>▢</div>
+                                            <div className={"span"}></div>
+                                            <div className={"square"}>▢</div>
+                                        </div>
+                                        <div>)</div>
+                                        </div>
+                                        ) : item.id === "mo" ? (
+                                            <div className={"row_button"}>
+                                                <span className={"module-left"}/>
+                                                <div>▢</div>
+                                                <span className={"module-right"}/>
+                                            </div>
+                                        ) : item.id === "sq" ? (
+                                            <div className={"row_button"}>
+                                                <div className={"button__sqrt"}>√</div>
+                                                <div className={"selected_element_v2"}></div>
+                                            </div>
+                                        ) : item.id === "square" ? (
+                                            <div className={"row_button"}>
+                                                <div className={"selected_element_v3"}></div>
+                                                <div className={"button_rank"}>2</div>
+                                            </div>
+                                        ) : item.id === "square2" ? (
+                                            <div className={"row_button"}>
+                                                <div className={"selected_element_v3"}></div>
+                                                <div className={"button_rank"}>▢</div>
+                                            </div>
+                                        ) : item.id === "backspace" ? (
+                                            <div className={"backspace__item"}>⌫</div>
+                                        ) : (
+                                            typeof item === "string" ? item : item.label
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className={"keyboard__choices"}>
                     <div className={"keayboard__input__field"}>
                         {searchKey.length > 0 && (
                             <div className={"cross_field"} onClick={clearSearchImmediately}>
@@ -148,13 +197,14 @@ const KeyboardV2 = () => {
                         <input id={"keyboard__search_field"} onChange={e => setSearchKey(e.target.value)}
                                value={searchKey} className={"keyboard__search_field"} placeholder={"Search"}></input>
                     </div>
-                    <div className={"keyboard__list"}>
+                    <div className="dynamic_keyboard__list">
                         {filteredFields.map(item => (
-                            <div key={item} className="keyboard__item">{item}</div>
+                            <div key={item} className="dynamic_keyboard__item">{item}</div>
                         ))}
-                        {filteredFields.length === 0 && <div className="keyboard__no_results">Nothing was found</div>}
+                        {filteredFields.length === 0 && <div className="dynamic_keyboard__no_results">Nothing was found</div>}
                     </div>
-                </div>
+                    </div>
+                )}
             </div>
         </div>
     );
