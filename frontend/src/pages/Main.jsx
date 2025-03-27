@@ -1,9 +1,9 @@
 import React from 'react';
-import KeyboardV2 from "../components/KeyboardV2";
+import FormulaEditor from "../components/FormulasEditor/FormulaEditor";
 
 const Main = () => {
     return (
-        <KeyboardV2/>
+        <FormulaEditor/>
     );
 };
 

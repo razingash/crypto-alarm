@@ -1,7 +1,19 @@
 
-.formula__input {
+/* input field */
 
+.formula__input {
+    color: #fff;
 }
+#cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: #ffffff;
+    color: #ffffff00;
+    animation: blink 2.3s infinite;
+}
+
+/* keyboard */
 
 .formula__keyboard {
     /*background: var(--container-background);*/
@@ -56,6 +68,22 @@
     align-items: center;
     overflow-y: auto;
     max-height: 40vh;
+}
+
+.keaboard__input__area {
+    display: flex;
+}
+
+.previous_level {
+    background: #2a2a2a;
+    border: 1px solid var(--active-element);
+    margin: 2px 0 12px;
+    text-wrap-mode: nowrap;
+    display: flex;
+    align-items: center;
+    padding: 0 9px;
+    border-radius: 2px;
+    cursor: pointer;
 }
 
 .keayboard__input__field {
@@ -270,6 +298,12 @@
 
 .dynamic_keyboard__no_results {
     margin-top: 5px;
+}
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
 }
 
 @media (max-width: 768px) {

@@ -85,7 +85,7 @@ export const defaultKeyboardV2 = [
                 {class: 'sep-1', label: ''},
                 {label: '<', latex: '\\lt'},
                 {label: '≤', latex: '\\le'},
-                {label: 'x^y', latex: '#@^{#?}', id: "square2"},
+                {label: '', latex: '#@^{#?}', id: "square2"},
                 {label: '', latex: '#@^2', id: "square"},
             ],
             [
@@ -106,8 +106,8 @@ export const defaultKeyboardV2 = [
                 {class: 'sep-1', label: ''},
                 '(',
                 ')',
-                {class: 'swap-left', label: '←', latex: 'left'},
-                {class: 'swap-right', label: '→', latex: 'right'},
+                {class: 'swap-left', label: '←', latex: '\\left'},
+                {class: 'swap-right', label: '→', latex: '\\right'},
             ],
         ]
     },

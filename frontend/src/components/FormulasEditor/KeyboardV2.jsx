@@ -1,19 +1,9 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import "../styles/keyboard.css"
-import AdaptiveLoading from "./UI/AdaptiveLoading";
-import {defaultKeyboardV2} from "../utils/keyboard";
-import {currencies} from "../utils/currencies";
+import {defaultKeyboardV2} from "../../utils/keyboard";
+import {currencies} from "../../utils/currencies";
+import AdaptiveLoading from "../UI/AdaptiveLoading";
 
-/*
-- добавить пагинацию для динамической клавиатуры
-- сделать чтобы шрифт уменьшался с экраном - как вообще без понятия
-- сделать кнопки 2 вложенности
-
-- сделать латекс поле для интерпретации формул
-- оптимизировать эту фигню - сделать чтобы базовый вариант спавнился тут а динамические кэшировались, чтобы клавиатура не лагала
-- сделать чтобы клава вылазила когда надо будет
-*/
-const KeyboardV2 = () => {
+const KeyboardV2 = ({onKeyPress}) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [searchKey, setSearchKey] = useState("");
     const [isSearch, setIsSearch] = useState(false);
@@ -104,78 +94,85 @@ const KeyboardV2 = () => {
         setIsSearch(false);
     };
 
+    const handleKeyClick = (key) => {
+        onKeyPress(key);
+    };
+
     return (
-        <div className={"section__main"}>
-            <div className={"formula__input"} id={"formula__input"}>latex?</div>
-            <div className={"formula__keyboard"}>
-                <div className={"keyboard__labels"}>
+        <div className={"formula__keyboard"}>
+            <div className={"keyboard__labels"}>
+                {canScrollLeft && (
                     <div className={"labels__before"} onClick={() => scrollToNearestElement("left")}>&#171;</div>
-                    <div className={"labels__list"} ref={listRef}>
-                        {availableLabels.map((label, index) => (
-                            <div key={index} className={`label__item ${selectedIndex === index ? "choosed_label" : ""}`}
-                                onClick={() => setSelectedIndex(index)}>{label}
-                            </div>
-                        ))}
-                    </div>
-                    <div className={"labels__right"} onClick={() => scrollToNearestElement("right")}>&#187;</div>
+                )}
+                <div className={"labels__list"} ref={listRef}>
+                    {availableLabels.map((label, index) => (
+                        <div key={index} className={`label__item ${selectedIndex === index ? "choosed_label" : ""}`}
+                             onClick={() => setSelectedIndex(index)}>{label}
+                        </div>
+                    ))}
                 </div>
-                {selectedKeyboard.type === "basic" ? (
-                    <div className="basic_keyboard__list">
-                        {selectedKeyboard.rows.map((row, rowIndex) => (
-                            <div key={rowIndex} className="basic_keyboard__row">
-                                {row.map((item, itemIndex) => (
-                                    <div key={itemIndex}
-                                        className={`basic_keyboard__item ${typeof item === "object" && item.class ? item.class : ""}`}
-                                    >
-                                        {item.id === "frac" ? (
+                {canScrollRight && (
+                    <div className={"labels__right"} onClick={() => scrollToNearestElement("right")}>&#187;</div>
+                )}
+            </div>
+            {selectedKeyboard.type === "basic" ? (
+                <div className="basic_keyboard__list">
+                    {selectedKeyboard.rows.map((row, rowIndex) => (
+                        <div key={rowIndex} className="basic_keyboard__row">
+                            {row.map((item) => (
+                                <div key={item.latex || item.toString()}
+                                     onClick={() => handleKeyClick(item.latex || item.toString())}
+                                     className={`basic_keyboard__item ${typeof item === "object" && item.class ? item.class : ""}`}
+                                >
+                                    {item.id === "frac" ? (
                                         <div className={"fraction"}>
                                             <div className={"selected_element"}>▢</div>
                                             <div className={"span"}></div>
                                             <div className={"square"}>▢</div>
                                         </div>
-                                        ) : item.id === "matrix" ? (
+                                    ) : item.id === "matrix" ? (
+                                        <div className={"row_button"}><div>(</div>
+                                            <div className={"fraction"}>
+                                                <div className={"square"}>▢</div>
+                                                <div className={"span"}></div>
+                                                <div className={"square"}>▢</div>
+                                            </div>
+                                            <div>)</div>
+                                        </div>
+                                    ) : item.id === "mo" ? (
                                         <div className={"row_button"}>
-                                        <div>(</div>
-                                        <div className={"fraction"}>
-                                            <div className={"square"}>▢</div>
-                                            <div className={"span"}></div>
-                                            <div className={"square"}>▢</div>
+                                            <span className={"module-left"}/>
+                                            <div>▢</div>
+                                            <span className={"module-right"}/>
                                         </div>
-                                        <div>)</div>
+                                    ) : item.id === "sq" ? (
+                                        <div className={"row_button"}>
+                                            <div className={"button__sqrt"}>√</div>
+                                            <div className={"selected_element_v2"}></div>
                                         </div>
-                                        ) : item.id === "mo" ? (
-                                            <div className={"row_button"}>
-                                                <span className={"module-left"}/>
-                                                <div>▢</div>
-                                                <span className={"module-right"}/>
-                                            </div>
-                                        ) : item.id === "sq" ? (
-                                            <div className={"row_button"}>
-                                                <div className={"button__sqrt"}>√</div>
-                                                <div className={"selected_element_v2"}></div>
-                                            </div>
-                                        ) : item.id === "square" ? (
-                                            <div className={"row_button"}>
-                                                <div className={"selected_element_v3"}></div>
-                                                <div className={"button_rank"}>2</div>
-                                            </div>
-                                        ) : item.id === "square2" ? (
-                                            <div className={"row_button"}>
-                                                <div className={"selected_element_v3"}></div>
-                                                <div className={"button_rank"}>▢</div>
-                                            </div>
-                                        ) : item.id === "backspace" ? (
-                                            <div className={"backspace__item"}>⌫</div>
-                                        ) : (
-                                            typeof item === "string" ? item : item.label
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className={"keyboard__choices"}>
+                                    ) : item.id === "square" ? (
+                                        <div className={"row_button"}>
+                                            <div className={"selected_element_v3"}></div>
+                                            <div className={"button_rank"}>2</div>
+                                        </div>
+                                    ) : item.id === "square2" ? (
+                                        <div className={"row_button"}>
+                                            <div className={"selected_element_v3"}></div>
+                                            <div className={"button_rank"}>▢</div>
+                                        </div>
+                                    ) : item.id === "backspace" ? (
+                                        <div className={"backspace__item"}>⌫</div>
+                                    ) : (
+                                        typeof item === "string" ? item : item.label
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className={"keyboard__choices"}><div className={"keaboard__input__area"}>
+                    <div className={"previous_level"}>go back</div>
                     <div className={"keayboard__input__field"}>
                         {searchKey.length > 0 && (
                             <div className={"cross_field"} onClick={clearSearchImmediately}>
@@ -197,15 +194,15 @@ const KeyboardV2 = () => {
                         <input id={"keyboard__search_field"} onChange={e => setSearchKey(e.target.value)}
                                value={searchKey} className={"keyboard__search_field"} placeholder={"Search"}></input>
                     </div>
-                    <div className="dynamic_keyboard__list">
-                        {filteredFields.map(item => (
-                            <div key={item} className="dynamic_keyboard__item">{item}</div>
-                        ))}
-                        {filteredFields.length === 0 && <div className="dynamic_keyboard__no_results">Nothing was found</div>}
-                    </div>
-                    </div>
-                )}
+                </div>
+                <div className="dynamic_keyboard__list">
+                    {filteredFields.map(item => (
+                        <div key={item} className="dynamic_keyboard__item">{item}</div>
+                    ))}
+                    {filteredFields.length === 0 && <div className="dynamic_keyboard__no_results">Nothing was found</div>}
+                </div>
             </div>
+            )}
         </div>
     );
 };
