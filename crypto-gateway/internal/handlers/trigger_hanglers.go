@@ -9,7 +9,7 @@ import (
 
 // отправляет датасет актуальных параметров клавиатуры
 func Keyboard(c fiber.Ctx) error {
-	keyboard := make(map[string][]string)
+	keyboard := make(map[string]interface{})
 
 	rows, err := db.DB.Query(context.Background(), `
 		SELECT crypto_api.api, crypto_params.parameter
@@ -23,6 +23,7 @@ func Keyboard(c fiber.Ctx) error {
 	}
 	defer rows.Close()
 
+	apiData := make(map[string][]string)
 	for rows.Next() {
 		var api string
 		var parameter string
@@ -32,12 +33,44 @@ func Keyboard(c fiber.Ctx) error {
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
 
-		keyboard[api] = append(keyboard[api], parameter)
+		apiData[api] = append(apiData[api], parameter)
 	}
 
 	if err := rows.Err(); err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
+
+	rows2, err := db.DB.Query(context.Background(), `
+		SELECT crypto_currencies.currency
+		FROM crypto_currencies
+		WHERE crypto_currencies.is_available=true;
+	`)
+
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	defer rows2.Close()
+
+	var currencies []string
+
+	for rows2.Next() {
+		var currency string
+
+		err := rows2.Scan(&currency)
+		if err != nil {
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+
+		currencies = append(currencies, currency)
+	}
+
+	if err := rows2.Err(); err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	keyboard["api"] = apiData
+	keyboard["currencies"] = currencies
 
 	return c.JSON(keyboard)
 }

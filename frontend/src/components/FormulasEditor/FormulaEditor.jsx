@@ -17,7 +17,7 @@ const FormulaEditor = () => {
 
     // обработчик нажатия клавиш
     const handleKeyPress = (key) => {
-        console.log(key)
+        //console.log(key)
         setLatex((prevLatex) => {
             let newCursorPos = cursorPos;
 
@@ -99,7 +99,7 @@ const FormulaEditor = () => {
 
                 // Степень
                 if (key.id === 'square2') {
-                    return addLatex('#@^{#?}');
+                    return addLatex('#@^{▢}');
                 }
 
                 // Квадрат

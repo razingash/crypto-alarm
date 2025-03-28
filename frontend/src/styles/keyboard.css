@@ -13,6 +13,13 @@
     animation: blink 2.3s infinite;
 }
 
+.latex-expression[data-empty="true"] {
+  opacity: 0;
+}
+
+.latex-expression[data-empty="false"] {
+  opacity: 1;
+}
 /* keyboard */
 
 .formula__keyboard {

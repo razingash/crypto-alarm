@@ -5,7 +5,7 @@ from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from core.models.base import Base
 
-__all__ = ["CryptoApi", "CryptoParams"]
+__all__ = ["CryptoApi", "CryptoParams", "CryptoCurrencies"]
 
 """
 crypto-analizer:
@@ -41,6 +41,22 @@ class CryptoParams(Base):
 
     __tablename__ = "crypto_params"
 
+
+class CryptoCurrencies(Base):
+    """
+    универсальные доступные криптовалюты
+    Note:
+        доступные валюты получаются путем нахождения общего множества среди доступных валют из апи:
+        1) https://api.binance.com/api/v3/ticker/price
+        2) https://api.binance.com/api/v3/ticker/24hr
+        3) https://api.binance.com/api/v3/exchangeInfo
+        нужно сравнивать данные из нескольких апи поскольку новые валюты добавляются неравномерно
+    """
+    currency: Mapped[str] = mapped_column(String(500), nullable=False)
+    is_available: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    last_updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    __tablename__ = "crypto_currencies"
 
 """
 MongoDB

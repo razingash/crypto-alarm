@@ -13,7 +13,10 @@ const renderLatex = (latexArr, cursorPos) => {
         if (typeof item === "string") {
             return item;
         }
-        return katex.renderToString(item.latex.replace('#@', ''), { throwOnError: false }); // эту чушь изменить
+        if (item.type === 'expression') {
+            console.log(item)
+        }
+        return katex.renderToString(item.latex.replace('#@', ''), {throwOnError: false}); // эту чушь изменить
     });
 
     result.splice(cursorPos, 0, '<span id="cursor">|</span>');
@@ -39,7 +42,7 @@ const FormulaInput = ({latex, onUpdateLatex, cursorPos}) => {
                 element.addEventListener('input', (e) => {
                     const index = e.target.dataset.index;
                     const newLatex = [...latex];
-                    newLatex[index] = {latex: e.target.innerText, type: 'expression'};
+                    newLatex[index] = {...newLatex[index], content: e.target.innerText};
                     onUpdateLatex(newLatex);
                 });
             });
