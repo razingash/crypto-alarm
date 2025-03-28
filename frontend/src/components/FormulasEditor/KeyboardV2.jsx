@@ -121,7 +121,7 @@ const KeyboardV2 = ({onKeyPress}) => {
                         <div key={rowIndex} className="basic_keyboard__row">
                             {row.map((item) => (
                                 <div key={item.latex || item.toString()}
-                                     onClick={() => handleKeyClick(item.latex || item.toString())}
+                                     onClick={() => handleKeyClick(item.latex ? item : item.toString())}
                                      className={`basic_keyboard__item ${typeof item === "object" && item.class ? item.class : ""}`}
                                 >
                                     {item.id === "frac" ? (

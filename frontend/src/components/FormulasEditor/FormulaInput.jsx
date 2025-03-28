@@ -31,8 +31,18 @@ const FormulaInput = ({latex, onUpdateLatex, cursorPos}) => {
 
             const cursorEl = document.getElementById("cursor");
             if (cursorEl) {
-                cursorEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+                cursorEl.scrollIntoView({behavior: "smooth", block: "nearest", inline: "start"});
             }
+
+            const editableElements = formulaInputRef.current.querySelectorAll('.latex-input');
+            editableElements.forEach((element) => {
+                element.addEventListener('input', (e) => {
+                    const index = e.target.dataset.index;
+                    const newLatex = [...latex];
+                    newLatex[index] = {latex: e.target.innerText, type: 'expression'};
+                    onUpdateLatex(newLatex);
+                });
+            });
         }
     }, [latex, cursorPos]);
 

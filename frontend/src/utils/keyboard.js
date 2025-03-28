@@ -70,7 +70,7 @@ export const defaultKeyboardV2 = [
                 '7',
                 '8',
                 '9',
-                {label: '÷', latex: '\\div'},
+                {label: '÷', latex: '\\div', id: 'div'},
                 {class: 'sep-1', label: ''},
                 {label: '', latex: '\\frac{#@}{#0}', id: 'frac'},
                 {label: '', latex: '\\begin{pmatrix}#0\\\\#0\\end{pmatrix}', id: 'matrix'},
@@ -81,10 +81,10 @@ export const defaultKeyboardV2 = [
                 '4',
                 '5',
                 '6',
-                {label: '×', latex: '\\times'},
+                {label: '×', latex: '\\times', id: 'times'},
                 {class: 'sep-1', label: ''},
-                {label: '<', latex: '\\lt'},
-                {label: '≤', latex: '\\le'},
+                {label: '<', latex: '\\lt', id: "lt"},
+                {label: '≤', latex: '\\le', id: "le"},
                 {label: '', latex: '#@^{#?}', id: "square2"},
                 {label: '', latex: '#@^2', id: "square"},
             ],
@@ -94,8 +94,8 @@ export const defaultKeyboardV2 = [
                 '3',
                 '−',
                 {class: 'sep-1', label: ''},
-                {label: '>', latex: '\\gt'},
-                {label: '≥', latex: '\\ge'},
+                {label: '>', latex: '\\gt', id: "gt"},
+                {label: '≥', latex: '\\ge', id: "ge"},
                 {label: '', class: 'backspace', latex: 'backspace', id: "backspace"},
             ],
             [
@@ -106,22 +106,9 @@ export const defaultKeyboardV2 = [
                 {class: 'sep-1', label: ''},
                 '(',
                 ')',
-                {class: 'swap-left', label: '←', latex: '\\left'},
-                {class: 'swap-right', label: '→', latex: '\\right'},
+                {class: 'swap-left', label: '←', latex: '\\left', id: "swl"},
+                {class: 'swap-right', label: '→', latex: '\\right', id: "swr"},
             ],
         ]
     },
-    {
-        label: "ticker 24hr",
-        type: "flex",
-        rows:
-            [
-                [
-                    "priceChange",
-                    "priceChangePercent",
-                    "weightedAvgPrice",
-                    "prevClosePrice",
-                ],
-            ],
-    }
 ]
