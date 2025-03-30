@@ -9,7 +9,6 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.8.3",
     "katex": "^0.16.21",
-    "mathlive": "^0.104.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.3.0",

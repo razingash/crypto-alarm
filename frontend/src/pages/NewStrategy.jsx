@@ -1,5 +1,5 @@
 import "../styles/strategy.css"
-import Keyboard from "../components/Keyboard";
+import FormulaEditor from "../components/FormulasEditor/FormulaEditor";
 
 const NewStrategy = () => {
 
@@ -7,7 +7,7 @@ const NewStrategy = () => {
         <div className={"section__main"}>
             <div className={"field__new_formula"}>
                 <div className={"area__new_formula"}>
-                    {<Keyboard/>}
+                    {<FormulaEditor/>}
                     <button className="formula__apply_button">apply</button>
                 </div>
             </div>

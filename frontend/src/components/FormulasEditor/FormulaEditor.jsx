@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import "../../styles/keyboard.css"
-import KeyboardV2 from "./KeyboardV2";
+import Keyboard from "./Keyboard";
 import FormulaInput from "./FormulaInput";
 
 /*
@@ -12,122 +12,111 @@ import FormulaInput from "./FormulaInput";
 - сделать чтобы клава вылазила когда надо будет
 */
 const FormulaEditor = () => {
-    const [latex, setLatex] = useState([]);
-    const [cursorPos, setCursorPos] = useState(0);
+    const [formula, setFormula] = useState([
+        "(", "2", "3", "+", "2", "*", "VAR3", ")", "/",
+        "(", "1", "7", "+", "abs", "(", "VAR1", ")", ")", "<=", "2", "0", "\\textunderscore"
+    ]);
+    const [cursorIndex, setCursorIndex] = useState(formula.length);
 
-    // обработчик нажатия клавиш
-    const handleKeyPress = (key) => {
-        //console.log(key)
-        setLatex((prevLatex) => {
-            let newCursorPos = cursorPos;
+    const formulaToLatex = (tokens, cursorPos) => {
+        let latex = [];
+        let absStack = [];
+        let fracStack = [];
 
-            // обработка специальных выражений
-            const addLatex = (latexString) => {
-                const newLatex = [
-                    ...prevLatex.slice(0, cursorPos),
-                    { latex: latexString, type: 'expression' },
-                    ...prevLatex.slice(cursorPos)
-                ];
-                newCursorPos += 1;
-                setCursorPos(newCursorPos);
-                return newLatex;
-            };
+        for (let i = 0; i < tokens.length; i++) {
+            if (i === cursorPos) latex.push("\\textunderscore");
 
-            if (key.latex) {
-                // удаление элемента
-                if (key.id === "backspace") {
-                    if (cursorPos > 0) {
-                        newCursorPos -= 1;
-                        setCursorPos(newCursorPos);
-                        const newLatex = [...prevLatex];
-                        newLatex.splice(cursorPos - 1, 1);
-                        return newLatex;
-                    }
-                    return prevLatex;
-                }
+            const token = tokens[i];
 
-                // переход курсора по элементам
-                if (key.id === "swl") {
-                    newCursorPos = Math.max(0, cursorPos - 1);
-                    setCursorPos(newCursorPos);
-                    return prevLatex;
-                } else if (key.id === "swr") {
-                    newCursorPos = Math.min(prevLatex.length, cursorPos + 1);
-                    setCursorPos(newCursorPos);
-                    return prevLatex;
-                }
-
-                // знаки выражений
-                if (key.id === 'lt') {
-                    return addLatex('\\lt');
-                } else if (key.id === 'le') {
-                    return addLatex('\\le');
-                } else if (key.id === 'gt') {
-                    return addLatex('\\gt');
-                } else if (key.id === 'ge') {
-                    return addLatex('\\ge');
-                }
-
-                // умножение и деление
-                if (key.id === 'div') {
-                    return addLatex('\\div');
-                } else if (key.id === 'times') {
-                    return addLatex('\\times');
-                }
-
-                // НИЖЕ НЕ РАБОТАЕТ
-
-                // модуль
-                if (key.id === 'mo') {
-                    return addLatex('\\left\\lvert {{▢}} \\right\\rvert');
-                }
-
-                // Дробь
-                if (key.id === 'frac') {
-                    return addLatex('\\frac{#@}{#0}');
-                }
-
-                // Матрица
-                if (key.id === 'matrix') {
-                    return addLatex('\\begin{pmatrix}#0\\\\#0\\end{pmatrix}');
-                }
-
-                // Корень
-                if (key.id === 'sq') {
-                    return addLatex('\\sqrt{#@}');
-                }
-
-                // Степень
-                if (key.id === 'square2') {
-                    return addLatex('#@^{▢}');
-                }
-
-                // Квадрат
-                if (key.id === 'square') {
-                    return addLatex('#@^2');
-                }
+            if (token === "abs") {
+                latex.push("\\left|");
+                absStack.push(true);
+            } else if (token === ")" && absStack.length > 0) {
+                latex.push("\\right|");
+                absStack.pop();
+            } else if (token === "/") {
+                latex.push("\\frac{");
+                fracStack.push(true);
+            } else if (token === "(" && fracStack.length > 0) {
+                latex.push("");
+            } else if (token === ")" && fracStack.length > 0) {
+                latex.push("}");
+                fracStack.pop();
+            } else if (token === "^2") {
+                latex.push("^{2}");
+            } else {
+                latex.push(token);
             }
+        }
 
-            // для остальных клавиш, просто символ
-            const newLatex = [
-                ...prevLatex.slice(0, cursorPos),
-                { latex: key, type: 'text' },
-                ...prevLatex.slice(cursorPos)
-            ];
-            newCursorPos += 1;
-            setCursorPos(newCursorPos);
+        if (cursorPos === tokens.length) latex.push("\\textunderscore");
 
-            return newLatex;
-        });
+        // Закрываем открытые `|` и `{` (если дробь не была закрыта)
+        while (absStack.length > 0) {
+            latex.push("\\right|");
+            absStack.pop();
+        }
+
+        while (fracStack.length > 0) {
+            latex.push("}");
+            fracStack.pop();
+        }
+
+        return latex;
+    };
+
+    const moveCursor = (direction) => {
+        const currentIndex = formula.indexOf("\\textunderscore");
+        if (currentIndex === -1) return;
+
+        let newIndex = currentIndex + direction;
+        if (newIndex < 0 || newIndex >= formula.length) return;
+
+        let newFormula = [...formula];
+        newFormula.splice(currentIndex, 1);
+        newFormula.splice(newIndex, 0, "\\textunderscore");
+
+        setFormula(newFormula);
+        setCursorIndex(newIndex);
+    };
+
+    const moveCursorLeft = () => moveCursor(-1);
+    const moveCursorRight = () => moveCursor(1);
+
+    const insertToken = (token) => {
+        let newFormula = [...formula];
+        const cursorIndex = newFormula.indexOf("\\textunderscore");
+        newFormula.splice(cursorIndex, 0, token);
+        setFormula(newFormula);
+    };
+
+    const deleteToken = () => {
+        let newFormula = [...formula];
+        const cursorIndex = newFormula.indexOf("\\textunderscore");
+        if (cursorIndex > 0) {
+            newFormula.splice(cursorIndex - 1, 1);
+            setFormula(newFormula);
+        }
+    };
+
+    const handleKeyPress = (key) => {
+        if (key.token === "backspace") {
+            deleteToken();
+        } else if (key.token === "left") {
+            moveCursorLeft();
+        } else if (key.token === "right") {
+            moveCursorRight();
+        } else {
+            insertToken(key.token || key.toString());
+        }
     };
 
     return (
-        <div className={"section__main"}>
-            <FormulaInput latex={latex} onUpdateLatex={setLatex} cursorPos={cursorPos} />
-            <KeyboardV2 onKeyPress={handleKeyPress} />
+        <div className="section__main">
+            <FormulaInput latexArray={formulaToLatex(formula)} cursorPos={cursorIndex}/>
+            <Keyboard onKeyPress={handleKeyPress}/>
         </div>
     );
 };
-
 
 export default FormulaEditor;

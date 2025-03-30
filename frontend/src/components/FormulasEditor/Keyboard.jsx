@@ -1,9 +1,9 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {defaultKeyboardV2} from "../../utils/keyboard";
+import {defaultKeyboardV3} from "../../utils/keyboard";
 import {currencies} from "../../utils/currencies";
 import AdaptiveLoading from "../UI/AdaptiveLoading";
 
-const KeyboardV2 = ({onKeyPress}) => {
+const Keyboard = ({onKeyPress}) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [searchKey, setSearchKey] = useState("");
     const [isSearch, setIsSearch] = useState(false);
@@ -12,8 +12,8 @@ const KeyboardV2 = ({onKeyPress}) => {
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
 
-    const availableLabels = defaultKeyboardV2.map(item => item.label);
-    const selectedKeyboard = defaultKeyboardV2[selectedIndex];
+    const availableLabels = defaultKeyboardV3.map(item => item.label);
+    const selectedKeyboard = defaultKeyboardV3[selectedIndex];
 
     useEffect(() => {
         //поиск начинается спустя 500мс после того как пользователь закончит вводить инфу
@@ -95,6 +95,7 @@ const KeyboardV2 = ({onKeyPress}) => {
     };
 
     const handleKeyClick = (key) => {
+        console.log(key)
         onKeyPress(key);
     };
 
@@ -120,8 +121,8 @@ const KeyboardV2 = ({onKeyPress}) => {
                     {selectedKeyboard.rows.map((row, rowIndex) => (
                         <div key={rowIndex} className="basic_keyboard__row">
                             {row.map((item) => (
-                                <div key={item.latex || item.toString()}
-                                     onClick={() => handleKeyClick(item.latex ? item : item.toString())}
+                                <div key={item.token || item.toString()}
+                                     onClick={() => handleKeyClick(item.token ? item : item.toString())}
                                      className={`basic_keyboard__item ${typeof item === "object" && item.class ? item.class : ""}`}
                                 >
                                     {item.id === "frac" ? (
@@ -207,4 +208,4 @@ const KeyboardV2 = ({onKeyPress}) => {
     );
 };
 
-export default KeyboardV2;
+export default Keyboard;
