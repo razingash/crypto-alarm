@@ -9,11 +9,10 @@ const renderLatex = (latexArr) => {
         return '';
     }
 
-    // Преобразуем все элементы в строку
     let latexString = latexArr.map(item => {
         if (typeof item === 'object') {
             console.warn("Объект в формуле:", item);
-            return ''; // Игнорируем объекты
+            return '';
         }
         return item;
     }).join(" ");
@@ -29,7 +28,6 @@ const FormulaInput = ({ latexArray }) => {
             try {
                 let latexWithCursor = renderLatex(latexArray);
 
-                // Рендерим формулу
                 katex.render(latexWithCursor, formulaInputRef.current, {
                     throwOnError: false,
                     displayMode: true,
@@ -42,7 +40,6 @@ const FormulaInput = ({ latexArray }) => {
                     }
                 });
 
-                // Прокручиваем к курсору
                 const cursorEl = document.getElementById("cursor");
                 if (cursorEl) {
                     cursorEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });

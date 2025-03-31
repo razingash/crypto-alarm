@@ -1,10 +1,10 @@
-export const defaultKeyboardV3 = [
+export const defaultKeyboard = [
     {
         label: "Basic",
         type: "basic",
         rows: [
             [
-                "7", "8", "9", "/",
+                "7", "8", "9", "÷",
                 { class: "sep-1", label: "" },
                 { label: "", token: "frac", id: "frac"},
                 { label: "", token: "matrix", id: "matrix"},

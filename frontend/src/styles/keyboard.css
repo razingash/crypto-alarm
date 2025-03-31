@@ -13,6 +13,14 @@
     animation: blink 2.3s infinite;
 }
 
+#keyboard_depth_2 {
+
+}
+
+#keyboard_depth_3 {
+    display: none;
+}
+
 .latex-expression[data-empty="true"] {
   opacity: 0;
 }
@@ -79,24 +87,32 @@
 
 .keaboard__input__area {
     display: flex;
+    gap: 12px;
+    margin: 2px 20px 20px 20px;
+    max-width: 400px;
+    justify-content: center;
+    align-items: center;
 }
 
-.previous_level {
+.previous_level, .current_currency_3 {
     background: #2a2a2a;
     border: 1px solid var(--active-element);
-    margin: 2px 0 12px;
     text-wrap-mode: nowrap;
     display: flex;
     align-items: center;
-    padding: 0 9px;
+    padding: 5px 9px;
     border-radius: 2px;
     cursor: pointer;
+    height: 31px;
+}
+
+.current_currency_3 {
+
 }
 
 .keayboard__input__field {
     position: relative;
     width: 100%;
-    max-width: 400px;
 }
 
 /* статическая(базовая) клавиатура*/
@@ -220,9 +236,8 @@
 .cross_field {
     position: absolute;
     top: 2px;
-    right: 3px;
+    right: 0;
     padding: 7px 10px;
-    margin-right: 17px;
     cursor: pointer;
 }
 
@@ -235,7 +250,7 @@
 
 .keyboard__input__loading {
     position: absolute;
-    left: 21px;
+    left: 0;
     width: 30px;
     height: 30px;
     display: flex;
@@ -255,7 +270,7 @@
 .keyboard__input__rollback {
     position: absolute;
     top: 6px;
-    left: 25px;
+    left: 4px;
     width: 22px;
     height: 22px;
     fill: var(--active-element);
@@ -264,7 +279,7 @@
 
 .keyboard__input__lupa {
     position: absolute;
-    left: 24px;
+    left: 4px;
     top: 5px;
     width: 24px;
     height: 24px;
@@ -276,7 +291,6 @@
 
 .keyboard__search_field {
     width: -webkit-fill-available;
-    margin: 2px 20px 12px 20px;
     padding: 4px 29px;
     font-family: sans-serif;
     font-size: 18px;
@@ -284,6 +298,7 @@
     background: #2a2a2a;
     color: #fff;
     border-radius: 2px;
+    height: 31px;
 }
 .keyboard__search_field:active {
     box-shadow: none;
@@ -331,6 +346,15 @@
     }
     .button_rank {
         font-size: 12px;
+    }
+}
+
+@media (max-width: 560px) {
+    .keaboard__input__area {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        width: -webkit-fill-available;
+        max-width: initial;
     }
 }
 

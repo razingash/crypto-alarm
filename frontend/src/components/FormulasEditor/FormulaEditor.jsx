@@ -6,15 +6,18 @@ import FormulaInput from "./FormulaInput";
 /*
 - добавить пагинацию для динамической клавиатуры
 - сделать чтобы шрифт уменьшался с экраном - как вообще без понятия
-- сделать кнопки 2 вложенности
 
 - оптимизировать эту фигню - сделать чтобы базовый вариант спавнился тут а динамические кэшировались, чтобы клавиатура не лагала
 - сделать чтобы клава вылазила когда надо будет
+
+Баги:
+нельзя выйти за модуль если он в конце(хз пока как решать эту проблему, надо что-то не стандартное придумать)
 */
 const FormulaEditor = () => {
     const [formula, setFormula] = useState([
         "(", "2", "3", "+", "2", "*", "VAR3", ")", "/",
-        "(", "1", "7", "+", "abs", "(", "VAR1", ")", ")", "<=", "2", "0", "\\textunderscore"
+        "(", "1", "7", "+", "abs", "(", "VAR1", ")", ")",
+        "≤", "2", "0", "\\textunderscore"
     ]);
     const [cursorIndex, setCursorIndex] = useState(formula.length);
 
@@ -31,19 +34,29 @@ const FormulaEditor = () => {
             if (token === "abs") {
                 latex.push("\\left|");
                 absStack.push(true);
+            } else if (token === "sqrt") {
+                latex.push("sqrt1");
             } else if (token === ")" && absStack.length > 0) {
                 latex.push("\\right|");
                 absStack.pop();
             } else if (token === "/") {
                 latex.push("\\frac{");
                 fracStack.push(true);
+            } else if (token === "matrix") {
+                latex.push("matrix1");
             } else if (token === "(" && fracStack.length > 0) {
                 latex.push("");
             } else if (token === ")" && fracStack.length > 0) {
                 latex.push("}");
                 fracStack.pop();
-            } else if (token === "^2") {
-                latex.push("^{2}");
+            } else if (token === "÷") {
+                latex.push("\\div");
+            } else if (token === "*") {
+                latex.push("\\times");
+            } else if (token === ">=") {
+                latex.push("\\ge");
+            } else if (token === "<=") {
+                latex.push("\\le");
             } else {
                 latex.push(token);
             }

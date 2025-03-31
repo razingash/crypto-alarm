@@ -1,19 +1,42 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {defaultKeyboardV3} from "../../utils/keyboard";
-import {currencies} from "../../utils/currencies";
+import {defaultKeyboard} from "../../utils/keyboard";
 import AdaptiveLoading from "../UI/AdaptiveLoading";
+import {useFetching} from "../../hooks/useFetching";
+import TriggersService from "../../API/TriggersService";
 
 const Keyboard = ({onKeyPress}) => {
+    const [availableApi, setAvailableApi] = useState([]);
+    const [availableCurrencies, setAvailableCurrencies] = useState([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [searchKey, setSearchKey] = useState("");
+    const [selectCurrency, setSelectedCurrency] = useState("None");
+
     const [isSearch, setIsSearch] = useState(false);
+    const [isDepth2Visible, setIsDepth2Visible] = useState(true);
     const [delayedSearchKey, setDelayedSearchKey] = useState(""); // отсроченный поиск
     const listRef = useRef(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
 
-    const availableLabels = defaultKeyboardV3.map(item => item.label);
-    const selectedKeyboard = defaultKeyboardV3[selectedIndex];
+    const [fetchKeyboard, isKeyboardLoading, ] = useFetching(async () => {
+        return await TriggersService.getKeyboard()
+    }, 0, 1000)
+
+    const selectedKeyboard = defaultKeyboard[selectedIndex];
+
+    useEffect(() => {
+        const loadData = async () => {
+            if (!isKeyboardLoading && availableApi.length === 0) {
+                const data = await fetchKeyboard();
+                if (data) {
+                    console.log(data)
+                    data?.api && setAvailableApi(data.api)
+                    data?.currencies && setAvailableCurrencies(data.currencies)
+                }
+            }
+        }
+        void loadData();
+    }, [isKeyboardLoading])
 
     useEffect(() => {
         //поиск начинается спустя 500мс после того как пользователь закончит вводить инфу
@@ -26,11 +49,11 @@ const Keyboard = ({onKeyPress}) => {
     }, [searchKey]);
 
     const filteredFields = useMemo(() => {
-        if (!delayedSearchKey) return currencies;
-        return currencies.filter(item =>
+        if (!delayedSearchKey) return availableCurrencies;
+        return availableCurrencies.filter(item =>
             item.toLowerCase().includes(delayedSearchKey.toLowerCase())
         );
-    }, [delayedSearchKey, currencies]);
+    }, [delayedSearchKey, availableCurrencies]);
 
     useEffect(() => {
         if (delayedSearchKey.length > 0) {
@@ -95,9 +118,17 @@ const Keyboard = ({onKeyPress}) => {
     };
 
     const handleKeyClick = (key) => {
-        console.log(key)
         onKeyPress(key);
     };
+
+    const handleItemClick = () => {
+        setIsDepth2Visible(false);
+    };
+
+    const handleGoBack = () => {
+        setIsDepth2Visible(true);
+    };
+
 
     return (
         <div className={"formula__keyboard"}>
@@ -106,74 +137,86 @@ const Keyboard = ({onKeyPress}) => {
                     <div className={"labels__before"} onClick={() => scrollToNearestElement("left")}>&#171;</div>
                 )}
                 <div className={"labels__list"} ref={listRef}>
-                    {availableLabels.map((label, index) => (
-                        <div key={index} className={`label__item ${selectedIndex === index ? "choosed_label" : ""}`}
-                             onClick={() => setSelectedIndex(index)}>{label}
-                        </div>
-                    ))}
+                    <div className={`label__item ${selectedIndex === 0 ? "choosed_label" : ""}`}
+                         onClick={() => setSelectedIndex(0)}> Basic
+                    </div>
+                    {availableApi &&
+                        Object.keys(availableApi).map((key, index) => (
+                            <div key={key} className={`label__item ${selectedIndex === index+1 ? "choosed_label" : ""}`}
+                                onClick={() => setSelectedIndex(index+1)}> {key}
+                            </div>
+                        ))}
                 </div>
                 {canScrollRight && (
                     <div className={"labels__right"} onClick={() => scrollToNearestElement("right")}>&#187;</div>
                 )}
             </div>
-            {selectedKeyboard.type === "basic" ? (
-                <div className="basic_keyboard__list">
-                    {selectedKeyboard.rows.map((row, rowIndex) => (
-                        <div key={rowIndex} className="basic_keyboard__row">
-                            {row.map((item) => (
-                                <div key={item.token || item.toString()}
-                                     onClick={() => handleKeyClick(item.token ? item : item.toString())}
-                                     className={`basic_keyboard__item ${typeof item === "object" && item.class ? item.class : ""}`}
-                                >
-                                    {item.id === "frac" ? (
+            {selectedKeyboard?.type && selectedKeyboard.type === "basic" ? (
+            <div className="basic_keyboard__list">
+                {selectedKeyboard.rows.map((row, rowIndex) => (
+                    <div key={rowIndex} className="basic_keyboard__row">
+                        {row.map((item) => (
+                            <div key={item.token || item.toString()}
+                                 onClick={() => handleKeyClick(item.token ? item : item.toString())}
+                                 className={`basic_keyboard__item ${typeof item === "object" && item.class ? item.class : ""}`}
+                            >
+                                {item.id === "frac" ? (
+                                    <div className={"fraction"}>
+                                        <div className={"selected_element"}>▢</div>
+                                        <div className={"span"}></div>
+                                        <div className={"square"}>▢</div>
+                                    </div>
+                                ) : item.id === "matrix" ? (
+                                    <div className={"row_button"}><div>(</div>
                                         <div className={"fraction"}>
-                                            <div className={"selected_element"}>▢</div>
+                                            <div className={"square"}>▢</div>
                                             <div className={"span"}></div>
                                             <div className={"square"}>▢</div>
                                         </div>
-                                    ) : item.id === "matrix" ? (
-                                        <div className={"row_button"}><div>(</div>
-                                            <div className={"fraction"}>
-                                                <div className={"square"}>▢</div>
-                                                <div className={"span"}></div>
-                                                <div className={"square"}>▢</div>
-                                            </div>
-                                            <div>)</div>
-                                        </div>
-                                    ) : item.id === "mo" ? (
-                                        <div className={"row_button"}>
-                                            <span className={"module-left"}/>
-                                            <div>▢</div>
-                                            <span className={"module-right"}/>
-                                        </div>
-                                    ) : item.id === "sq" ? (
-                                        <div className={"row_button"}>
-                                            <div className={"button__sqrt"}>√</div>
-                                            <div className={"selected_element_v2"}></div>
-                                        </div>
-                                    ) : item.id === "square" ? (
-                                        <div className={"row_button"}>
-                                            <div className={"selected_element_v3"}></div>
-                                            <div className={"button_rank"}>2</div>
-                                        </div>
-                                    ) : item.id === "square2" ? (
-                                        <div className={"row_button"}>
-                                            <div className={"selected_element_v3"}></div>
-                                            <div className={"button_rank"}>▢</div>
-                                        </div>
-                                    ) : item.id === "backspace" ? (
-                                        <div className={"backspace__item"}>⌫</div>
-                                    ) : (
-                                        typeof item === "string" ? item : item.label
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                                        <div>)</div>
+                                    </div>
+                                ) : item.id === "mo" ? (
+                                    <div className={"row_button"}>
+                                        <span className={"module-left"}/>
+                                        <div>▢</div>
+                                        <span className={"module-right"}/>
+                                    </div>
+                                ) : item.id === "sq" ? (
+                                    <div className={"row_button"}>
+                                        <div className={"button__sqrt"}>√</div>
+                                        <div className={"selected_element_v2"}></div>
+                                    </div>
+                                ) : item.id === "square" ? (
+                                    <div className={"row_button"}>
+                                        <div className={"selected_element_v3"}></div>
+                                        <div className={"button_rank"}>2</div>
+                                    </div>
+                                ) : item.id === "square2" ? (
+                                    <div className={"row_button"}>
+                                        <div className={"selected_element_v3"}></div>
+                                        <div className={"button_rank"}>▢</div>
+                                    </div>
+                                ) : item.id === "backspace" ? (
+                                    <div className={"backspace__item"}>⌫</div>
+                                ) : (
+                                    typeof item === "string" ? item : item.label
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                ))}
+            </div>
+            ) : (
+            <>
+            <div className={"keyboard__choices"} id={"keyboard_depth_2"} style={{ display: isDepth2Visible ? "flex" : "none" }}>
+                <div className="dynamic_keyboard__list">
+                    {Object.values(availableApi)[selectedIndex-1]?.map(value => (
+                        <div key={value} className="dynamic_keyboard__item" onClick={handleItemClick}>{value}</div>
                     ))}
                 </div>
-            ) : (
-                <div className={"keyboard__choices"}><div className={"keaboard__input__area"}>
-                    <div className={"previous_level"}>go back</div>
+            </div>
+            <div className={"keyboard__choices"} id={"keyboard_depth_3"} style={{ display: isDepth2Visible ? "none" : "flex" }}>
+                <div className={"keaboard__input__area"}>
                     <div className={"keayboard__input__field"}>
                         {searchKey.length > 0 && (
                             <div className={"cross_field"} onClick={clearSearchImmediately}>
@@ -195,14 +238,17 @@ const Keyboard = ({onKeyPress}) => {
                         <input id={"keyboard__search_field"} onChange={e => setSearchKey(e.target.value)}
                                value={searchKey} className={"keyboard__search_field"} placeholder={"Search"}></input>
                     </div>
+                    <div className={"previous_level"} onClick={handleGoBack}>go back</div>
+                    <div className={"current_currency_3"}>{selectCurrency}</div>
                 </div>
                 <div className="dynamic_keyboard__list">
                     {filteredFields.map(item => (
-                        <div key={item} className="dynamic_keyboard__item">{item}</div>
+                        <div key={item} className="dynamic_keyboard__item" onClick={() => setSelectedCurrency(item)}>{item}</div>
                     ))}
                     {filteredFields.length === 0 && <div className="dynamic_keyboard__no_results">Nothing was found</div>}
                 </div>
             </div>
+            </>
             )}
         </div>
     );
