@@ -6,4 +6,8 @@ export default class TriggersService {
         const response = await apiClient.get(`/triggers/keyboard`)
         return response.data
     }
+    static async registerFormula(formula) {
+        const response = await apiClient.post('/triggers/formula', {formula})
+        return response.data
+    }
 }

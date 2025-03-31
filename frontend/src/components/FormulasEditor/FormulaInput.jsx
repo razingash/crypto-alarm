@@ -46,7 +46,6 @@ const FormulaInput = ({ latexArray }) => {
                 }
             } catch (e) {
                 console.error("Ошибка рендеринга KaTeX:", e);
-                formulaInputRef.current.innerHTML = `<span style="color:red;">Ошибка</span>`;
             }
         }
     }, [latexArray]);

@@ -2,16 +2,17 @@ import React, {useState} from 'react';
 import "../../styles/keyboard.css"
 import Keyboard from "./Keyboard";
 import FormulaInput from "./FormulaInput";
+import {useFetching} from "../../hooks/useFetching";
+import TriggersService from "../../API/TriggersService";
 
 /*
 - добавить пагинацию для динамической клавиатуры
-- сделать чтобы шрифт уменьшался с экраном - как вообще без понятия
 
 - оптимизировать эту фигню - сделать чтобы базовый вариант спавнился тут а динамические кэшировались, чтобы клавиатура не лагала
 - сделать чтобы клава вылазила когда надо будет
 
 Баги:
-нельзя выйти за модуль если он в конце(хз пока как решать эту проблему, надо что-то не стандартное придумать)
+некорректный рендер продвинутых выражений по типу abs
 */
 const FormulaEditor = () => {
     const [formula, setFormula] = useState([
@@ -21,10 +22,25 @@ const FormulaEditor = () => {
     ]);
     const [cursorIndex, setCursorIndex] = useState(formula.length);
 
+    const [fetchNewFormula, isNewFormulaLoading, newFormulaError] = useFetching(async (formula) => {
+        await TriggersService.getKeyboard(formula)
+    }, 0, 1000)
+
+    const sendNewFormula = async () => { // улучшить потом
+        const validatedFormula = formula.filter(item => item !== "\\textunderscore");
+        await fetchNewFormula(validatedFormula);
+    }
+
+    console.log(formula)
+
     const formulaToLatex = (tokens, cursorPos) => {
         let latex = [];
         let absStack = [];
-        let fracStack = [];
+        let sqrtStack = [];
+        let isInFraction = false; // Флаг, указывающий, что мы внутри дроби
+        let numerator = []; // Буфер для числителя
+        let denominator = []; // Буфер для знаменателя
+        let isDenominator = false; // Флаг для переключения в знаменатель
 
         for (let i = 0; i < tokens.length; i++) {
             if (i === cursorPos) latex.push("\\textunderscore");
@@ -35,20 +51,25 @@ const FormulaEditor = () => {
                 latex.push("\\left|");
                 absStack.push(true);
             } else if (token === "sqrt") {
-                latex.push("sqrt1");
+                latex.push("\\sqrt{");
+                sqrtStack.push(true);
             } else if (token === ")" && absStack.length > 0) {
                 latex.push("\\right|");
                 absStack.pop();
-            } else if (token === "/") {
-                latex.push("\\frac{");
-                fracStack.push(true);
-            } else if (token === "matrix") {
-                latex.push("matrix1");
-            } else if (token === "(" && fracStack.length > 0) {
-                latex.push("");
-            } else if (token === ")" && fracStack.length > 0) {
+            } else if (token === ")" && sqrtStack.length > 0) {
                 latex.push("}");
-                fracStack.pop();
+                sqrtStack.pop();
+            } else if (token === "/") {
+                isInFraction = true;
+                isDenominator = false;
+                numerator = [...latex]; // сохранение текущего LateX как числителя
+                latex = []; // очищение основного массива для знаменателя
+            } else if (token === "(" && isInFraction) {
+                isDenominator = true; // начало знаменателя
+            } else if (token === ")" && isInFraction) {
+                isInFraction = false; // закрытие дроби
+                denominator = [...latex]; // сохранение знаменателя
+                latex = [`\\frac{${numerator.join(" ")}}{${denominator.join(" ")}}`]; // создание дроби
             } else if (token === "÷") {
                 latex.push("\\div");
             } else if (token === "*") {
@@ -64,15 +85,15 @@ const FormulaEditor = () => {
 
         if (cursorPos === tokens.length) latex.push("\\textunderscore");
 
-        // Закрываем открытые `|` и `{` (если дробь не была закрыта)
+        // закрытие модуля если он не закрыт
         while (absStack.length > 0) {
             latex.push("\\right|");
             absStack.pop();
         }
 
-        while (fracStack.length > 0) {
+        while (sqrtStack.length > 0) {
             latex.push("}");
-            fracStack.pop();
+            sqrtStack.pop();
         }
 
         return latex;
@@ -99,7 +120,15 @@ const FormulaEditor = () => {
     const insertToken = (token) => {
         let newFormula = [...formula];
         const cursorIndex = newFormula.indexOf("\\textunderscore");
-        newFormula.splice(cursorIndex, 0, token);
+
+        if (token === "sqrt" || token === "abs") {
+            // Вставляем `sqrt` или `abs` и сразу добавляем скобки
+            newFormula.splice(cursorIndex, 0, token, "(", ")");
+            setCursorIndex(cursorIndex + 1);
+        } else {
+            newFormula.splice(cursorIndex, 0, token);
+        }
+
         setFormula(newFormula);
     };
 

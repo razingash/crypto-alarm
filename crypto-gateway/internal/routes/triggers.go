@@ -11,4 +11,5 @@ func SetupTriggersRoutes(app *fiber.App) {
 	authGroup := app.Group("/api/v1/triggers")
 
 	authGroup.Get("/keyboard", handlers.Keyboard, middlewares.ValidateAuthorization)
+	authGroup.Post("/formula", handlers.Formula, middlewares.ValidateAuthorization, middlewares.ValidateFormulaInfo)
 }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"crypto-gateway/crypto-gateway/internal/db"
+	"crypto-gateway/crypto-gateway/internal/triggers"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -73,4 +74,18 @@ func Keyboard(c fiber.Ctx) error {
 	keyboard["currencies"] = currencies
 
 	return c.JSON(keyboard)
+}
+
+func Formula(c fiber.Ctx) error {
+	expression := c.Locals("formula").(string)
+
+	errCode := triggers.Analys(expression)
+	switch errCode {
+	case 1:
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unknown symbol",
+		})
+	default:
+		return c.SendStatus(fiber.StatusOK)
+	}
 }

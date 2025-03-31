@@ -13,14 +13,6 @@
     animation: blink 2.3s infinite;
 }
 
-#keyboard_depth_2 {
-
-}
-
-#keyboard_depth_3 {
-    display: none;
-}
-
 .latex-expression[data-empty="true"] {
   opacity: 0;
 }
@@ -94,7 +86,7 @@
     align-items: center;
 }
 
-.previous_level, .current_currency_3 {
+.current_currency_3 {
     background: #2a2a2a;
     border: 1px solid var(--active-element);
     text-wrap-mode: nowrap;
@@ -140,6 +132,7 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 24px;
+    user-select: none;
 }
 
 .sep-1 {
@@ -342,7 +335,7 @@
     }
     .backspace {
         max-width: calc(92px * 2 + 2px);
-        width: calc(100% * 2 + 2px + 42px);
+        width: calc(100%* 2 + 16px);
     }
     .button_rank {
         font-size: 12px;

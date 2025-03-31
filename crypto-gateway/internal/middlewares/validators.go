@@ -34,3 +34,19 @@ func ValidateAuthenticationInfo(c fiber.Ctx) error {
 
 	return c.Next()
 }
+
+func ValidateFormulaInfo(c fiber.Ctx) error {
+	var body struct {
+		Formula string `json:"formula"`
+	}
+
+	if err := json.Unmarshal(c.Body(), &body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid JSON",
+		})
+	}
+
+	c.Locals("formula", body.Formula)
+
+	return c.Next()
+}

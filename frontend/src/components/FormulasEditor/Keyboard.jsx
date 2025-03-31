@@ -9,10 +9,9 @@ const Keyboard = ({onKeyPress}) => {
     const [availableCurrencies, setAvailableCurrencies] = useState([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [searchKey, setSearchKey] = useState("");
-    const [selectCurrency, setSelectedCurrency] = useState("None");
+    const [selectedCurrency, setSelectedCurrency] = useState(null);
 
     const [isSearch, setIsSearch] = useState(false);
-    const [isDepth2Visible, setIsDepth2Visible] = useState(true);
     const [delayedSearchKey, setDelayedSearchKey] = useState(""); // отсроченный поиск
     const listRef = useRef(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -29,7 +28,6 @@ const Keyboard = ({onKeyPress}) => {
             if (!isKeyboardLoading && availableApi.length === 0) {
                 const data = await fetchKeyboard();
                 if (data) {
-                    console.log(data)
                     data?.api && setAvailableApi(data.api)
                     data?.currencies && setAvailableCurrencies(data.currencies)
                 }
@@ -121,14 +119,14 @@ const Keyboard = ({onKeyPress}) => {
         onKeyPress(key);
     };
 
-    const handleItemClick = () => {
-        setIsDepth2Visible(false);
-    };
-
-    const handleGoBack = () => {
-        setIsDepth2Visible(true);
-    };
-
+    const handleVariable = (variable) => {
+        if (selectedCurrency) {
+            // можно использовать разные цвета для разных валют чтобы сократить место,
+            // но тогда надо будет пошаманить с катексом а сейчас не до этого
+            const v = `\\text{\\textcolor{orange}{${selectedCurrency}}\\_${variable}}`
+            handleKeyClick(v)
+        }
+    }
 
     return (
         <div className={"formula__keyboard"}>
@@ -139,6 +137,9 @@ const Keyboard = ({onKeyPress}) => {
                 <div className={"labels__list"} ref={listRef}>
                     <div className={`label__item ${selectedIndex === 0 ? "choosed_label" : ""}`}
                          onClick={() => setSelectedIndex(0)}> Basic
+                    </div>
+                    <div className={`label__item ${selectedIndex === -1 ? "choosed_label" : ""}`}
+                         onClick={() => setSelectedIndex(-1)}>Currency
                     </div>
                     {availableApi &&
                         Object.keys(availableApi).map((key, index) => (
@@ -207,15 +208,16 @@ const Keyboard = ({onKeyPress}) => {
                 ))}
             </div>
             ) : (
-            <>
-            <div className={"keyboard__choices"} id={"keyboard_depth_2"} style={{ display: isDepth2Visible ? "flex" : "none" }}>
+            <div className={"keyboard__choices"}>
                 <div className="dynamic_keyboard__list">
                     {Object.values(availableApi)[selectedIndex-1]?.map(value => (
-                        <div key={value} className="dynamic_keyboard__item" onClick={handleItemClick}>{value}</div>
+                        <div key={value} className="dynamic_keyboard__item" onClick={() => handleVariable(value)}>{value}</div>
                     ))}
                 </div>
             </div>
-            <div className={"keyboard__choices"} id={"keyboard_depth_3"} style={{ display: isDepth2Visible ? "none" : "flex" }}>
+            )}
+            {selectedIndex === -1 && (
+            <div className={"keyboard__choices"}>
                 <div className={"keaboard__input__area"}>
                     <div className={"keayboard__input__field"}>
                         {searchKey.length > 0 && (
@@ -238,8 +240,7 @@ const Keyboard = ({onKeyPress}) => {
                         <input id={"keyboard__search_field"} onChange={e => setSearchKey(e.target.value)}
                                value={searchKey} className={"keyboard__search_field"} placeholder={"Search"}></input>
                     </div>
-                    <div className={"previous_level"} onClick={handleGoBack}>go back</div>
-                    <div className={"current_currency_3"}>{selectCurrency}</div>
+                    <div className={"current_currency_3"}>Current currency: {selectedCurrency || "None"}</div>
                 </div>
                 <div className="dynamic_keyboard__list">
                     {filteredFields.map(item => (
@@ -248,7 +249,6 @@ const Keyboard = ({onKeyPress}) => {
                     {filteredFields.length === 0 && <div className="dynamic_keyboard__no_results">Nothing was found</div>}
                 </div>
             </div>
-            </>
             )}
         </div>
     );
