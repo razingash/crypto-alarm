@@ -78,14 +78,53 @@ func Keyboard(c fiber.Ctx) error {
 
 func Formula(c fiber.Ctx) error {
 	expression := c.Locals("formula").(string)
-
+	// Analys("(BOTBTC_price+BOTBTC_price24hr)*2==10.2+3^2")
 	errCode := triggers.Analys(expression)
 	switch errCode {
+	case 0:
+		userUUID := c.Locals("userUUID").(string)
+		err := db.SaveFormula(expression, userUUID)
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "error during saving formula",
+			})
+		}
+		return c.SendStatus(fiber.StatusOK)
 	case 1:
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Unknown symbol",
 		})
+	case 2:
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Incorrect variable",
+		})
+	case 3: // unused
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "there is no such variable in the database",
+		})
+	case 4:
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "The variable is outdated",
+		})
+	case 5:
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Incorrect sequence of symbols",
+		})
+	case 6:
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Incorrect brackets",
+		})
+	case 7:
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "There are no comparison operators",
+		})
+	case 10:
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "database error",
+		})
 	default:
-		return c.SendStatus(fiber.StatusOK)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "unprocessed error",
+		})
 	}
 }

@@ -17,9 +17,9 @@ class TriggersHistory(Base):
 """
 
 class TriggerFormula(Base):
+    formula: Mapped[str] = mapped_column(String, nullable=False)
     is_notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False) # тут могут быть баги при большой нагрузке
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
-    formula: Mapped[str] = mapped_column(String, nullable=False)
 
     owner_id: Mapped[int] = mapped_column(Integer, ForeignKey("user_user.id"), nullable=False)
     owner = relationship("User", back_populates="triggers")

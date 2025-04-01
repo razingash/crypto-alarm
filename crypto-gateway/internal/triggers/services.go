@@ -3,8 +3,9 @@ package triggers
 import (
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
+
+	"crypto-gateway/crypto-gateway/internal/db"
 )
 
 const (
@@ -23,6 +24,7 @@ type Token struct {
 	Value string
 }
 
+// добавить когда-нибудь тесты
 func Analys(expression string) int {
 	tokens, errCode := tokenize(expression)
 
@@ -30,7 +32,7 @@ func Analys(expression string) int {
 		return errCode
 	}
 
-	_, errCode = parse(tokens)
+	errCode = validateTokens(tokens)
 
 	return errCode
 }
@@ -39,65 +41,131 @@ func Analys(expression string) int {
 func tokenize(expression string) ([]Token, int) {
 	var tokens []Token
 
-	expression = strings.ReplaceAll(expression, " ", "") // убрать пробелы(хотя их не должно быть,
-	// и возможно лучше сразу ошибку скинуть)
-
 	tokenPatterns := []struct {
 		Type    string
 		Pattern string
 	}{
-		{NUMBER, `\d+(\.\d+)?`},              // Числа
-		{OPERATOR, `[+\-*/^]`},               // Операторы
-		{VARIABLE, `[A-Za-z]+[A-Za-z0-9_]*`}, // Переменные
-		{FUNCTION, `sqrt\(|abs\(`},           // Функции
-		{LPAREN, `\(`},                       // Левые скобки
-		{RPAREN, `\)`},                       // Правые скобки
-		{COMPARISON, `[<>]=?|>=?`},           // Операторы сравнения
+		{NUMBER, `^\d+(\.\d+)?`},                  // Числа
+		{OPERATOR, `^[+\-*/^]`},                   // Операторы
+		{FUNCTION, `^(sqrt|abs)\(`},               // Функции
+		{LPAREN, `^\(`},                           // Левая скобка
+		{RPAREN, `^\)`},                           // Правая скобка
+		{COMPARISON, `^(<=|>=|==|<|>)`},           // Операторы сравнения
+		{VARIABLE, `^([a-zA-Z]+)_([a-zA-Z0-9]+)`}, // Переменные в формате crypto_variable
 	}
 
-	for _, pattern := range tokenPatterns {
-		re := regexp.MustCompile("^" + pattern.Pattern)
-		match := re.FindString(expression)
-		if match != "" {
-			tokens = append(tokens, Token{Type: pattern.Type, Value: match})
-			expression = strings.TrimPrefix(expression, match)
+	for len(expression) > 0 {
+		matched := false
+		for _, pattern := range tokenPatterns {
+			re := regexp.MustCompile(pattern.Pattern)
+			match := re.FindString(expression)
+			if match != "" {
+				if pattern.Type == VARIABLE {
+					// Проверяем, является ли переменная допустимой
+					parts := strings.Split(match, "_")
+					if len(parts) != 2 { // неправильная переменная
+						return nil, 2
+					}
+
+					isValid, err := db.IsValidCryptoCurrency(parts[0])
+					if err != nil {
+						fmt.Println(err)
+						return nil, 10
+					}
+					if !isValid {
+						fmt.Println("недопустимая переменная:", match)
+						/*
+							3 - переменной нет в базе данных
+							4 - переменная не актуальна
+						*/
+						return nil, 4
+					}
+
+					isValid, err = db.IsValidVariable(parts[1])
+					if err != nil {
+						fmt.Println(err)
+						return nil, 10
+					}
+					if !isValid {
+						fmt.Println("недопустимая переменная:", match)
+						/*
+							3 - переменной нет в базе данных
+							4 - переменная не актуальна
+						*/
+						return nil, 4
+					}
+				}
+
+				tokens = append(tokens, Token{Type: pattern.Type, Value: match})
+				expression = expression[len(match):]
+				matched = true
+				break
+			}
 		}
-	}
 
-	if len(expression) > 0 {
-		return nil, 1 // unknown symbol
+		if !matched { // неизвестный символ
+			return nil, 1
+		}
 	}
 
 	return tokens, 0
 }
 
 // проверка на правильность
-func parse(tokens []Token) (float64, int) {
-	// Пример простого обхода
-	stack := []float64{}
+func validateTokens(tokens []Token) int {
+	stack := []Token{}
+	lastTokenType := ""
 
-	for _, token := range tokens {
+	comparisonFound := false
+
+	for i, token := range tokens {
 		switch token.Type {
-		case NUMBER:
-			num, err := strconv.ParseFloat(token.Value, 64)
-			if err != nil {
-				fmt.Printf("не удалось преобразовать число: %s", token.Value)
-				return 0, 2
+		/*
+			1) Два числа, переменные, оператора, сравнения подряд - недопустимы
+			2) Оператор, сравнение не могут стоять в начале или после другого оператора
+			3) Оператор сравнения должен быть хоть один раз
+			4) проверка скобок с помощью стека - при встрече '(' ложить в стек, при ')' убирать из стэка
+				- если в конце стек не пуст или при встрече ')' то будет ошибка
+			5) операторы требуют после себя выражений(скорее всего доработать стоит)
+		*/
+		case NUMBER, VARIABLE:
+			// Два числа переменные подряд недопустимы
+			if lastTokenType == NUMBER || lastTokenType == VARIABLE {
+				return 5
 			}
-			stack = append(stack, num)
 		case OPERATOR:
-			// добавить обработку приоритетов операторов
-		case FUNCTION: // sqrt | abs
-			// обработка функций
+			//Оператор не может стоять в начале или после другого оператора
+			if i == 0 || lastTokenType == OPERATOR || lastTokenType == LPAREN || lastTokenType == COMPARISON {
+				return 5
+			}
 		case COMPARISON:
-			// проверка на сравнение
-		case LPAREN, RPAREN:
-			// обработка скобок
-		default:
-			fmt.Printf("неизвестный токен: %s", token.Value)
-			return 0, 3
+			// Оператор сравнения не может стоять в начале, после другого сравнения или скобки
+			comparisonFound = true
+			if i == 0 || lastTokenType == COMPARISON || lastTokenType == LPAREN {
+				return 5
+			}
+		case FUNCTION:
+			// Функция требует открывающую скобку сразу после
+			stack = append(stack, token)
+		case LPAREN:
+			stack = append(stack, token)
+		case RPAREN:
+			// Проверяем, есть ли соответствующая открывающая скобка
+			if len(stack) == 0 || stack[len(stack)-1].Type != LPAREN {
+				return 6
+			}
+			stack = stack[:len(stack)-1]
 		}
+
+		lastTokenType = token.Type
 	}
 
-	return stack[0], 0
+	if !comparisonFound {
+		return 7
+	}
+	if len(stack) > 0 {
+		return 6
+	}
+
+	return 0
 }
