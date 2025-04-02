@@ -20,13 +20,93 @@ const renderLatex = (latexArr) => {
     return latexString;
 };
 
-const FormulaInput = ({ latexArray }) => {
+const FormulaInput = ({ formula, cursorPos }) => {
     const formulaInputRef = useRef(null);
+
+    const formulaToLatexArray = (formula) => {
+        if (typeof formula === "object"){ // фиксануть эту чушь
+            return formulaToLatex(formula)
+        }
+        const regex = /([a-zA-Z_][a-zA-Z0-9_]*)|(\d+\.\d+|\d+)|([+\-*/^()=<>!]+)/g;
+        let tokens = [];
+
+        let match;
+        while ((match = regex.exec(formula)) !== null) {
+            tokens.push(match[0]);
+        }
+
+        return formulaToLatex(tokens);
+    };
+
+    const formulaToLatex = (tokens) => {
+        let latex = [];
+        let absStack = [];
+        let sqrtStack = [];
+        let isInFraction = false; // Флаг, указывающий, что мы внутри дроби
+        let numerator = []; // Буфер для числителя
+        let denominator = []; // Буфер для знаменателя
+        let isDenominator = false; // Флаг для переключения в знаменатель
+
+        for (let i = 0; i < tokens.length; i++) {
+            const token = tokens[i];
+
+            if (/^[a-zA-Z_]+_[a-zA-Z_]+$/.test(token)) {
+                const [firstPart, secondPart] = token.split("_");
+                latex.push(`\\text{\\textcolor{orange}{${firstPart}}\\_${secondPart}}`);
+            } else if (token === "abs") {
+                latex.push("\\left|");
+                absStack.push(true);
+            } else if (token === "sqrt") {
+                latex.push("\\sqrt{");
+                sqrtStack.push(true);
+            } else if (token === ")" && absStack.length > 0) {
+                latex.push("\\right|");
+                absStack.pop();
+            } else if (token === ")" && sqrtStack.length > 0) {
+                latex.push("}");
+                sqrtStack.pop();
+            } else if (token === "/") {
+                isInFraction = true;
+                isDenominator = false;
+                numerator = [...latex]; // сохранение текущего LateX как числителя
+                latex = []; // очищение основного массива для знаменателя
+            } else if (token === "(" && isInFraction) {
+                isDenominator = true; // начало знаменателя
+            } else if (token === ")" && isInFraction) {
+                isInFraction = false; // закрытие дроби
+                denominator = [...latex]; // сохранение знаменателя
+                latex = [`\\frac{${numerator.join(" ")}}{${denominator.join(" ")}}`]; // создание дроби
+            } else if (token === "÷") {
+                latex.push("\\div");
+            } else if (token === "*") {
+                latex.push("\\times");
+            } else if (token === ">=") {
+                latex.push("\\ge");
+            } else if (token === "<=") {
+                latex.push("\\le");
+            } else {
+                latex.push(token);
+            }
+        }
+
+        // закрытие модуля если он не закрыт
+        while (absStack.length > 0) {
+            latex.push("\\right|");
+            absStack.pop();
+        }
+
+        while (sqrtStack.length > 0) {
+            latex.push("}");
+            sqrtStack.pop();
+        }
+
+        return latex;
+    };
 
     useEffect(() => {
         if (formulaInputRef.current) {
             try {
-                let latexWithCursor = renderLatex(latexArray);
+                let latexWithCursor = renderLatex(formulaToLatexArray(formula));
 
                 katex.render(latexWithCursor, formulaInputRef.current, {
                     throwOnError: false,
@@ -48,7 +128,7 @@ const FormulaInput = ({ latexArray }) => {
                 console.error("Ошибка рендеринга KaTeX:", e);
             }
         }
-    }, [latexArray]);
+    }, [formula]);
 
     return <div className="formula__input" ref={formulaInputRef}></div>;
 };

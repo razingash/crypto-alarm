@@ -31,74 +31,6 @@ const FormulaEditor = () => {
         await fetchNewFormula(validatedFormula);
     }
 
-    console.log(formula)
-
-    const formulaToLatex = (tokens, cursorPos) => {
-        let latex = [];
-        let absStack = [];
-        let sqrtStack = [];
-        let isInFraction = false; // Флаг, указывающий, что мы внутри дроби
-        let numerator = []; // Буфер для числителя
-        let denominator = []; // Буфер для знаменателя
-        let isDenominator = false; // Флаг для переключения в знаменатель
-
-        for (let i = 0; i < tokens.length; i++) {
-            if (i === cursorPos) latex.push("\\textunderscore");
-
-            const token = tokens[i];
-
-            if (token === "abs") {
-                latex.push("\\left|");
-                absStack.push(true);
-            } else if (token === "sqrt") {
-                latex.push("\\sqrt{");
-                sqrtStack.push(true);
-            } else if (token === ")" && absStack.length > 0) {
-                latex.push("\\right|");
-                absStack.pop();
-            } else if (token === ")" && sqrtStack.length > 0) {
-                latex.push("}");
-                sqrtStack.pop();
-            } else if (token === "/") {
-                isInFraction = true;
-                isDenominator = false;
-                numerator = [...latex]; // сохранение текущего LateX как числителя
-                latex = []; // очищение основного массива для знаменателя
-            } else if (token === "(" && isInFraction) {
-                isDenominator = true; // начало знаменателя
-            } else if (token === ")" && isInFraction) {
-                isInFraction = false; // закрытие дроби
-                denominator = [...latex]; // сохранение знаменателя
-                latex = [`\\frac{${numerator.join(" ")}}{${denominator.join(" ")}}`]; // создание дроби
-            } else if (token === "÷") {
-                latex.push("\\div");
-            } else if (token === "*") {
-                latex.push("\\times");
-            } else if (token === ">=") {
-                latex.push("\\ge");
-            } else if (token === "<=") {
-                latex.push("\\le");
-            } else {
-                latex.push(token);
-            }
-        }
-
-        if (cursorPos === tokens.length) latex.push("\\textunderscore");
-
-        // закрытие модуля если он не закрыт
-        while (absStack.length > 0) {
-            latex.push("\\right|");
-            absStack.pop();
-        }
-
-        while (sqrtStack.length > 0) {
-            latex.push("}");
-            sqrtStack.pop();
-        }
-
-        return latex;
-    };
-
     const moveCursor = (direction) => {
         const currentIndex = formula.indexOf("\\textunderscore");
         if (currentIndex === -1) return;
@@ -122,7 +54,6 @@ const FormulaEditor = () => {
         const cursorIndex = newFormula.indexOf("\\textunderscore");
 
         if (token === "sqrt" || token === "abs") {
-            // Вставляем `sqrt` или `abs` и сразу добавляем скобки
             newFormula.splice(cursorIndex, 0, token, "(", ")");
             setCursorIndex(cursorIndex + 1);
         } else {
@@ -155,7 +86,7 @@ const FormulaEditor = () => {
 
     return (
         <div className="section__main">
-            <FormulaInput latexArray={formulaToLatex(formula)} cursorPos={cursorIndex}/>
+            <FormulaInput formula={formula} cursorPos={cursorIndex} type={2}/>
             <Keyboard onKeyPress={handleKeyPress}/>
         </div>
     );

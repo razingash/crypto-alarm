@@ -12,12 +12,6 @@
     align-items: flex-end;
 }
 
-.formula_input {
-    min-width: 300px;
-    background: #000;
-    color: #fff;
-}
-
 .formula__apply_button {
     width: fit-content;
     padding: 7px 14px;
@@ -30,7 +24,109 @@
     font-weight: 700;
 }
 
-/*keyboard modification*/
-.MLK__rows > .MLK__row {
-    flex-wrap: wrap !important;
+/* UserStrategies */
+
+.strategies__list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+
+.strategy__item {
+    display: flex;
+    flex-direction: column;
+    row-gap: 12px;
+    color: #fff;
+    background: var(--container-background);
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.strategy__item__header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.strategy__weight {
+    color: #ff8800;
+    margin-right: 30px;
+}
+
+.strategy__name {
+
+}
+
+.strategy__description {
+
+}
+
+.strategy__info {
+    display: flex;
+    flex-direction: column;
+    row-gap: 9px;
+}
+
+.strategy__info__item {
+    display: flex;
+    justify-content: space-between;
+}
+
+
+.button__show_more {
+
+}
+
+/* zipline */
+.checkbox_zipline {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.zipline {
+    position: absolute;
+    width: 70%;
+    height: 10px;
+    background: #5e5e5e;
+    border-radius: 5px;
+    z-index: 1;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+    opacity: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #fff;
+    transition: 0.4s;
+    border-radius: 12px;
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    left: 6px;
+    bottom: 4px;
+    background-color: #000;
+    transition: 0.4s;
+    z-index: 1;
+}
+
+.checkbox_zipline input:checked + .slider:before {
+    transform: translateX(19px);
 }

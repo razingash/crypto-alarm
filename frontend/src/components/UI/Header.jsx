@@ -11,9 +11,8 @@ const Header = () => {
                 <div className={"header__items"}>
                     {isAuth && (
                         <>
-                        <Link to={"/profile"} className={"header__item"}>Profile</Link>
-                        <Link to={"/profile/strategies"} className={"header__item"}>Strategies</Link>
-                            <Link to={"/new-strategy"} className={"header__item"}>New strategy</Link>
+                        <Link to={"/new-strategy"} className={"header__item"}>New strategy</Link>
+                        <Link to={"/strategies"} className={"header__item"}>Strategies</Link>
                         </>
                     )}
                     <Link to={"#"} className={"header__item"}>Settings</Link>

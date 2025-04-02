@@ -10,4 +10,8 @@ export default class TriggersService {
         const response = await apiClient.post('/triggers/formula', {formula})
         return response.data
     }
+    static async getUserFormulas() {
+        const response = await apiClient('triggers/formulas')
+        return response.data
+    }
 }
