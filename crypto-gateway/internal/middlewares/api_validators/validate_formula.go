@@ -1,0 +1,127 @@
+package api_validators
+
+import (
+	"crypto-gateway/crypto-gateway/internal/middlewares/field_validators"
+	"encoding/json"
+
+	"github.com/gofiber/fiber/v3"
+)
+
+func ValidateFormulaPost(c fiber.Ctx) error {
+	var body struct {
+		Formula string `json:"formula"`
+	}
+
+	if err := json.Unmarshal(c.Body(), &body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid JSON",
+		})
+	}
+
+	errCode := field_validators.ValidateTriggerFormulaFormula(body.Formula)
+	switch errCode {
+	case 0:
+		c.Locals("formula", body.Formula)
+		return c.Next()
+	case 1:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Unknown symbol",
+		})
+	case 2:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Incorrect variable",
+		})
+	case 3: // unused
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "there is no such variable in the database",
+		})
+	case 4:
+		return c.Status(fiber.StatusNotAcceptable).JSON(fiber.Map{
+			"error": "The variable is outdated",
+		})
+	case 5:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Incorrect sequence of symbols",
+		})
+	case 6:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Incorrect brackets",
+		})
+	case 7:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "There are no comparison operators",
+		})
+	case 10:
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "database error",
+		})
+	default:
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "unprocessed error",
+		})
+	}
+}
+
+func ValidateFormulaPatch(c fiber.Ctx) error {
+	var payload map[string]interface{}
+
+	if err := json.Unmarshal(c.Body(), &payload); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid JSON",
+		})
+	}
+
+	formulaId, ok := payload["formula_id"].(string)
+	if !ok || formulaId == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "formula_id is required",
+		})
+	}
+	delete(payload, "formula_id")
+
+	userUUID := c.Locals("userUUID").(string)
+	errCode := field_validators.ValidateTriggerFormulaId(userUUID, formulaId)
+	switch errCode {
+	case 0: // дальше по коду
+	case 1:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "user does not exist",
+		})
+	case 2:
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Database error",
+		})
+	case 3:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "formula does not exists",
+		})
+	}
+
+	var allowedFields = map[string]struct{}{
+		"formula":        {},
+		"name":           {},
+		"description":    {},
+		"is_notified":    {},
+		"is_active":      {},
+		"is_history_on":  {},
+		"is_shutted_off": {},
+		"last_triggered": {},
+	}
+
+	validData := make(map[string]interface{})
+	for key, value := range payload {
+		if _, exists := allowedFields[key]; exists {
+			validData[key] = value
+		}
+	}
+
+	if len(validData) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "no valid fields provided for update",
+		})
+	}
+
+	c.Locals("formulaId", formulaId)
+	c.Locals("updateData", validData)
+	return c.Next()
+}

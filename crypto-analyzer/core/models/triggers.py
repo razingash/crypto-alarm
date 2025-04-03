@@ -12,13 +12,9 @@ MongoDB
 class TriggersHistory(Base):
     pass
 """
-"""
-Нужно также добавить таблицу истории стратегии, именно в постгрессе, чтобы была возможность строить график конкретной
-стратегии.
-Возможно также стоит добавить в MongoDB 
-"""
 
 class TriggerFormula(Base):
+    """формула может быть активной, но если она не будет фиксировать историю, или отправлять уведомления, то она будет бесполезной"""
     formula: Mapped[str] = mapped_column(String, nullable=False)
     name: Mapped[str] = mapped_column(String(150), nullable=True)
     description: Mapped[str] = mapped_column(String(1500), nullable=True)

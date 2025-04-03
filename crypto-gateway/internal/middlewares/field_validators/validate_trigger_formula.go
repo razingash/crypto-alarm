@@ -1,12 +1,14 @@
-package triggers
+package field_validators
 
 import (
+	"context"
+	"crypto-gateway/crypto-gateway/internal/db"
 	"fmt"
 	"regexp"
 	"strings"
-
-	"crypto-gateway/crypto-gateway/internal/db"
 )
+
+// добавить когда-нибудь тесты
 
 const (
 	NUMBER     = "NUMBER"
@@ -24,9 +26,9 @@ type Token struct {
 	Value string
 }
 
-// добавить когда-нибудь тесты
-func Analys(expression string) int {
-	tokens, errCode := tokenize(expression)
+// проверяет формулу на валидность
+func ValidateTriggerFormulaFormula(formula string) int {
+	tokens, errCode := tokenize(formula)
 
 	if errCode != 0 {
 		return errCode
@@ -35,6 +37,31 @@ func Analys(expression string) int {
 	errCode = validateTokens(tokens)
 
 	return errCode
+}
+
+// проверяет существует ли формула с таким id, и является ли пользователь её автором
+func ValidateTriggerFormulaId(userUUID string, formulaId string) int {
+	userId, err := db.GetIdbyUuid(userUUID)
+	if err != nil {
+		return 1
+	}
+
+	var count int
+	err2 := db.DB.QueryRow(context.Background(), `
+		SELECT COUNT(*) 
+		FROM trigger_formula
+		WHERE id = $1 AND owner_id = $2
+	`, formulaId, userId).Scan(&count)
+
+	if err2 != nil {
+		return 2
+	}
+
+	if count == 0 {
+		return 3
+	}
+
+	return 0
 }
 
 // проверка на синтаксис

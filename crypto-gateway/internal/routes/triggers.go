@@ -3,6 +3,7 @@ package routes
 import (
 	"crypto-gateway/crypto-gateway/internal/handlers"
 	"crypto-gateway/crypto-gateway/internal/middlewares"
+	"crypto-gateway/crypto-gateway/internal/middlewares/api_validators"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -10,8 +11,9 @@ import (
 func SetupTriggersRoutes(app *fiber.App) {
 	authGroup := app.Group("/api/v1/triggers")
 
-	authGroup.Get("/keyboard", handlers.Keyboard, middlewares.ValidateAuthorization)
-	authGroup.Get("/formulas", handlers.Formulas, middlewares.ValidateAuthorization)
-	authGroup.Post("/formula", handlers.FormulaPost, middlewares.ValidateAuthorization, middlewares.ValidateFormula)
-	authGroup.Patch("/formula", handlers.FormulaPatch, middlewares.ValidateAuthorization, middlewares.ValidateFormulaId)
+	authGroup.Get("/keyboard", handlers.Keyboard, middlewares.IsAuthorized)
+	authGroup.Get("/formulas", handlers.Formulas, middlewares.IsAuthorized)
+	authGroup.Post("/formula", handlers.FormulaPost, middlewares.IsAuthorized, api_validators.ValidateFormulaPost)
+	authGroup.Patch("/formula", handlers.FormulaPatch, middlewares.IsAuthorized, api_validators.ValidateFormulaPatch)
+	authGroup.Delete("/formula", handlers.FormulaDelete, middlewares.IsAuthorized)
 }

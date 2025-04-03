@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"crypto-gateway/crypto-gateway/internal/db"
+	"crypto-gateway/crypto-gateway/internal/middlewares/field_validators"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -101,6 +102,44 @@ func FormulaPatch(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "unprocessed error",
 		})
+	}
+}
+
+func FormulaDelete(c fiber.Ctx) error {
+	formulaId := c.Query("formula_id")
+	if formulaId == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "formula_id is required",
+		})
+	}
+
+	userUUID := c.Locals("userUUID").(string)
+	errCode := field_validators.ValidateTriggerFormulaId(userUUID, formulaId)
+	switch errCode {
+	case 0: // дальше по коду
+	case 1:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "user does not exist",
+		})
+	case 2:
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Database error",
+		})
+	case 3:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "formula does not exists",
+		})
+	}
+
+	code := db.DeleteUserFormula(formulaId)
+
+	switch code {
+	case 2:
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Database error",
+		})
+	default:
+		return c.SendStatus(fiber.StatusOK)
 	}
 }
 

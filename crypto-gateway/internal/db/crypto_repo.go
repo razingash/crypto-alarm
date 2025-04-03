@@ -139,3 +139,14 @@ func UpdateUserFormula(formulaId string, data map[string]interface{}) int {
 
 	return 0
 }
+
+func DeleteUserFormula(formulaId string) int {
+	_, err := DB.Exec(context.Background(), `DELETE FROM trigger_formula WHERE id = $1`, formulaId)
+
+	if err != nil {
+		fmt.Println(err)
+		return 2
+	}
+
+	return 0
+}

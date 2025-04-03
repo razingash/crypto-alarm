@@ -8,7 +8,7 @@ import (
 )
 
 // used to check whether the user is authorized
-func ValidateAuthorization(c fiber.Ctx) error {
+func IsAuthorized(c fiber.Ctx) error {
 	authHeader := c.Get("Authorization")
 
 	if authHeader == "" {

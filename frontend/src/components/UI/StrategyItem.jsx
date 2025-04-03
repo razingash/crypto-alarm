@@ -2,14 +2,12 @@ import React, {useState} from 'react';
 import FormulaInput from "../FormulasEditor/FormulaInput";
 
 const StrategyItem = ({formula}) => {
-    const [isChecked, setIsChecked] = useState(false);
-
-    const handlePushNotificationToggle = (e) => {
-        setIsChecked(e.target.checked);
-    };
+    const [isHistoryAvailable, setIsHistoryAvailable] = useState(formula.is_history_on);
+    const [isNoisy, setIsNoisy] = useState(formula.is_notified);
+    const [isActive, setIsActive] = useState(formula.is_active);
 
     return (
-        <div className={"strategy__item"} key={formula.formula}>
+        <div className={"strategy__item"} key={formula.id}>
             <div className={"strategy__item__header"}>
                 <div className={"strategy__weight"}>Weight: 80</div>
                 <div className={"strategy__name"}>{formula.name}</div>
@@ -18,30 +16,30 @@ const StrategyItem = ({formula}) => {
             <div className={"strategy__info"}>
                 <div className={"strategy__info__item"}>
                     <div>History</div>
-                    <label htmlFor="history_slider" className={"checkbox_zipline"}>
+                    <label htmlFor={`history_slider${formula.id}`} className={"checkbox_zipline"}>
                         <span className={"zipline"}></span>
-                        <input id="history_slider" type="checkbox" className={"switch"}
-                               onChange={handlePushNotificationToggle} checked={formula.is_history_on}
+                        <input id={`history_slider${formula.id}`} type="checkbox" className={"switch"}
+                               onChange={() => setIsHistoryAvailable(!isHistoryAvailable)} checked={isHistoryAvailable}
                         />
                         <span className="slider"></span>
                     </label>
                 </div>
                 <div className={"strategy__info__item"}>
                     <div>Notifications</div>
-                    <label htmlFor="notifications_slider" className={"checkbox_zipline"}>
+                    <label htmlFor={`notifications_slider_${formula.id}`} className={"checkbox_zipline"}>
                         <span className={"zipline"}></span>
-                        <input id="notifications_slider" type="checkbox" className={"switch"}
-                               onChange={handlePushNotificationToggle} checked={formula.is_notified}
+                        <input id={`notifications_slider_${formula.id}`} type="checkbox" className={"switch"}
+                               onChange={() => setIsNoisy(!isNoisy)} checked={isNoisy}
                         />
                         <span className="slider"></span>
                     </label>
                 </div>
                 <div className={"strategy__info__item"}>
                     <div>Active</div>
-                    <label htmlFor="relevance_slider" className={"checkbox_zipline"}>
+                    <label htmlFor={`relevance_slider${formula.id}`} className={"checkbox_zipline"}>
                         <span className={"zipline"}></span>
-                        <input id="relevance_slider" type="checkbox" className={"switch"}
-                               onChange={handlePushNotificationToggle} checked={formula.is_active}
+                        <input id={`relevance_slider${formula.id}`} type="checkbox" className={"switch"}
+                               onChange={() => setIsActive(!isActive)} checked={isActive}
                         />
                         <span className="slider"></span>
                     </label>

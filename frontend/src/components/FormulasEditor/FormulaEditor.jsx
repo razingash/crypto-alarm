@@ -12,14 +12,14 @@ import TriggersService from "../../API/TriggersService";
 - сделать чтобы клава вылазила когда надо будет
 
 Баги:
-некорректный рендер продвинутых выражений по типу abs
+несовсем корректный рендер продвинутых выражений по типу abs
 */
 const FormulaEditor = () => {
     const [formula, setFormula] = useState([
         "(", "2", "3", "+", "2", "*", "VAR3", ")", "/",
         "(", "1", "7", "+", "abs", "(", "VAR1", ")", ")",
         "≤", "2", "0", "\\textunderscore"
-    ]);
+    ]); // изменить после того как исправлю интерпретацию в formulaToLatex
     const [cursorIndex, setCursorIndex] = useState(formula.length);
 
     const [fetchNewFormula, isNewFormulaLoading, newFormulaError] = useFetching(async (formula) => {
