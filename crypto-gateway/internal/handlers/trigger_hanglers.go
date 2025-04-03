@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"crypto-gateway/crypto-gateway/internal/db"
-	"crypto-gateway/crypto-gateway/internal/triggers"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -76,55 +75,47 @@ func Keyboard(c fiber.Ctx) error {
 	return c.JSON(keyboard)
 }
 
-func Formula(c fiber.Ctx) error {
+func FormulaPost(c fiber.Ctx) error {
 	expression := c.Locals("formula").(string)
-	// Analys("(BOTBTC_price+BOTBTC_price24hr)*2==10.2+3^2")
-	errCode := triggers.Analys(expression)
+	userUUID := c.Locals("userUUID").(string)
+
+	err := db.SaveFormula(expression, userUUID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "error during saving formula",
+		})
+	}
+	return c.SendStatus(fiber.StatusOK)
+}
+
+func FormulaPatch(c fiber.Ctx) error {
+	formulaId := c.Locals("formulaId").(string)
+	data := c.Locals("updateData").(map[string]interface{})
+
+	errCode := db.UpdateUserFormula(formulaId, data)
+
 	switch errCode {
 	case 0:
-		userUUID := c.Locals("userUUID").(string)
-		err := db.SaveFormula(expression, userUUID)
-		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "error during saving formula",
-			})
-		}
 		return c.SendStatus(fiber.StatusOK)
-	case 1:
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Unknown symbol",
-		})
-	case 2:
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Incorrect variable",
-		})
-	case 3: // unused
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "there is no such variable in the database",
-		})
-	case 4:
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "The variable is outdated",
-		})
-	case 5:
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Incorrect sequence of symbols",
-		})
-	case 6:
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Incorrect brackets",
-		})
-	case 7:
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "There are no comparison operators",
-		})
-	case 10:
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "database error",
-		})
 	default:
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "unprocessed error",
 		})
 	}
+}
+
+func Formulas(c fiber.Ctx) error {
+	userUUID := c.Locals("userUUID").(string)
+
+	formulas, err := db.GetUserFormulas(userUUID)
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "something went wrong",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": formulas,
+	})
 }
