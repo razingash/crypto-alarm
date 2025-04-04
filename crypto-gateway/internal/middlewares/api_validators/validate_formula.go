@@ -97,22 +97,40 @@ func ValidateFormulaPatch(c fiber.Ctx) error {
 		})
 	}
 
-	var allowedFields = map[string]struct{}{
-		"formula":        {},
-		"name":           {},
-		"description":    {},
-		"is_notified":    {},
-		"is_active":      {},
-		"is_history_on":  {},
-		"is_shutted_off": {},
-		"last_triggered": {},
+	validator := field_validators.FormulaValidator{
+		Formula:     field_validators.ValidateText(0, 50000),
+		Name:        field_validators.ValidateText(0, 150),
+		Description: field_validators.ValidateText(0, 1500),
+		IsNotified:  field_validators.ValidateBool,
+		IsActive:    field_validators.ValidateBool,
+		IsHistoryOn: field_validators.ValidateBool,
+	}
+
+	fieldValidators := map[string]func(interface{}) string{
+		"formula":       validator.Formula,
+		"name":          validator.Name,
+		"description":   validator.Description,
+		"is_notified":   validator.IsNotified,
+		"is_active":     validator.IsActive,
+		"is_history_on": validator.IsHistoryOn,
 	}
 
 	validData := make(map[string]interface{})
+	errors := make(map[string]string)
 	for key, value := range payload {
-		if _, exists := allowedFields[key]; exists {
-			validData[key] = value
+		if validatorFunc, exists := fieldValidators[key]; exists {
+			if err := validatorFunc(value); err != "" {
+				errors[key] = err
+			} else {
+				validData[key] = value
+			}
 		}
+	}
+
+	if len(errors) > 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"errors": errors,
+		})
 	}
 
 	if len(validData) == 0 {
