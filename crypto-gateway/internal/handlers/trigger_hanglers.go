@@ -177,6 +177,6 @@ func FormulaGet(c fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"data": formulas,
+		"data": formulas[0],
 	})
 }

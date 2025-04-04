@@ -2,6 +2,8 @@
 /* input field */
 
 .formula__input {
+    max-width: 100%;
+    overflow: auto;
     color: #fff;
 }
 #cursor {

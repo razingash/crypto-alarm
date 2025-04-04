@@ -1,9 +1,10 @@
 import React, {useEffect, useRef, useState} from 'react';
 import "../styles/strategy.css"
-import StrategyItem from "../components/UI/StrategyItem";
 import {useFetching} from "../hooks/useFetching";
 import TriggersService from "../API/TriggersService";
 import {useObserver} from "../hooks/useObserver";
+import {Link} from "react-router-dom";
+import FormulaInput from "../components/FormulasEditor/FormulaInput";
 
 const UserStrategies = () => {
     const [page, setPage] = useState(1);
@@ -11,7 +12,7 @@ const UserStrategies = () => {
     const lastElement = useRef();
     const [formulas, setFormulast] = useState([]);
     const [fetchFormulas, isFormulasLoading, ] = useFetching(async () => {
-        const data = await TriggersService.getUserFormulas(page)
+        const data = await TriggersService.getUserFormulas({page: page})
         setFormulast((prevFormula) => {
             const newFormulas = data.data.filter(
                 (formula) => !prevFormula.some((obj) => obj.id === formula.id)
@@ -28,7 +29,6 @@ const UserStrategies = () => {
             await fetchFormulas();
         }
         void loadData();
-        console.log(page)
     }, [page])
 
     return (
@@ -37,7 +37,47 @@ const UserStrategies = () => {
                 {formulas.length > 0 && (
                     formulas.map((formula, index) => (
                         <div className={"strategy__item"} key={formula.id} ref={index === formulas.length - 1 ? lastElement : null}>
-                            <StrategyItem formula={formula}/>
+                            <div className={"strategy__item__header"}>
+                                <div className={"strategy__weight"}>Weight: 80</div>
+                                <Link to={`/strategy/${formula.id}`} className={"strategy__name"}>
+                                    {formula.name || `Nameless formula with id ${formula.id}`}
+                                </Link>
+                            </div>
+                            {formula.description && (
+                            <div className={"strategy__description"}>{formula.description}</div>
+                            )}
+                            <div className={"strategy__info"}>
+                                <div className={"strategy__info__item"}>
+                                    <div>History</div>
+                                    {formula.is_history_on === 'true' ? (
+                                        <div className={"param__status_on"}>On</div>
+                                    ) : (
+                                        <div className={"param__status_off"}>Off</div>
+                                    )}
+                                </div>
+                                <div className={"strategy__info__item"}>
+                                    <div>Notifications</div>
+                                    {formula.is_notified === 'true' ? (
+                                        <div className={"param__status_on"}>On</div>
+                                    ) : (
+                                        <div className={"param__status_off"}>Off</div>
+                                    )}
+                                </div>
+                                <div className={"strategy__info__item"}>
+                                    <div>Active</div>
+                                    {formula.is_active === 'true' ? (
+                                        <div className={"param__status_on"}>On</div>
+                                    ) : (
+                                        <div className={"param__status_off"}>Off</div>
+                                    )}
+                                </div>
+                                <div className={"strategy__info__item"}>
+                                    <div>Last Triggered</div>
+                                    <div>{formula.last_triggered || "Never"}</div>
+                                </div>
+                            </div>
+                            <FormulaInput formula={formula.formula}/>
+                            <div className={"button__show_more"}></div>
                         </div>
                     ))
                 )}

@@ -1,5 +1,4 @@
 import React, {useState} from 'react';
-import "../../styles/keyboard.css"
 import Keyboard from "./Keyboard";
 import FormulaInput from "./FormulaInput";
 import {useFetching} from "../../hooks/useFetching";

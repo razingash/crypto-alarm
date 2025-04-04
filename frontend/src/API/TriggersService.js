@@ -6,8 +6,8 @@ export default class TriggersService {
         const response = await apiClient.get(`/triggers/keyboard`)
         return response.data
     }
-    static async getUserFormulas(page) {
-        const response = await apiClient.get('triggers/formula', {params: {page: page}})
+    static async getUserFormulas(params) {
+        const response = await apiClient.get('triggers/formula', {params: params})
         return response.data
     }
     static async createFormula(formula) {
@@ -15,11 +15,9 @@ export default class TriggersService {
         return response.data
     }
     static async updateUserFormula(data) { // data - словарь с formula_id и полями которые нужно изменить
-        const response = await apiClient.patch('/triggers/formula', data)
-        return response.data
+        return await apiClient.patch('/triggers/formula', data)
     }
     static async deleteUserFormula(formula_id) {
-        const response = await apiClient.delete(`/triggers/formula?id=${formula_id}`)
-        return response.data
+        return await apiClient.delete(`/triggers/formula?formula_id=${formula_id}`)
     }
 }
