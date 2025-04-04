@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto-gateway/crypto-gateway/internal/db"
 	"crypto-gateway/crypto-gateway/internal/middlewares/field_validators"
+	"strconv"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -143,14 +144,35 @@ func FormulaDelete(c fiber.Ctx) error {
 	}
 }
 
-func Formulas(c fiber.Ctx) error {
+func FormulaGet(c fiber.Ctx) error {
 	userUUID := c.Locals("userUUID").(string)
 
-	formulas, err := db.GetUserFormulas(userUUID)
+	defaultLimit := 10
+	defaultPage := 1
 
+	limit, err := strconv.Atoi(c.Query("limit"))
+	if err != nil || limit <= 0 {
+		limit = defaultLimit
+	}
+
+	page, err := strconv.Atoi(c.Query("page"))
+	if err != nil || page <= 0 {
+		page = defaultPage
+	}
+
+	formulaID := c.Query("id")
+
+	formulas, hasNext, err := db.GetUserFormulas(userUUID, limit, page, formulaID)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "something went wrong",
+		})
+	}
+
+	if formulaID == "" {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"data":     formulas,
+			"has_next": hasNext,
 		})
 	}
 

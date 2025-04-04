@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import FormulaInput from "../FormulasEditor/FormulaInput";
+import {Link} from "react-router-dom";
 
 const StrategyItem = ({formula}) => {
     const [isHistoryAvailable, setIsHistoryAvailable] = useState(formula.is_history_on);
@@ -7,12 +8,16 @@ const StrategyItem = ({formula}) => {
     const [isActive, setIsActive] = useState(formula.is_active);
 
     return (
-        <div className={"strategy__item"} key={formula.id}>
+        <>
             <div className={"strategy__item__header"}>
                 <div className={"strategy__weight"}>Weight: 80</div>
-                <div className={"strategy__name"}>{formula.name}</div>
+                <Link to={`/strategies/${formula.id}`} className={"strategy__name"}>
+                    {formula.name || `Nameless formula with id ${formula.id}`}
+                </Link>
             </div>
+            {formula.description && (
             <div className={"strategy__description"}>{formula.description}</div>
+            )}
             <div className={"strategy__info"}>
                 <div className={"strategy__info__item"}>
                     <div>History</div>
@@ -46,12 +51,12 @@ const StrategyItem = ({formula}) => {
                 </div>
                 <div className={"strategy__info__item"}>
                     <div>Last Triggered</div>
-                    <div>{formula.last_triggered}</div>
+                    <div>{formula.last_triggered || "Never"}</div>
                 </div>
             </div>
             <FormulaInput formula={formula.formula}/>
             <div className={"button__show_more"}></div>
-        </div>
+        </>
     );
 };
 

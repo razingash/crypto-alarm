@@ -54,26 +54,51 @@ func IsValidVariable(name string) (bool, error) {
 	return isAvailable, nil
 }
 
-func GetUserFormulas(uuid string) ([]UserFormula, error) {
-	owner_id, err := GetIdbyUuid(uuid)
-
+func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]UserFormula, bool, error) {
+	ownerID, err := GetIdbyUuid(uuid)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-
-	rows, err := DB.Query(context.Background(), `
-	    SELECT id, formula, COALESCE(name, ''), COALESCE(description, ''), is_notified, is_active,
-			is_shutted_off, is_history_on, COALESCE(TO_CHAR(last_triggered, 'YYYY-MM-DD HH24:MI:SS'), '') AS last_triggered
-	    FROM trigger_formula
-	    WHERE owner_id=$1;
-	`, owner_id)
-
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 
 	var formulas []UserFormula
+	var hasNext bool
+
+	if formulaID != "" {
+		row := DB.QueryRow(context.Background(), `
+            SELECT id, formula, COALESCE(name, ''), COALESCE(description, ''), is_notified, is_active,
+                is_shutted_off, is_history_on, COALESCE(TO_CHAR(last_triggered, 'YYYY-MM-DD HH24:MI:SS'), '') AS last_triggered
+            FROM trigger_formula
+            WHERE id = $1 AND owner_id = $2;
+        `, formulaID, ownerID)
+
+		var formula UserFormula
+		err := row.Scan(
+			&formula.Id, &formula.Formula, &formula.Name, &formula.Description, &formula.IsNotified,
+			&formula.IsActive, &formula.IsShuttedOff, &formula.IsHistoryOn, &formula.LastTriggered,
+		)
+		if err != nil {
+			return nil, false, err
+		}
+
+		formulas = append(formulas, formula)
+		return formulas, false, nil
+	}
+
+	offset := (page - 1) * limit
+
+	rows, err := DB.Query(context.Background(), `
+        SELECT id, formula, COALESCE(name, ''), COALESCE(description, ''), is_notified, is_active,
+            is_shutted_off, is_history_on, COALESCE(TO_CHAR(last_triggered, 'YYYY-MM-DD HH24:MI:SS'), '') AS last_triggered
+        FROM trigger_formula
+        WHERE owner_id = $1
+        ORDER BY id DESC
+        LIMIT $2 OFFSET $3;
+    `, ownerID, limit+1, offset)
+
+	if err != nil {
+		return nil, false, err
+	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var formula UserFormula
@@ -82,16 +107,21 @@ func GetUserFormulas(uuid string) ([]UserFormula, error) {
 			&formula.IsActive, &formula.IsShuttedOff, &formula.IsHistoryOn, &formula.LastTriggered,
 		)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		formulas = append(formulas, formula)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return formulas, nil
+	if len(formulas) > limit {
+		hasNext = true
+		formulas = formulas[:limit]
+	}
+
+	return formulas, hasNext, nil
 }
 
 func SaveFormula(formula string, uuid string) error {

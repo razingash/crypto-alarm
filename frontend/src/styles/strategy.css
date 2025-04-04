@@ -28,9 +28,10 @@
 
 .strategies__list {
     display: flex;
-    flex-direction: column;
     align-items: center;
     gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 
@@ -51,12 +52,19 @@
 }
 
 .strategy__weight {
-    color: #ff8800;
+    color: var(--blocked-element);
     margin-right: 30px;
 }
 
 .strategy__name {
-
+    text-decoration: none;
+    color: #fff;
+}
+.strategy__name:hover {
+    color: var(--clickable-element);
+}
+.strategy__name:focus {
+    color: var(--blocked-element);
 }
 
 .strategy__description {

@@ -26,7 +26,7 @@ const FormulaEditor = () => {
         await TriggersService.getKeyboard(formula)
     }, 0, 1000)
 
-    const sendNewFormula = async () => { // улучшить потом
+    const sendNewFormula = async () => {
         const validatedFormula = formula.filter(item => item !== "\\textunderscore");
         await fetchNewFormula(validatedFormula);
     }
