@@ -96,6 +96,10 @@ body {
     margin-bottom: 10px;
 }
 
+.cell__error {
+    color: #ff3a75;
+}
+
 /*loading effect*/
 .loading__spinner {
     animation: rotate 2s linear infinite;

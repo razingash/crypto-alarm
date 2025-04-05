@@ -100,10 +100,6 @@
     white-space: nowrap;
 }
 
-.cell__error {
-    color: #ff3a75;
-}
-
 .button__submit:active {
     color: var(--active-element);
     background: var(--active-element-background);

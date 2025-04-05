@@ -1,9 +1,6 @@
 import React, {useState} from 'react';
 import Keyboard from "./Keyboard";
 import FormulaInput from "./FormulaInput";
-import {useFetching} from "../../hooks/useFetching";
-import TriggersService from "../../API/TriggersService";
-
 /*
 - добавить пагинацию для динамической клавиатуры
 
@@ -13,22 +10,8 @@ import TriggersService from "../../API/TriggersService";
 Баги:
 несовсем корректный рендер продвинутых выражений по типу abs
 */
-const FormulaEditor = () => {
-    const [formula, setFormula] = useState([
-        "(", "2", "3", "+", "2", "*", "VAR3", ")", "/",
-        "(", "1", "7", "+", "abs", "(", "VAR1", ")", ")",
-        "≤", "2", "0", "\\textunderscore"
-    ]); // изменить после того как исправлю интерпретацию в formulaToLatex
+const FormulaEditor = ({formula, setFormula}) => {
     const [cursorIndex, setCursorIndex] = useState(formula.length);
-
-    const [fetchNewFormula, isNewFormulaLoading, newFormulaError] = useFetching(async (formula) => {
-        await TriggersService.getKeyboard(formula)
-    }, 0, 1000)
-
-    const sendNewFormula = async () => {
-        const validatedFormula = formula.filter(item => item !== "\\textunderscore");
-        await fetchNewFormula(validatedFormula);
-    }
 
     const moveCursor = (direction) => {
         const currentIndex = formula.indexOf("\\textunderscore");
@@ -84,10 +67,10 @@ const FormulaEditor = () => {
     };
 
     return (
-        <div className="section__main">
+        <>
             <FormulaInput formula={formula} cursorPos={cursorIndex} type={2}/>
             <Keyboard onKeyPress={handleKeyPress}/>
-        </div>
+        </>
     );
 };
 

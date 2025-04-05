@@ -79,15 +79,18 @@ func Keyboard(c fiber.Ctx) error {
 
 func FormulaPost(c fiber.Ctx) error {
 	expression := c.Locals("formula").(string)
+	name := c.Locals("name").(string)
 	userUUID := c.Locals("userUUID").(string)
 
-	err := db.SaveFormula(expression, userUUID)
+	id, err := db.SaveFormula(expression, name, userUUID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "error during saving formula",
 		})
 	}
-	return c.SendStatus(fiber.StatusOK)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"id": id,
+	})
 }
 
 func FormulaPatch(c fiber.Ctx) error {

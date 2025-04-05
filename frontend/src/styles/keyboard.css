@@ -3,6 +3,7 @@
 
 .formula__input {
     max-width: 100%;
+    width: 100%;
     overflow: auto;
     color: #fff;
 }
@@ -33,6 +34,7 @@
     right: 0;
     bottom: 0;
     padding: 20px 0 10px 0;
+    max-height: 240px;
 }
 
 .keyboard__labels {

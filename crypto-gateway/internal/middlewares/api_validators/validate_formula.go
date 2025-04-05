@@ -10,6 +10,7 @@ import (
 func ValidateFormulaPost(c fiber.Ctx) error {
 	var body struct {
 		Formula string `json:"formula"`
+		Name    string `json:"name"`
 	}
 
 	if err := json.Unmarshal(c.Body(), &body); err != nil {
@@ -22,6 +23,7 @@ func ValidateFormulaPost(c fiber.Ctx) error {
 	switch errCode {
 	case 0:
 		c.Locals("formula", body.Formula)
+		c.Locals("name", body.Name)
 		return c.Next()
 	case 1:
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

@@ -3,25 +3,24 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 30px;
+    background: var(--container-background);
+    padding: 20px;
+    border-radius: 4px;
+    max-height: calc(100vh - 255px - 90px);
 }
 
-.area__new_formula {
+.new_formula__core {
     display: flex;
-    flex-direction: column;
-    row-gap: 20px;
-    align-items: flex-end;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 20px 50px;
 }
 
-.formula__apply_button {
-    width: fit-content;
-    padding: 7px 14px;
-    border-radius: 7px;
-    cursor: pointer;
-    background: #0d0d0d;
-    color: #ffffff;
-    border: 1px solid #fff;
-    font-family: sans-serif;
-    font-weight: 700;
+.field__new_formula_errors {
+    width: 100%;
+    min-height: 2em;
 }
 
 /* UserStrategies */
@@ -73,6 +72,7 @@
     border-bottom: 1px solid #a4a4a4;
     padding: 0 3px;
     color: #fff;
+    font-size: 1em;
 }
 
 .strategy__description {
@@ -157,6 +157,9 @@
 .strategy__change__cancle:hover {
    box-shadow: 0 0 0 2px rgb(228, 228, 228), 0 2px 4px rgba(228, 228, 228, 0.3), 0 4px 8px rgba(228, 228, 228, 0.3), 0 0 16px rgb(228, 228, 228);
 }
+.strategy__create {
+    display: flex;
+}
 
 /* zipline */
 .checkbox_zipline {
@@ -211,7 +214,15 @@
 }
 
 @media (max-width: 500px) {
-    .formula__field {
+    .formula__field, .field__new_formula {
         border-radius: initial;
+    }
+    .field__new_formula {
+        padding: 10px 0;
+        border-bottom: 1px solid #cecece;
+        max-height: calc(100vh - 255px - 70px);
+    }
+    .field__new_formula_errors {
+        max-height: initial;
     }
 }

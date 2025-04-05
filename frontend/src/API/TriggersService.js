@@ -10,9 +10,8 @@ export default class TriggersService {
         const response = await apiClient.get('triggers/formula', {params: params})
         return response.data
     }
-    static async createFormula(formula) {
-        const response = await apiClient.post('/triggers/formula', {formula})
-        return response.data
+    static async createFormula(formula, name) {
+        return await apiClient.post('/triggers/formula', {formula, name});
     }
     static async updateUserFormula(data) { // data - словарь с formula_id и полями которые нужно изменить
         return await apiClient.patch('/triggers/formula', data)

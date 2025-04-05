@@ -124,23 +124,24 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
 	return formulas, hasNext, nil
 }
 
-func SaveFormula(formula string, uuid string) error {
+func SaveFormula(formula string, name string, uuid string) (int, error) {
 	owner_id, err := GetIdbyUuid(uuid)
+	if err != nil {
+		return 0, err
+	}
+
+	var formulaId int
+	err = DB.QueryRow(context.Background(), `
+        INSERT INTO trigger_formula (formula, name, owner_id, is_notified, is_active, is_shutted_off, is_history_on) 
+        VALUES ($1, $2, $3, false, false, false, false)
+        RETURNING id
+    `, formula, name, owner_id).Scan(&formulaId)
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	_, err2 := DB.Exec(context.Background(), `
-		INSERT INTO trigger_formula (formula, owner_id, is_notified, is_active, is_shutted_off, is_history_on) 
-		VALUES ($1, $2, false, false, false, false)`,
-		formula, owner_id)
-
-	if err2 != nil {
-		return err2
-	}
-
-	return nil
+	return formulaId, nil
 }
 
 // позже переделать обработку ошибок
