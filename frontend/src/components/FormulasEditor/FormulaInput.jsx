@@ -63,6 +63,10 @@ const FormulaInput = ({ formula, cursorPos }) => {
             } else if (token === "^") {
                 latex.push("^{");
                 powerStack.push(true);
+            } else if (token === "^2") {
+                latex.push("^{");
+                latex.push("2");
+                powerStack.push(true);
             } else if (token === ")" && absStack.length > 0) {
                 latex.push("\\right|");
                 absStack.pop();
