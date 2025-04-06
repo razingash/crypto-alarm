@@ -18,12 +18,12 @@ const FormulaEditor = ({formula, setFormula}) => {
 
         if (direction === 1) {
             const nextToken = formula[currentIndex + 1];
-            if (["abs", "sqrt"].includes(nextToken)) {
+            if (["abs", "sqrt", "^"].includes(nextToken)) {
                 moveBy = 2;
             }
         } else if (direction === -1) {
             const tokenTwoLeft = formula[currentIndex - 2];
-            if (["abs", "sqrt"].includes(tokenTwoLeft)) {
+            if (["abs", "sqrt", "^"].includes(tokenTwoLeft)) {
                 moveBy = 2;
             }
         }
@@ -45,9 +45,10 @@ const FormulaEditor = ({formula, setFormula}) => {
         let newFormula = [...formula];
         const cursorIndex = newFormula.indexOf("\\textunderscore");
 
-        if (token === "sqrt" || token === "abs") {
-            newFormula.splice(cursorIndex, 0, token, "(", ")");
-            setCursorIndex(cursorIndex + 1);
+        if (token === "sqrt" || token === "abs" || token === '^') {
+            newFormula.splice(cursorIndex, 1);
+            newFormula.splice(cursorIndex, 0, token, "(", "\\textunderscore", ")");
+            setCursorIndex(cursorIndex + 2);
         } else {
             newFormula.splice(cursorIndex, 0, token);
         }
@@ -62,7 +63,7 @@ const FormulaEditor = ({formula, setFormula}) => {
         if (cursorIndex === -1) return;
 
         const tokenBefore = newFormula[cursorIndex - 1];
-        const isWrapper = (token) => token === "abs" || token === "sqrt";
+        const isWrapper = (token) => token === "abs" || token === "sqrt" || token === '^';
 
         if (tokenBefore === ")") {
             let depth = 0;
@@ -95,11 +96,11 @@ const FormulaEditor = ({formula, setFormula}) => {
 
                         if (isEmpty) { // если выражение пустое | НЕ МЕНЯТЬ
                             newFormula.splice(cursorIndex, 1);
-                            newFormula.splice(deleteFrom, i - deleteFrom + 1);
+                            newFormula.splice(deleteFrom, i - deleteFrom);
                             newFormula.splice(deleteFrom, 0, "\\textunderscore");
                         } else { // если выражение не пустое, переместить курсор левее | НЕ МЕНЯТЬ
                             newFormula.splice(cursorIndex, 1);
-                            const isWrapperBeforeParen = ["abs", "sqrt"].includes(newFormula[cursorIndex - 2]);
+                            const isWrapperBeforeParen = ["abs", "sqrt", "^"].includes(newFormula[cursorIndex - 2]);
                             const moveLeftBy = isWrapperBeforeParen ? 2 : 1;
                             newFormula.splice(cursorIndex - moveLeftBy, 0, "\\textunderscore");
                         }

@@ -8,6 +8,7 @@ import {useNavigate} from "react-router-dom";
 const NewStrategy = () => {
     const navigate = useNavigate();
     const [formula, setFormula] = useState([
+        //"x", "^", "{", "1", "0", "}",
         //"(", "2", "3", "+", "2", "*", "VAR3", ")", "/",
         //"(", "1", "7", "+", "abs", "(", "VAR1", ")", ")",
         //"≤", "2", "0", "\\textunderscore"
@@ -16,7 +17,7 @@ const NewStrategy = () => {
     const [formulaName, setFormulaName] = useState('');
     const [localError, setLocalError] = useState(null);
 
-    const [fetchNewFormula, isNewFormulaLoading, newFormulaError] = useFetching(async (formula, name) => {
+    const [fetchNewFormula, , newFormulaError] = useFetching(async (formula, name) => {
         return await TriggersService.createFormula(formula, name)
     }, 0, 1000)
 

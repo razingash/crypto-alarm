@@ -42,6 +42,7 @@ const FormulaInput = ({ formula, cursorPos }) => {
         let latex = [];
         let absStack = [];
         let sqrtStack = [];
+        let powerStack = [];
         let isInFraction = false; // Флаг, указывающий, что мы внутри дроби
         let numerator = []; // Буфер для числителя
         let denominator = []; // Буфер для знаменателя
@@ -59,13 +60,18 @@ const FormulaInput = ({ formula, cursorPos }) => {
             } else if (token === "sqrt") {
                 latex.push("\\sqrt{");
                 sqrtStack.push(true);
+            } else if (token === "^") {
+                latex.push("^{");
+                powerStack.push(true);
             } else if (token === ")" && absStack.length > 0) {
-                console.log('1')
                 latex.push("\\right|");
                 absStack.pop();
             } else if (token === ")" && sqrtStack.length > 0) {
                 latex.push("}");
                 sqrtStack.pop();
+            } else if (token === ")" && powerStack.length > 0) {
+                latex.push("}");
+                powerStack.pop();
             } else if (token === "/") {
                 isInFraction = true;
                 isDenominator = false;
@@ -85,24 +91,27 @@ const FormulaInput = ({ formula, cursorPos }) => {
                 latex.push("\\ge");
             } else if (token === "<=") {
                 latex.push("\\le");
-            } else if (token === "("){ // нужно чтобы в функциях с скобками по типу корня и модуля не было лишней скобки '('
+            } else if (token === "(") { // нужно чтобы в функциях с скобками по типу корня и модуля не было лишней скобки '('
                 console.log('splint')
             } else {
                 latex.push(token);
             }
         }
 
-        // закрытие модуля если он не закрыт
+        // закрытие элемента если он не закрыт
         while (absStack.length > 0) {
-            console.log('2')
             latex.push("\\right|");
             absStack.pop();
         }
-
         while (sqrtStack.length > 0) {
             latex.push("}");
             sqrtStack.pop();
         }
+        while (powerStack.length > 0) {
+            latex.push("}");
+            powerStack.pop();
+        }
+
         console.log(latex)
         return latex;
     };
