@@ -60,6 +60,7 @@ const FormulaInput = ({ formula, cursorPos }) => {
                 latex.push("\\sqrt{");
                 sqrtStack.push(true);
             } else if (token === ")" && absStack.length > 0) {
+                console.log('1')
                 latex.push("\\right|");
                 absStack.pop();
             } else if (token === ")" && sqrtStack.length > 0) {
@@ -84,6 +85,8 @@ const FormulaInput = ({ formula, cursorPos }) => {
                 latex.push("\\ge");
             } else if (token === "<=") {
                 latex.push("\\le");
+            } else if (token === "("){ // нужно чтобы в функциях с скобками по типу корня и модуля не было лишней скобки '('
+                console.log('splint')
             } else {
                 latex.push(token);
             }
@@ -91,6 +94,7 @@ const FormulaInput = ({ formula, cursorPos }) => {
 
         // закрытие модуля если он не закрыт
         while (absStack.length > 0) {
+            console.log('2')
             latex.push("\\right|");
             absStack.pop();
         }
@@ -99,7 +103,7 @@ const FormulaInput = ({ formula, cursorPos }) => {
             latex.push("}");
             sqrtStack.pop();
         }
-
+        console.log(latex)
         return latex;
     };
 

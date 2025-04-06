@@ -1,6 +1,6 @@
 import "../styles/strategy.css"
 import FormulaEditor from "../components/FormulasEditor/FormulaEditor";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {useFetching} from "../hooks/useFetching";
 import TriggersService from "../API/TriggersService";
 import {useNavigate} from "react-router-dom";
@@ -8,9 +8,10 @@ import {useNavigate} from "react-router-dom";
 const NewStrategy = () => {
     const navigate = useNavigate();
     const [formula, setFormula] = useState([
-        "(", "2", "3", "+", "2", "*", "VAR3", ")", "/",
-        "(", "1", "7", "+", "abs", "(", "VAR1", ")", ")",
-        "≤", "2", "0", "\\textunderscore"
+        //"(", "2", "3", "+", "2", "*", "VAR3", ")", "/",
+        //"(", "1", "7", "+", "abs", "(", "VAR1", ")", ")",
+        //"≤", "2", "0", "\\textunderscore"
+        "\\textunderscore"
     ]); // изменить после того как исправлю интерпретацию в formulaToLatex
     const [formulaName, setFormulaName] = useState('');
     const [localError, setLocalError] = useState(null);
@@ -19,7 +20,12 @@ const NewStrategy = () => {
         return await TriggersService.createFormula(formula, name)
     }, 0, 1000)
 
+    useEffect(() => {
+        console.log(formula)
+    }, [formula])
+
     function cleanKatexExpression(expr) {
+        /*сейчас поддерживает переменные*/
         return expr
             .replace(/\\textcolor{[^}]+}{([^}]+)}/g, '$1')
             .replace(/\\text{([^}]+)}/g, '$1')
