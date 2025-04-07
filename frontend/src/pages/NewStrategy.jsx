@@ -7,13 +7,7 @@ import {useNavigate} from "react-router-dom";
 
 const NewStrategy = () => {
     const navigate = useNavigate();
-    const [formula, setFormula] = useState([
-        //"x", "^", "{", "1", "0", "}",
-        //"(", "2", "3", "+", "2", "*", "VAR3", ")", "/",
-        //"(", "1", "7", "+", "abs", "(", "VAR1", ")", ")",
-        //"≤", "2", "0", "\\textunderscore"
-        "\\textunderscore"
-    ]); // изменить после того как исправлю интерпретацию в formulaToLatex
+    const [formula, setFormula] = useState(["\\textunderscore"]);
     const [formulaName, setFormulaName] = useState('');
     const [localError, setLocalError] = useState(null);
 

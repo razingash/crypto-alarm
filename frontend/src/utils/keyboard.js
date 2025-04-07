@@ -29,7 +29,8 @@ export const defaultKeyboard = [
             [
                 "0", ".", "=", "+",
                 { class: "sep-1", label: "" },
-                "(", ")",
+                { label: "(", token: "brackets-l"},
+                { label: ")", token: "brackets-r"},
                 { class: "swap-left", label: "←", token: "left" },
                 { class: "swap-right", label: "→", token: "right" },
             ],

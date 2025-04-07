@@ -40,18 +40,10 @@ const FormulaInput = ({ formula, cursorPos }) => {
 
     const formulaToLatex = (tokens) => {
         let latex = [];
-        let absStack = [];
-        let sqrtStack = [];
-        let powerStack = [];
-        let isInFraction = false; // Флаг, указывающий, что мы внутри дроби
-        let numerator = []; // Буфер для числителя
-        let denominator = []; // Буфер для знаменателя
-        let isDenominator = false; // Флаг для переключения в знаменатель
         let wrapperStack = [];
 
         for (let i = 0; i < tokens.length; i++) {
             const token = tokens[i];
-
             if (/^[a-zA-Z_]+_[a-zA-Z_]+$/.test(token)) {
                 const [firstPart, secondPart] = token.split("_");
                 latex.push(`\\text{\\textcolor{orange}{${firstPart}}\\_${secondPart}}`);
@@ -77,17 +69,10 @@ const FormulaInput = ({ formula, cursorPos }) => {
                 } else {
                     latex.push(")"); // обычная скобка
                 }
-            } else if (token === "/") {
-                isInFraction = true;
-                isDenominator = false;
-                numerator = [...latex]; // сохранение текущего LateX как числителя
-                latex = []; // очищение основного массива для знаменателя
-            } else if (token === "(" && isInFraction) {
-                isDenominator = true; // начало знаменателя
-            } else if (token === ")" && isInFraction) {
-                isInFraction = false; // закрытие дроби
-                denominator = [...latex]; // сохранение знаменателя
-                latex = [`\\frac{${numerator.join(" ")}}{${denominator.join(" ")}}`]; // создание дроби
+            } else if (token === "frac") { // дробь - умная
+                console.warn("TODO")
+            } else if (token === "matrix") { // дробь
+                console.warn("TODO 2")
             } else if (token === "÷") {
                 latex.push("\\div");
             } else if (token === "*") {
@@ -97,7 +82,14 @@ const FormulaInput = ({ formula, cursorPos }) => {
             } else if (token === "<=") {
                 latex.push("\\le");
             } else if (token === "(") {
-                console.log('splint')
+                const expressions_formula = ['^', 'sqrt', 'abs'];
+
+                const isWrapperCall = expressions_formula.includes(tokens[i-1])
+
+                if (!isWrapperCall) {
+                    wrapperStack.push("(");
+                    latex.push(token);
+                }
             } else {
                 latex.push(token);
             }
@@ -110,6 +102,8 @@ const FormulaInput = ({ formula, cursorPos }) => {
                 latex.push("\\right|");
             } else if (type === "sqrt" || type === "^") {
                 latex.push("}");
+            } else if (type === "(") {
+                latex.push(")");
             }
         }
 

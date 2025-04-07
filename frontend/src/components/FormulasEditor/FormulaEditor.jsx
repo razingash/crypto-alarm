@@ -53,6 +53,10 @@ const FormulaEditor = ({formula, setFormula}) => {
             newFormula.splice(cursorIndex, 1);
             newFormula.splice(cursorIndex, 0, "^", "(",  "2", "\\textunderscore", ")");
             setCursorIndex(cursorIndex + 2);
+        } else if (token === "brackets-l" || token === "brackets-r") {
+            newFormula.splice(cursorIndex, 1);
+            newFormula.splice(cursorIndex, 0, "(", "\\textunderscore", ")");
+            setCursorIndex(cursorIndex + 1);
         } else {
             newFormula.splice(cursorIndex, 0, token);
         }
@@ -72,8 +76,9 @@ const FormulaEditor = ({formula, setFormula}) => {
         if (tokenBefore === ")") {
             let depth = 0;
             for (let i = cursorIndex - 2; i >= 0; i--) {
-                if (newFormula[i] === ")") depth++;
-                else if (newFormula[i] === "(") {
+                if (newFormula[i] === ")") {
+                    depth++;
+                } else if (newFormula[i] === "(") {
                     if (depth === 0) {
                         const isEmpty = i === cursorIndex - 2;
                         const deleteFrom = isWrapper(newFormula[i - 1]) ? i - 1 : i;

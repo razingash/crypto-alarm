@@ -376,3 +376,9 @@
         height: 9px;
     }
 }
+
+@media (max-width: 300px) {
+    .keyboard__labels, .basic_keyboard__list, .dynamic_keyboard__list {
+        padding: 0 12px;
+    }
+}
