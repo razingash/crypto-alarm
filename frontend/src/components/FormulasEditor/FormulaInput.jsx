@@ -47,6 +47,7 @@ const FormulaInput = ({ formula, cursorPos }) => {
         let numerator = []; // Буфер для числителя
         let denominator = []; // Буфер для знаменателя
         let isDenominator = false; // Флаг для переключения в знаменатель
+        let wrapperStack = [];
 
         for (let i = 0; i < tokens.length; i++) {
             const token = tokens[i];
@@ -56,26 +57,26 @@ const FormulaInput = ({ formula, cursorPos }) => {
                 latex.push(`\\text{\\textcolor{orange}{${firstPart}}\\_${secondPart}}`);
             } else if (token === "abs") {
                 latex.push("\\left|");
-                absStack.push(true);
+                wrapperStack.push("abs");
             } else if (token === "sqrt") {
                 latex.push("\\sqrt{");
-                sqrtStack.push(true);
+                wrapperStack.push("sqrt");
             } else if (token === "^") {
                 latex.push("^{");
-                powerStack.push(true);
+                wrapperStack.push("^");
             } else if (token === "^2") {
                 latex.push("^{");
                 latex.push("2");
-                powerStack.push(true);
-            } else if (token === ")" && absStack.length > 0) {
-                latex.push("\\right|");
-                absStack.pop();
-            } else if (token === ")" && sqrtStack.length > 0) {
-                latex.push("}");
-                sqrtStack.pop();
-            } else if (token === ")" && powerStack.length > 0) {
-                latex.push("}");
-                powerStack.pop();
+                wrapperStack.push("^");
+            } else if (token === ")") {
+                const lastWrapper = wrapperStack.pop();
+                if (lastWrapper === "abs") {
+                    latex.push("\\right|");
+                } else if (lastWrapper === "sqrt" || lastWrapper === "^") {
+                    latex.push("}");
+                } else {
+                    latex.push(")"); // обычная скобка
+                }
             } else if (token === "/") {
                 isInFraction = true;
                 isDenominator = false;
@@ -95,7 +96,7 @@ const FormulaInput = ({ formula, cursorPos }) => {
                 latex.push("\\ge");
             } else if (token === "<=") {
                 latex.push("\\le");
-            } else if (token === "(") { // нужно чтобы в функциях с скобками по типу корня и модуля не было лишней скобки '('
+            } else if (token === "(") {
                 console.log('splint')
             } else {
                 latex.push(token);
@@ -103,17 +104,13 @@ const FormulaInput = ({ formula, cursorPos }) => {
         }
 
         // закрытие элемента если он не закрыт
-        while (absStack.length > 0) {
-            latex.push("\\right|");
-            absStack.pop();
-        }
-        while (sqrtStack.length > 0) {
-            latex.push("}");
-            sqrtStack.pop();
-        }
-        while (powerStack.length > 0) {
-            latex.push("}");
-            powerStack.pop();
+        while (wrapperStack.length > 0) {
+            const type = wrapperStack.pop();
+            if (type === "abs") {
+                latex.push("\\right|");
+            } else if (type === "sqrt" || type === "^") {
+                latex.push("}");
+            }
         }
 
         console.log(latex)

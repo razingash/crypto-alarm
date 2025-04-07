@@ -67,7 +67,7 @@ const FormulaEditor = ({formula, setFormula}) => {
         if (cursorIndex === -1) return;
 
         const tokenBefore = newFormula[cursorIndex - 1];
-        const isWrapper = (token) => token === "abs" || token === "sqrt" || token === '^' || token === '^2';
+        const isWrapper = (token) => ["abs", "sqrt", "^", "^2"].includes(token);
 
         if (tokenBefore === ")") {
             let depth = 0;
