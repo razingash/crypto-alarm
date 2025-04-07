@@ -41,18 +41,53 @@ const FormulaEditor = ({formula, setFormula}) => {
     const moveCursorLeft = () => moveCursor(-1);
     const moveCursorRight = () => moveCursor(1);
 
+    const isInsidePower = (formula, cursorIndex) => { // костыль падла
+        if (formula[cursorIndex - 1] !== ")") return false;
+
+        let depth = 0;
+        for (let i = cursorIndex - 1; i >= 0; i--) {
+            const token = formula[i];
+
+            if (token === ")") {
+                depth++;
+            } else if (token === "(") {
+                depth--;
+                if (depth === 0) {
+                    return formula[i - 1] === "^";
+                }
+            }
+        }
+
+        return false;
+    };
+
     const insertToken = (token) => {
         let newFormula = [...formula];
         const cursorIndex = newFormula.indexOf("\\textunderscore");
 
-        if (token === "sqrt" || token === "abs" || token === '^') {
+        if (token === "sqrt" || token === "abs") {
             newFormula.splice(cursorIndex, 1);
             newFormula.splice(cursorIndex, 0, token, "(", "\\textunderscore", ")");
             setCursorIndex(cursorIndex + 2);
+        } else if (token === '^') {
+            if (isInsidePower(newFormula, cursorIndex)) {
+                newFormula.splice(cursorIndex, 1);
+                newFormula.splice(cursorIndex - 1, 0, "\\textunderscore");
+                setCursorIndex(cursorIndex - 1);
+            } else {
+                newFormula.splice(cursorIndex, 1);
+                newFormula.splice(cursorIndex, 0, "^", "(", "\\textunderscore", ")");
+                setCursorIndex(cursorIndex + 2);
+            }
         } else if (token === "^2") {
-            newFormula.splice(cursorIndex, 1);
-            newFormula.splice(cursorIndex, 0, "^", "(",  "2", "\\textunderscore", ")");
-            setCursorIndex(cursorIndex + 2);
+            if (isInsidePower(newFormula, cursorIndex)) {
+                newFormula.splice(cursorIndex - 1, 0, "2");
+                setCursorIndex(cursorIndex + 1);
+            } else {
+                newFormula.splice(cursorIndex, 1);
+                newFormula.splice(cursorIndex, 0, "^", "(", "2", "\\textunderscore", ")");
+                setCursorIndex(cursorIndex + 2);
+            }
         } else if (token === "brackets-l" || token === "brackets-r") {
             newFormula.splice(cursorIndex, 1);
             newFormula.splice(cursorIndex, 0, "(", "\\textunderscore", ")");

@@ -16,7 +16,7 @@ const NewStrategy = () => {
     }, 0, 1000)
 
     useEffect(() => {
-        console.log(formula)
+        console.log('formula', formula)
     }, [formula])
 
     function cleanKatexExpression(expr) {

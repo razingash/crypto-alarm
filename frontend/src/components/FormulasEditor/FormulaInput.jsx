@@ -39,6 +39,7 @@ const FormulaInput = ({ formula, cursorPos }) => {
     };
 
     const formulaToLatex = (tokens) => {
+        // из-за того как работает insertToken условие ^2 заменяется на ^
         let latex = [];
         let wrapperStack = [];
 
@@ -54,12 +55,20 @@ const FormulaInput = ({ formula, cursorPos }) => {
                 latex.push("\\sqrt{");
                 wrapperStack.push("sqrt");
             } else if (token === "^") {
-                latex.push("^{");
-                wrapperStack.push("^");
-            } else if (token === "^2") {
-                latex.push("^{");
-                latex.push("2");
-                wrapperStack.push("^");
+                if (tokens[i-1] === ')') {
+                    for (let j = i - 2; j >= 0; j--) {
+                        if (tokens[j] === "(") {
+                            if (tokens[j-1] === '^') {
+                                console.log('BIG WIN')
+                                latex.splice(latex.length - 1, 0, tokens[i + 2]);
+                            }
+                            break;
+                        }
+                    }
+                } else {
+                    latex.push("^{");
+                    wrapperStack.push("^");
+                }
             } else if (token === ")") {
                 const lastWrapper = wrapperStack.pop();
                 if (lastWrapper === "abs") {
@@ -107,7 +116,7 @@ const FormulaInput = ({ formula, cursorPos }) => {
             }
         }
 
-        console.log(latex)
+        console.log('latex', latex)
         return latex;
     };
 
