@@ -54,8 +54,9 @@ async def initialize_crypto_models(dataset: dict) -> None:
             await session.flush()
 
             for parameter in data.keys():
-                crypto_param = CryptoParams(parameter=parameter, crypto_api_id=crypto_api.id)
-                session.add(crypto_param)
+                if parameter != 'symbol':
+                    crypto_param = CryptoParams(parameter=parameter, crypto_api_id=crypto_api.id)
+                    session.add(crypto_param)
 
         await session.commit()
 

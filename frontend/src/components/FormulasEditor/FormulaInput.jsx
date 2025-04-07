@@ -59,8 +59,10 @@ const FormulaInput = ({ formula, cursorPos }) => {
                     for (let j = i - 2; j >= 0; j--) {
                         if (tokens[j] === "(") {
                             if (tokens[j-1] === '^') {
-                                console.log('BIG WIN')
                                 latex.splice(latex.length - 1, 0, tokens[i + 2]);
+                            } else {
+                                latex.push("^{");
+                                wrapperStack.push("^");
                             }
                             break;
                         }
