@@ -15,6 +15,7 @@ class DependencyGraph:
     Горячее хранилище активных выражений; хранит выражения в виде графа зависимостей
     1) улучшить добавление(можно позже, чтобы учитывало числа, -> тригонометрию -> скобки -> циклические выражения(самое трудное) ->)
     2) оптимизировать добавление (можно позже)
+    3) добавить реакцию на изменения в апи
     """
 
     def __init__(self):
@@ -26,7 +27,7 @@ class DependencyGraph:
         self.formula_ids = {}  # Formula: ID | нужно чтобы нормально удалять их
         self.subexpression_weights = defaultdict(int) # {подвыражение -> количество повторений}
 
-    def add_formula(self, formula: str, formula_id: int) -> None: # слишком медленная
+    def add_formula(self, formula: str, formula_id: int): # слишком медленная
         """Добавляет формулу в граф зависимостей"""
         try:
             expr = sympify(formula, evaluate=False)
@@ -53,27 +54,28 @@ class DependencyGraph:
                 filename="Graph.log"
             )
             print('опасная формула')
+            return 'reccursion error'
         except Exception as e:
             print(f"Ошибка в формуле '{formula}': {e}")
+            return f"Ошибка в формуле '{formula}': {e}"
+        return True
 
-    def remove_formula(self, formula_str) -> None:
+    def remove_formula(self, formula_id: int):
         """Удаляет формулу из графа и все связанные подвыражения"""
         try:
-            expr = sympify(formula_str, evaluate=False)
-            formula_id = self.formula_ids.get(str(expr))
-
-            if formula_id is None:
+            if formula_id not in self.formulas:
                 custom_logger.log_with_path(
                     level=2,
-                    msg=f"The formula was not found, most likely due to a bug in the code, or asynchronous approach:  {formula_str}",
+                    msg=f"The formula was not found, most likely due to a bug in the code, or asynchronous approach: {formula_id}",
                     filename="Graph.log"
                 )
-                print(f"Формула '{formula_str}' не найдена.")
-                return
+                print(f"Формула с id '{formula_id}' не найдена.")
+                return False
 
+            expr = self.formulas[formula_id]
             del self.formulas[formula_id]
             del self.compiled[formula_id]
-            del self.formula_ids[str(expr)]
+            self.formula_ids.pop(str(expr), None)
 
             for subexpr, formula_ids in list(self.graph.items()):
                 if formula_id in formula_ids:
@@ -87,9 +89,17 @@ class DependencyGraph:
                     continue
                 del self.subexpression_weights[subexpr]
 
-            print(f"Удалена формула: {formula_str}")
+            print(f"Удалена формула: {expr}")
         except Exception as e:
-            print(f"Ошибка при удалении формулы '{formula_str}': {e}")
+            print(f"Ошибка при удалении формулы '{formula_id}': {e}")
+            custom_logger.log_with_path(
+                level=1,
+                msg=f"Formula with id {formula_id} wasn't removed from graph due to an error: {e}",
+                filename="Graph.log"
+            )
+            return f"Ошибка при удалении формулы '{formula_id}': {e}"
+
+        return True
 
     def remove_variable(self, variable_str: str) -> list:
         """
@@ -117,8 +127,7 @@ class DependencyGraph:
 
             # удаление подвязаных формул
             for formula_id in dependent_formulas:
-                formula = self.formulas[formula_id]
-                self.remove_formula(str(formula))
+                self.remove_formula(formula_id)
 
             del self.values[variable_str]
 

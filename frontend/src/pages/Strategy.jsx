@@ -85,7 +85,7 @@ const Strategy = () => {
             <div className={"formula__field"}>
                 <div className={"strategy__item__header"}>
                     <div className={"strategy__weight"}>Weight: 80</div>
-                    <div className={`strategy__name ${formulaNewData.name !== formula.name && "param__status_unsaved"}`}>
+                    <div className={`strategy__name__blocked ${formulaNewData.name !== formula.name ? "param__status_unsaved": ""}`}>
                         {changeMod ? (
                             <input className={"strategy__name__input"} type="text" maxLength={150} value={formulaNewData.name}
                                 onChange={(e) => setFormulaNewData((prev) => ({...prev, name: e.target.value,}))}

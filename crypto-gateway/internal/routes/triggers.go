@@ -16,4 +16,7 @@ func SetupTriggersRoutes(app *fiber.App) {
 	authGroup.Post("/formula", handlers.FormulaPost, middlewares.IsAuthorized, api_validators.ValidateFormulaPost)
 	authGroup.Patch("/formula", handlers.FormulaPatch, middlewares.IsAuthorized, api_validators.ValidateFormulaPatch)
 	authGroup.Delete("/formula", handlers.FormulaDelete, middlewares.IsAuthorized)
+
+	// only from python service
+	authGroup.Post("/push-notifications", handlers.Keyboard, api_validators.ValidatePushNotifications)
 }

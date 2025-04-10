@@ -20,14 +20,14 @@ const renderLatex = (latexArr) => {
     return latexString;
 };
 
-const FormulaInput = ({ formula, cursorPos }) => {
+const FormulaInput = ({ formula }) => {
     const formulaInputRef = useRef(null);
 
     const formulaToLatexArray = (formula) => {
         if (typeof formula === "object"){ // если список, значит редактор, если нет то строка(строка только для отображения)
             return formulaToLatex(formula)
         }
-        const regex = /([a-zA-Z_][a-zA-Z0-9_]*)|(\d+\.\d+|\d+)|([+\-*/^()=<>!]+)|\\textunderscore/g;
+        const regex = /\b([a-zA-Z_][a-zA-Z0-9_]*)\b|(\d+\.\d+|\d+)|(<=|>=|==|!=)|([+\-*/^()=<>])/g;
         let tokens = [];
 
         let match;

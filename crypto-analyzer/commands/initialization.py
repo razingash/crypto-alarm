@@ -86,4 +86,3 @@ async def get_valid_currencies(binance_api: BinanceAPI) -> None:
             crypto_currency = CryptoCurrencies(currency=currency)
             session.add(crypto_currency)
         await session.commit()
-

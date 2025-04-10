@@ -16,7 +16,7 @@ class CustomLogger(logging.Logger):
         if path:
             log_directory = os.path.relpath(os.path.join(BASE_DIR, path), BASE_DIR)
         else:
-            log_directory = self.log_file_path
+            log_directory = self.LOG_DIR
 
         log_file = os.path.join(log_directory, filename) if filename else self.log_file_path
 

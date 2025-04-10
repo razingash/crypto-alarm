@@ -9,6 +9,7 @@ from apps.binance.external_router import BinanceAPI
 from core.controller import controller
 from core.middlewares import WeightTrackingMiddleware
 from core.orchestrator import BinanceAPIOrchestrator
+from core.analysis.manager import formula_manager
 
 
 @asynccontextmanager

@@ -19,8 +19,7 @@ const NewStrategy = () => {
         console.log('formula', formula)
     }, [formula])
 
-    function cleanKatexExpression(expr) {
-        /*сейчас поддерживает переменные*/
+    function cleanKatexExpression(expr) { // проверки на правильность тут не будет
         return expr
             .replace(/\\textcolor{[^}]+}{([^}]+)}/g, '$1')
             .replace(/\\text{([^}]+)}/g, '$1')

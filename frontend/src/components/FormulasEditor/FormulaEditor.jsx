@@ -2,8 +2,6 @@ import React, {useState} from 'react';
 import Keyboard from "./Keyboard";
 import FormulaInput from "./FormulaInput";
 /*
-- добавить пагинацию для динамической клавиатуры
-
 - оптимизировать эту фигню - сделать чтобы базовый вариант спавнился тут а динамические кэшировались, чтобы клавиатура не лагала
 - сделать чтобы клава вылазила когда надо будет
 */
@@ -174,7 +172,7 @@ const FormulaEditor = ({formula, setFormula}) => {
 
     return (
         <>
-            <FormulaInput formula={formula} cursorPos={cursorIndex}/>
+            <FormulaInput formula={formula}/>
             <Keyboard onKeyPress={handleKeyPress}/>
         </>
     );

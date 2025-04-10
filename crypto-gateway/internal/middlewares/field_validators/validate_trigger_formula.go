@@ -74,11 +74,11 @@ func tokenize(expression string) ([]Token, int) {
 	}{
 		{NUMBER, `^\d+(\.\d+)?`},                  // Числа
 		{OPERATOR, `^[+\-*/^]`},                   // Операторы
-		{FUNCTION, `^(sqrt|abs)\(`},               // Функции
-		{LPAREN, `^\(`},                           // Левая скобка
-		{RPAREN, `^\)`},                           // Правая скобка
 		{COMPARISON, `^(<=|>=|==|<|>)`},           // Операторы сравнения
 		{VARIABLE, `^([a-zA-Z]+)_([a-zA-Z0-9]+)`}, // Переменные в формате crypto_variable
+		{FUNCTION, `^(sqrt|abs)`},                 // Функции
+		{LPAREN, `^\(`},                           // Левая скобка
+		{RPAREN, `^\)`},                           // Правая скобка
 	}
 
 	for len(expression) > 0 {
@@ -142,7 +142,6 @@ func tokenize(expression string) ([]Token, int) {
 func validateTokens(tokens []Token) int {
 	stack := []Token{}
 	lastTokenType := ""
-
 	comparisonFound := false
 
 	for i, token := range tokens {
@@ -173,12 +172,11 @@ func validateTokens(tokens []Token) int {
 			}
 		case FUNCTION:
 			// Функция требует открывающую скобку сразу после
-			stack = append(stack, token)
+			//stack = append(stack, token)
 		case LPAREN:
 			stack = append(stack, token)
 		case RPAREN:
-			// Проверяем, есть ли соответствующая открывающая скобка
-			if len(stack) == 0 || stack[len(stack)-1].Type != LPAREN {
+			if len(stack) == 0 {
 				return 6
 			}
 			stack = stack[:len(stack)-1]

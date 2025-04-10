@@ -7,6 +7,23 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
+func ValidatePushNotifications(c fiber.Ctx) error {
+	var body struct {
+		IsShuttedOff string `json:"is_shutted_off"`
+		Formulas     []int  `json:"formulas_id"`
+	}
+
+	if err := json.Unmarshal(c.Body(), &body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid JSON",
+		})
+	}
+
+	c.Locals("is_shutted_off", body.IsShuttedOff)
+	c.Locals("formulas", body.Formulas)
+	return c.Next()
+}
+
 func ValidateFormulaPost(c fiber.Ctx) error {
 	var body struct {
 		Formula string `json:"formula"`

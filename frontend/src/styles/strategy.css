@@ -42,6 +42,8 @@
     background: var(--container-background);
     padding: 15px;
     border-radius: 4px;
+    min-height: 242px;
+    max-width: 100%;
 }
 
 .strategy__item__header {
@@ -55,6 +57,9 @@
     margin-right: 30px;
 }
 
+.strategy__name__blocked {
+    color: #fff;
+}
 .strategy__name {
     text-decoration: none;
     color: #fff;
@@ -214,8 +219,11 @@
 }
 
 @media (max-width: 500px) {
-    .formula__field, .field__new_formula {
+    .formula__field, .field__new_formula, .strategy__item {
         border-radius: initial;
+    }
+    .strategy__item {
+        width: 100%;
     }
     .field__new_formula {
         padding: 10px 0;

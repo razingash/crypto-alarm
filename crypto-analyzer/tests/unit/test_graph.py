@@ -27,7 +27,7 @@ def test_remove_formula():
     graph.add_formula("b + c == 100", 2)
     graph.add_formula("a - b + c <= 200", 3)
 
-    graph.remove_formula("b + c == 100")
+    graph.remove_formula(2)
 
     assert "Eq(b + c, 100)" not in graph.formula_ids
     assert 2 not in graph.formulas # 2 это id формулы
