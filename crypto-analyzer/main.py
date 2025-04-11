@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 from apps.binance.external_router import BinanceAPI
+from apps.analytics.router import router as router_analytics
 from core.controller import controller
 from core.middlewares import WeightTrackingMiddleware
 from core.orchestrator import BinanceAPIOrchestrator
@@ -23,6 +24,8 @@ async def lifespan(app: FastAPI):
     orchestrator = BinanceAPIOrchestrator(binance_api)
     await orchestrator.start()
 
+    await formula_manager.load()
+
     yield
     print("END")
 
@@ -31,6 +34,7 @@ app = FastAPI(lifespan=lifespan)
 middleware_binance_api_weight = WeightTrackingMiddleware(app=app)
 binance_api = BinanceAPI(controller=controller, middleware=middleware_binance_api_weight)
 
+app.include_router(router_analytics, prefix="/api/v1/analytics")
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Run FastAPI server")

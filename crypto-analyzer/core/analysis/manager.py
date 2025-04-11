@@ -6,7 +6,6 @@ from colorama import Fore, Style
 from apps.analytics.crud import get_actual_formulas
 from core.analysis.graph import DependencyGraph, dependency_graph
 from core.logger import custom_logger
-from core.utils import run_sync_to_async
 
 
 class FormulaManager: # если будет слишком много функций связи с бд или различных стратегий тогда отделить в отдельного менеджера grpc
@@ -20,7 +19,11 @@ class FormulaManager: # если будет слишком много функц
     def __init__(self, graph: DependencyGraph):
         self.graph = graph
         self.client = httpx.AsyncClient()
-        self.load_formulas_from_db()
+        self._loaded = False
+
+    async def load(self):
+        self._loaded = True
+        await self.load_formulas_from_db()
 
     async def send_triggered_formulas(self, formulas_id: list, is_shutted_off: bool):
         """
@@ -37,9 +40,9 @@ class FormulaManager: # если будет слишком много функц
                 filename="ExternalErrors.log"
             )
 
-    def load_formulas_from_db(self):
+    async def load_formulas_from_db(self):
         """Загружает формулы из БД и строит зависимости. необходимо оптимизировать в графе метод загрузки"""
-        formulas = run_sync_to_async(func=get_actual_formulas)
+        formulas = await get_actual_formulas()
         print(Fore.LIGHTYELLOW_EX + 'Trying to load formulas from a database...' + Style.RESET_ALL)
 
         errors = []
@@ -66,12 +69,10 @@ class FormulaManager: # если будет слишком много функц
     def add_formulas_to_graph(self, formula: str, pk: int):
         return self.graph.add_formula(formula, pk)
 
-    def remove_formulas_from_graph(self, pk: int):
+    async def remove_formulas_from_graph(self, pk: int):
         res = self.graph.remove_formula(pk)
-
         if res is True:
-            run_sync_to_async(func=formula_manager.send_triggered_formulas, formulas_id=[pk], is_shutted_off=False)
-
+            await formula_manager.send_triggered_formulas(formulas_id=[pk], is_shutted_off=False)
         return res
 
     def update_formula_in_graph(self, formula: str, pk: int):

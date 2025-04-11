@@ -58,6 +58,7 @@ class DependencyGraph:
         except Exception as e:
             print(f"Ошибка в формуле '{formula}': {e}")
             return f"Ошибка в формуле '{formula}': {e}"
+        print('success', self.__dict__)
         return True
 
     def remove_formula(self, formula_id: int):
@@ -98,7 +99,7 @@ class DependencyGraph:
                 filename="Graph.log"
             )
             return f"Ошибка при удалении формулы '{formula_id}': {e}"
-
+        print('deleted, ', self.__dict__)
         return True
 
     def remove_variable(self, variable_str: str) -> list:

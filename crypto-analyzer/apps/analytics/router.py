@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from apps.analytics.crud import get_formula_by_id
 from core.analysis.manager import formula_manager
 from db.postgre import postgres_db
@@ -19,21 +18,23 @@ async def add_formula(pk: int, session: AsyncSession = Depends(postgres_db.sessi
     res = formula_manager.add_formulas_to_graph(formula, pk)
     if not res:
         return {"error": res}
+    return status.HTTP_200_OK
 
 
 @router.delete(path='/formula/{pk}/')
 async def remove_formula(pk: int):
     """удаляет формулу из графа"""
-    res = formula_manager.remove_formulas_from_graph(pk)
+    res = await formula_manager.remove_formulas_from_graph(pk)
     if res is not True:
         return {"error": res}
-
+    return status.HTTP_200_OK
 
 @router.put(path='/formula/{pk}/')
 async def update_formula(pk: int, session: AsyncSession = Depends(postgres_db.session_dependency)):
-    """обновляет формулу в графе"""
+    """обновляет(удаляет и заново создает) формулу в графе"""
     formula = await get_formula_by_id(session, pk)
     res = formula_manager.update_formula_in_graph(formula, pk)
 
     if not res:
         return {"error": res}
+    return status.HTTP_200_OK

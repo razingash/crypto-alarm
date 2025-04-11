@@ -1,5 +1,3 @@
-import json
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,10 +9,7 @@ async def get_formula_by_id(session: AsyncSession, pk: int) -> str:
     query = await session.execute(select(TriggerFormula.formula).where(
         TriggerFormula.id == pk,
     ))
-    result = query.fetchall()
-
-    if result:
-        result = json.loads(result[0][0])
+    result = query.scalar()
 
     return result
 
