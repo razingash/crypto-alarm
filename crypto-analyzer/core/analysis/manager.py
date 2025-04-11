@@ -18,7 +18,7 @@ class FormulaManager: # если будет слишком много функц
     """
     def __init__(self, graph: DependencyGraph):
         self.graph = graph
-        self.client = httpx.AsyncClient()
+        self.client = httpx.AsyncClient(timeout=10)
         self._loaded = False
 
     async def load(self):
