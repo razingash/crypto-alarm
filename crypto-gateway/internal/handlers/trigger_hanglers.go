@@ -88,6 +88,7 @@ func FormulaPost(c fiber.Ctx) error {
 			"error": "error during saving formula",
 		})
 	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"id": id,
 	})
@@ -101,6 +102,20 @@ func FormulaPatch(c fiber.Ctx) error {
 
 	switch errCode {
 	case 0:
+		if _, hasFormula := data["formula"]; hasFormula {
+			go updateFormulaInGraph(formulaId)
+		}
+
+		if isActiveRaw, hasIsActive := data["is_active"]; hasIsActive {
+			if isActive, ok := isActiveRaw.(bool); ok {
+				if isActive {
+					id, _ := strconv.Atoi(formulaId)
+					go addFormulaToGraph(id)
+				} else {
+					go deleteFormulaFromGraph(formulaId)
+				}
+			}
+		}
 		return c.SendStatus(fiber.StatusOK)
 	default:
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -143,6 +158,7 @@ func FormulaDelete(c fiber.Ctx) error {
 			"error": "Database error",
 		})
 	default:
+		go deleteFormulaFromGraph(formulaId)
 		return c.SendStatus(fiber.StatusOK)
 	}
 }
