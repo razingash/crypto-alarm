@@ -27,11 +27,10 @@ class BinanceAPI:
                 if response_model:
                     return response_model(**data)
                 return data
-            except HTTPStatusError as e: # обработать
+            except HTTPStatusError as e: # обработать, как правда пока не ясно, по идее просто стоит увеличить задержку
                 print(f"BINANCE ERROR: херовый код ответа - {e.response.status_code} on {url}")
                 raise
             except TimeoutException: # сразу оффать систему
-                print(f"BINANCE ERROR Request to {url} timed out.")
                 custom_logger.log_with_path(
                     level=2,
                     msg=f"TimeoutException: Request to {url}",
@@ -39,7 +38,6 @@ class BinanceAPI:
                 )
                 return True
             except ConnectError: # сразу оффать систему - возникает из-за сбоя сервера
-                print(f"BINANCE ERROR Could not connect to {url}.")
                 custom_logger.log_with_path(
                     level=1,
                     msg=f"ConnectError: Could not connect to {url}.",
@@ -78,7 +76,7 @@ class BinanceAPI:
     # ситуативный апи, думаю лучше всего его не использовать(для такого лучше будет вебсокет, даже в доке так пишут)
     async def get_ticker_current_price(self, symbol=None):
         """цена конкретной валюты"""
-        await self.get(
+        return await self.get(
             endpoint="/v3/ticker/price",
             weight=endpoints.get("/v3/ticker/price")
         )
@@ -86,7 +84,7 @@ class BinanceAPI:
     async def get_price_change_24h(self, symbol=None):
         # если без атрибутов то стоимость будет 80, но данных будет намного больше, проверить как часто обновляются данные
         """изменение процентного значения за 24 часа"""
-        await self.get(
+        return await self.get(
             endpoint="/v3/ticker/24hr",
             weight=endpoints.get("/v3/ticker/24hr")
         )

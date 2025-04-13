@@ -81,11 +81,19 @@ func FormulaPost(c fiber.Ctx) error {
 	expression := c.Locals("formula").(string)
 	name := c.Locals("name").(string)
 	userUUID := c.Locals("userUUID").(string)
+	variables := c.Locals("variables").([]db.CryptoVariable)
 
 	id, err := db.SaveFormula(expression, name, userUUID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "error during saving formula",
+		})
+	}
+
+	err2 := db.SaveCryptoVariables(id, variables)
+	if err2 != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "error during saving formula variables",
 		})
 	}
 

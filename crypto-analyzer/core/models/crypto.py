@@ -5,16 +5,8 @@ from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from core.models.base import Base
 
-__all__ = ["CryptoApi", "CryptoParams", "CryptoCurrencies"]
+__all__ = ["CryptoApi", "CryptoParams", "CryptoCurrencies", "TriggerFormula", "TriggerComponent", "TriggerFormulaComponent"]
 
-"""
-crypto-analizer:
-    1) система актуализации (в FormulaManager)
-        - работает путем периодической проверки в FormulaManager(но скорее всего это можно сделать лучше)
-    2) контроль над ними с помощью хуков
-crypto-gateway:
-    1) получение доступных переменных подвязанных под апи, для заполнения данных о актуальных переменных для клавиатуры
-"""
 
 class CryptoApi(Base):
     """список доступных апи"""
@@ -23,6 +15,7 @@ class CryptoApi(Base):
     last_updated: Mapped[bool] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
     params = relationship("CryptoParams", back_populates="crypto_api", cascade="all, delete-orphan")
+    trigger_components = relationship("TriggerComponent", back_populates="api", cascade="all, delete-orphan")
 
     __tablename__ = "crypto_api"
 
@@ -38,6 +31,7 @@ class CryptoParams(Base):
 
     crypto_api_id: Mapped[int] = mapped_column(Integer, ForeignKey("crypto_api.id", ondelete="CASCADE"), nullable=False)
     crypto_api = relationship("CryptoApi", back_populates="params")
+    trigger_components = relationship("TriggerComponent", back_populates="parameter", cascade="all, delete-orphan")
 
     __tablename__ = "crypto_params"
 
@@ -55,8 +49,55 @@ class CryptoCurrencies(Base):
     currency: Mapped[str] = mapped_column(String(500), nullable=False)
     is_available: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     last_updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    trigger_components = relationship("TriggerComponent", back_populates="currency", cascade="all, delete-orphan")
 
     __tablename__ = "crypto_currencies"
+
+
+class TriggerComponent(Base):
+    api_id: Mapped[int] = mapped_column(ForeignKey("crypto_api.id", ondelete="CASCADE"), nullable=False)
+    currency_id: Mapped[int] = mapped_column(ForeignKey("crypto_currencies.id", ondelete="CASCADE"), nullable=False)
+    parameter_id: Mapped[int] = mapped_column(ForeignKey("crypto_params.id", ondelete="CASCADE"), nullable=False)
+
+    api = relationship("CryptoApi", back_populates="trigger_components")
+    currency = relationship("CryptoCurrencies", back_populates="trigger_components")
+    parameter = relationship("CryptoParams", back_populates="trigger_components")
+    trigger_formula_components = relationship("TriggerFormulaComponent", back_populates="component", cascade="all, delete-orphan")
+
+    __tablename__ = "trigger_component"
+
+
+class TriggerFormulaComponent(Base):
+    """
+    брать во внимание только компоненты с amount > 1\n
+    amount должен повышатся и понижатся в зависимости от количества указывающих на него is_active
+    """
+    component_id: Mapped[int] = mapped_column(Integer, ForeignKey("trigger_component.id", ondelete="CASCADE"), nullable=False)
+    formula_id: Mapped[int] = mapped_column(Integer, ForeignKey("trigger_formula.id"), nullable=False)
+
+    component = relationship("TriggerComponent", back_populates="trigger_formula_components")
+    formula = relationship("TriggerFormula", back_populates="components")
+
+    __tablename__ = "trigger_formula_component"
+
+
+class TriggerFormula(Base):
+    """формула может быть активной, но если она не будет фиксировать историю, или отправлять уведомления, то она будет бесполезной"""
+    formula: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String(150), nullable=True)
+    description: Mapped[str] = mapped_column(String(1500), nullable=True)
+    is_notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False) # тут могут быть баги при большой нагрузке
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    is_history_on: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False) # не работает сейчас!
+    is_shutted_off: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False) # оффается из-за изменений в апи
+    last_triggered: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+
+    owner_id: Mapped[int] = mapped_column(Integer, ForeignKey("user_user.id"), nullable=False)
+    owner = relationship("User", back_populates="triggers")
+    components: Mapped[list["TriggerFormulaComponent"]] = relationship("TriggerFormulaComponent", back_populates="formula")
+
+    __tablename__ = "trigger_formula"
+
 
 """
 MongoDB

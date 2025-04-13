@@ -27,16 +27,16 @@ type Token struct {
 }
 
 // проверяет формулу на валидность
-func ValidateTriggerFormulaFormula(formula string) int {
-	tokens, errCode := tokenize(formula)
+func ValidateTriggerFormulaFormula(formula string) ([]db.CryptoVariable, int) {
+	tokens, variables, errCode := tokenize(formula)
 
 	if errCode != 0 {
-		return errCode
+		return nil, errCode
 	}
 
 	errCode = validateTokens(tokens)
 
-	return errCode
+	return variables, errCode
 }
 
 // проверяет существует ли формула с таким id, и является ли пользователь её автором
@@ -65,8 +65,9 @@ func ValidateTriggerFormulaId(userUUID string, formulaId string) int {
 }
 
 // проверка на синтаксис
-func tokenize(expression string) ([]Token, int) {
+func tokenize(expression string) ([]Token, []db.CryptoVariable, int) {
 	var tokens []Token
+	var variables []db.CryptoVariable
 
 	tokenPatterns := []struct {
 		Type    string
@@ -91,13 +92,13 @@ func tokenize(expression string) ([]Token, int) {
 					// Проверяем, является ли переменная допустимой
 					parts := strings.Split(match, "_")
 					if len(parts) != 2 { // неправильная переменная
-						return nil, 2
+						return nil, nil, 2
 					}
 
 					isValid, err := db.IsValidCryptoCurrency(parts[0])
 					if err != nil {
 						fmt.Println(err)
-						return nil, 10
+						return nil, nil, 10
 					}
 					if !isValid {
 						fmt.Println("недопустимая переменная:", match)
@@ -105,13 +106,13 @@ func tokenize(expression string) ([]Token, int) {
 							3 - переменной нет в базе данных
 							4 - переменная не актуальна
 						*/
-						return nil, 4
+						return nil, nil, 4
 					}
 
 					isValid, err = db.IsValidVariable(parts[1])
 					if err != nil {
 						fmt.Println(err)
-						return nil, 10
+						return nil, nil, 10
 					}
 					if !isValid {
 						fmt.Println("недопустимая переменная:", match)
@@ -119,8 +120,9 @@ func tokenize(expression string) ([]Token, int) {
 							3 - переменной нет в базе данных
 							4 - переменная не актуальна
 						*/
-						return nil, 4
+						return nil, nil, 4
 					}
+					variables = append(variables, db.CryptoVariable{Currency: parts[0], Variable: parts[1]})
 				}
 
 				tokens = append(tokens, Token{Type: pattern.Type, Value: match})
@@ -131,11 +133,11 @@ func tokenize(expression string) ([]Token, int) {
 		}
 
 		if !matched { // неизвестный символ
-			return nil, 1
+			return nil, nil, 1
 		}
 	}
 
-	return tokens, 0
+	return tokens, variables, 0
 }
 
 // проверка на правильность

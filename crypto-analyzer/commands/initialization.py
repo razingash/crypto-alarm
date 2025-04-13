@@ -1,9 +1,12 @@
 import asyncio
 
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
 from apps.binance.external_router import BinanceAPI
 from core.controller import controller
 from core.endpoints import endpoints
-from core.models import CryptoParams, CryptoApi, CryptoCurrencies
+from core.models import CryptoParams, CryptoApi, CryptoCurrencies, TriggerComponent
 from db.postgre import postgres_db
 from .makemigrations import command_makemigrations
 
@@ -22,6 +25,7 @@ def fill_crypto_models() -> None:
     binance_api = BinanceAPI(controller=controller, middleware=None)
     loop.run_until_complete(get_initial_data_params(binance_api))
     loop.run_until_complete(get_valid_currencies(binance_api))
+    loop.run_until_complete(create_trigger_components())
 
 async def get_initial_data_params(binance_api: BinanceAPI) -> dict:
     """
@@ -86,3 +90,26 @@ async def get_valid_currencies(binance_api: BinanceAPI) -> None:
             crypto_currency = CryptoCurrencies(currency=currency)
             session.add(crypto_currency)
         await session.commit()
+
+async def create_trigger_components():
+    """заполняет модель TriggerComponent исходя из имеющихся данных"""
+    async with postgres_db.session_factory() as session:
+        crypto_apis = await session.execute(
+            select(CryptoApi).options(selectinload(CryptoApi.params))
+        )
+        crypto_apis = crypto_apis.scalars().all()
+
+        crypto_currencies = await session.execute(select(CryptoCurrencies))
+        crypto_currencies = crypto_currencies.scalars().all()
+
+        for api in crypto_apis:
+            for param in api.params:
+                for currency in crypto_currencies:
+                    component = TriggerComponent(
+                        api_id=api.id,
+                        parameter_id=param.id,
+                        currency_id=currency.id,
+                    )
+                    session.add(component)
+
+            await session.commit()

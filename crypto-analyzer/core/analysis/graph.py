@@ -13,16 +13,15 @@ from core.logger import custom_logger
 class DependencyGraph:
     """
     Горячее хранилище активных выражений; хранит выражения в виде графа зависимостей
-    1) улучшить добавление(можно позже, чтобы учитывало числа, -> тригонометрию -> скобки -> циклические выражения(самое трудное) ->)
+    1) улучшить добавление(можно позже, чтобы учитывало числа -> скобки -> циклические выражения(самое трудное) ->)
     2) оптимизировать добавление (можно позже)
-    3) добавить реакцию на изменения в апи
     """
 
     def __init__(self):
         self.graph = defaultdict(set)  # {переменная -> набор формул, которые от неё зависят}
         self.formulas = {}  # {ID формулы -> символьное выражение}
         self.compiled = {}  # {ID формулы -> скомпилированная функция}
-        self.values = {}  # {переменная -> текущее значение}
+        self.variables = {}  # {переменная -> текущее значение}
         self.cache = {}  # Кэш для промежуточных результатов
         self.formula_ids = {}  # Formula: ID | нужно чтобы нормально удалять их
         self.subexpression_weights = defaultdict(int) # {подвыражение -> количество повторений}
@@ -110,7 +109,7 @@ class DependencyGraph:
         """
         try:
             variable = sympify(variable_str)
-            if variable_str not in self.values:
+            if variable_str not in self.variables:
                 print(f"Переменная '{variable_str}' не найдена.")
                 return []
 
@@ -130,7 +129,7 @@ class DependencyGraph:
             for formula_id in dependent_formulas:
                 self.remove_formula(formula_id)
 
-            del self.values[variable_str]
+            del self.variables[variable_str]
 
             # удаление подвыражений
             for subexpr in list(self.subexpression_weights.keys()):
@@ -144,7 +143,7 @@ class DependencyGraph:
             print(f"Ошибка при удалении переменной '{variable_str}': {e}")
             return []
 
-    def update_variables_topological_Kahn(self, updates) -> None:
+    def update_variables_topological_Kahn(self, updates: dict) -> None:
         """
         алгоритм Кана (не учитывает циклические зависимости)
         Обновляет сразу несколько переменных и пересчитывает только необходимые формулы
@@ -153,7 +152,8 @@ class DependencyGraph:
         Для 3000 уникальных параметров и 10000 разных формул с количеством пременных равным 3000 обновление
         3000 параметров(по сути всего графа) происхоидит примерно за 0.0004 секунды
         """
-        self.values.update(updates)
+        print('Updating variables')
+        self.variables.update(updates)
 
         affected_formulas = set()
         for var in updates:
@@ -182,10 +182,11 @@ class DependencyGraph:
         # пересчет только нужных значений
         for formula_id in sorted_formulas:
             self.evaluate_formula(formula_id)
+        print('Updating finished')
 
     def update_variables_topological_Taryan(self, updates) -> None:
         """
-        ЕСЛИ будут циклы(более трудные формулы) в графе, тогда топологическая сортировка уже не спасет и нужно
+        ЕСЛИ будут циклы(более трудные формулы) в графе, тогда простая топологическая сортировка уже не спасет и нужно
         будет использовать Алгоритм Тарьяна(с простыми выражениями он бесполезен, но для циклических даст прирост в скорости
         и будет иметь сложность O(n), как и топологический(проверить потом что быстрее работает) )
         """
@@ -193,7 +194,7 @@ class DependencyGraph:
     def evaluate_subexpression(self, subexpr): # возвращает float или bool, зависит от sympify().subs()
         """Вычисляет значение подвыражения с учетом кэша"""
         expr = sympify(subexpr)
-        vars_values = {str(var): self.values.get(str(var), 0) for var in expr.free_symbols}
+        vars_values = {str(var): self.variables.get(str(var), 0) for var in expr.free_symbols}
         cache_key = self.get_canonical_cache_key(vars_values)
 
         if cache_key in self.cache:
@@ -257,7 +258,7 @@ class DependencyGraph:
         expr = self.formulas[formula_id]
         func = self.compiled[formula_id]
 
-        args = {str(var): self.values.get(str(var), 0) for var in expr.free_symbols}
+        args = {str(var): self.variables.get(str(var), 0) for var in expr.free_symbols}
         cache_key = self.get_canonical_cache_key(args)
 
         if cache_key in self.cache:

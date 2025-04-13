@@ -46,8 +46,8 @@ def test_remove_variable():
 
     graph.remove_variable("a")
 
-    assert 'a' not in graph.values
-    assert len(graph.values) == 2
+    assert 'a' not in graph.variables
+    assert len(graph.variables) == 2
     assert len(graph.formulas) == 1
 
 
@@ -70,9 +70,9 @@ def test_update_variables_topological_Kahn():
 
     graph.update_variables_topological_Kahn({"a": 1200, "b": 200, "c": -100})
 
-    assert graph.values["a"] == 1200
-    assert graph.values["b"] == 200
-    assert graph.values["c"] == -100
+    assert graph.variables["a"] == 1200
+    assert graph.variables["b"] == 200
+    assert graph.variables["c"] == -100
 
     assert graph.is_formula_triggered(1) == True
     assert graph.is_formula_triggered(2) == True

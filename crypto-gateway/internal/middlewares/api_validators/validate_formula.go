@@ -36,11 +36,12 @@ func ValidateFormulaPost(c fiber.Ctx) error {
 		})
 	}
 
-	errCode := field_validators.ValidateTriggerFormulaFormula(body.Formula)
+	variables, errCode := field_validators.ValidateTriggerFormulaFormula(body.Formula)
 	switch errCode {
 	case 0:
 		c.Locals("formula", body.Formula)
 		c.Locals("name", body.Name)
+		c.Locals("variables", variables)
 		return c.Next()
 	case 1:
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

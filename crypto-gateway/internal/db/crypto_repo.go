@@ -18,6 +18,12 @@ type UserFormula struct {
 	LastTriggered string `json:"last_triggered"`
 }
 
+type CryptoVariable struct {
+	Currency string
+	Variable string
+	//
+}
+
 func IsValidCryptoCurrency(name string) (bool, error) {
 	var isAvailable bool
 
@@ -142,6 +148,37 @@ func SaveFormula(formula string, name string, uuid string) (int, error) {
 	}
 
 	return formulaId, nil
+}
+
+func SaveCryptoVariables(formulaID int, variables []CryptoVariable) error {
+	for _, v := range variables {
+		var triggerComponentID int
+
+		err := DB.QueryRow(context.Background(), `
+			SELECT tc.id
+			FROM trigger_component tc
+			JOIN crypto_currencies cc ON tc.currency_id = cc.id
+			JOIN crypto_params cp ON tc.parameter_id = cp.id
+			WHERE cc.currency = $1 AND cp.parameter = $2
+			LIMIT 1
+		`, v.Currency, v.Variable).Scan(&triggerComponentID)
+
+		if err != nil {
+			return err
+		}
+
+		_, err = DB.Exec(context.Background(), `
+			INSERT INTO trigger_formula_component (component_id, formula_id)
+			VALUES ($1, $2)
+			ON CONFLICT DO NOTHING
+		`, triggerComponentID, formulaID)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // позже переделать обработку ошибок

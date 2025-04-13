@@ -1,11 +1,9 @@
 import asyncio
 
+from apps.analytics.crud import get_actual_components, get_needed_fields_from_endpoint
 from apps.binance.external_router import BinanceAPI
+from core.analysis.graph import dependency_graph
 from core.logger import custom_logger
-
-"""
-добавить в систему которая будедт подтягивать необходимые данные относительно формул (начать с инициализации)
-"""
 
 class BinanceAPIOrchestrator:
     """
@@ -23,13 +21,25 @@ class BinanceAPIOrchestrator:
         await self.check_binance_response(response)
 
         if self.is_binance_online:
-            self.tasks.extend([
-                asyncio.create_task(self.update_weights_loop()),
-            ])
+            await self.launch_needed_api()
+
+    async def launch_needed_api(self) -> None:
+        """выбирает апи, которые нужны для получения актуальных данных в граф"""
+        data = await get_actual_components()
+        tasks = [asyncio.create_task(self.update_weights_loop())]
+        for api, formulas_amount in data.items():
+            if formulas_amount > 0:
+                if api == "/v3/ticker/price":
+                    tasks.append(asyncio.create_task(self.update_ticker_current_price()))
+                elif api == "/v3/ticker/24hr":
+                    tasks.append(asyncio.create_task(self.update_price_change_24h()))
+
+        if len(tasks) > 1:
+            self.tasks.extend(tasks)
 
     async def check_binance_response(self, response):
         """checks Binacne availability"""
-        if not isinstance(response, dict) or response:  # бинанс лег
+        if not isinstance(response, dict) and not isinstance(response, list) or response is True: # бинанс лег
             if self.is_binance_online is True:  # первое срабатывание - документация
                 custom_logger.log_with_path(
                     level=3,
@@ -53,7 +63,16 @@ class BinanceAPIOrchestrator:
             for task in self.tasks:
                 task.cancel()
 
-            #  нужно еще запустить нужные таски
+            await self.launch_needed_api()
+
+    async def check_api_status_loop(self, cooldown: int):
+        """Проверка доступности API."""
+        while True:
+            await asyncio.sleep(cooldown)
+            response = await self.binance_api.get_apiv3_accessibility()
+            await self.check_binance_response(response)
+            if self.is_binance_online is True:
+                break
 
     async def update_weights_loop(self): # улучшить чтобы были не все эндпоинты а используемые
         """Периодическая актуализация весов. не добавляет сложности, просто постепенно актуализирует весы"""
@@ -62,11 +81,48 @@ class BinanceAPIOrchestrator:
             response = await self.binance_api.check_and_update_weights()
             await self.check_binance_response(response)
 
-    async def check_api_status_loop(self, cooldown: int): # возможно лучше сделать чтобы запрос срабатывал один раз при инициализации
-        """Проверка доступности API."""
+    async def update_ticker_current_price(self):
         while True:
-            await asyncio.sleep(cooldown)
-            response = await self.binance_api.get_apiv3_accessibility()
+            print('update_ticker_current_price')
+            await asyncio.sleep(600)
+            response = await self.binance_api.get_ticker_current_price()
             await self.check_binance_response(response)
-            if self.is_binance_online is True:
-                break
+            currencies = await get_needed_fields_from_endpoint(endpoint="/v3/ticker/price")
+
+            data_for_graph = extract_data_from_ticker_current_price(response, currencies)
+            dependency_graph.update_variables_topological_Kahn(data_for_graph)
+
+    async def update_price_change_24h(self):
+        while True:
+            print('update_price_change_24h')
+            await asyncio.sleep(6)
+            response = await self.binance_api.get_price_change_24h()
+            await self.check_binance_response(response)
+            fields = await get_needed_fields_from_endpoint(endpoint="/v3/ticker/24hr")
+
+            data_for_graph = extract_data_from_price_change_24h(response, fields)
+            dependency_graph.update_variables_topological_Kahn(data_for_graph)
+
+
+def extract_data_from_price_change_24h(dataset: list, fields: dict[str, list]):
+    dataset_dict = {data["symbol"]: data for data in dataset}
+    result = {}
+
+    for symbol, field_list in fields.items():
+        if symbol in dataset_dict:
+            data = dataset_dict[symbol]
+            result[symbol] = {field: data[field] for field in field_list if field in data}
+
+    return result
+
+def extract_data_from_ticker_current_price(dataset: list, currencies: dict[str, list[str]]) -> dict:
+    """тут только symbol и price"""
+    dataset_dict = {data["symbol"]: data for data in dataset}
+    result = {}
+
+    for symbol in currencies.keys():
+        data = dataset_dict.get(symbol)
+        if data:
+            result[symbol] = {"price": data["price"]}
+
+    return result
