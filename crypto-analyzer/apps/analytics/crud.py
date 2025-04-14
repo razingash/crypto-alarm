@@ -6,8 +6,8 @@ from core.models import TriggerFormula, CryptoApi, CryptoParams, TriggerFormulaC
 from db.postgre import postgres_db
 
 
-async def get_formula_by_id(session: AsyncSession, pk: int) -> str:
-    query = await session.execute(select(TriggerFormula.formula).where(
+async def get_formula_by_id(session: AsyncSession, pk: int, *fields) -> str:
+    query = await session.execute(select(*fields).where(
         TriggerFormula.id == pk,
     ))
     result = query.scalar()
@@ -33,9 +33,11 @@ async def get_actual_components() -> dict: # возможная оптимиза
             .join(TriggerComponent, CryptoApi.id == TriggerComponent.api_id)
             .join(CryptoParams, TriggerComponent.parameter_id == CryptoParams.id)
             .join(TriggerFormulaComponent, TriggerFormulaComponent.component_id == TriggerComponent.id)
+            .join(TriggerFormula, TriggerFormula.id == TriggerFormulaComponent.formula_id)
             .where(
                 CryptoApi.is_actual.is_(True),
                 CryptoParams.is_active.is_(True),
+                TriggerFormula.is_active.is_(True),
             )
             .group_by(CryptoApi.api)
         )

@@ -96,7 +96,7 @@ func FormulaPost(c fiber.Ctx) error {
 			"error": "error during saving formula variables",
 		})
 	}
-
+	go addFormulaToGraph(id)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"id": id,
 	})

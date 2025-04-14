@@ -5,6 +5,7 @@ from apps.binance.external_router import BinanceAPI
 from core.analysis.graph import dependency_graph
 from core.logger import custom_logger
 
+
 class BinanceAPIOrchestrator:
     """
     запускает периодические задачи
@@ -13,7 +14,7 @@ class BinanceAPIOrchestrator:
     def __init__(self, binance_api: BinanceAPI):
         self.binance_api = binance_api
         self.is_binance_online = True
-        self.tasks = []
+        self.tasks = {}
 
     async def start(self):
         """Запуск фоновых задач. первая задача должна быть проверка апи"""
@@ -24,18 +25,35 @@ class BinanceAPIOrchestrator:
             await self.launch_needed_api()
 
     async def launch_needed_api(self) -> None:
-        """выбирает апи, которые нужны для получения актуальных данных в граф"""
+        """выбирает апи, которые нужны для получения актуальных данных в граф, и убирает ненужные"""
+        print("launching needed API tasks...")
         data = await get_actual_components()
-        tasks = [asyncio.create_task(self.update_weights_loop())]
-        for api, formulas_amount in data.items():
-            if formulas_amount > 0:
-                if api == "/v3/ticker/price":
-                    tasks.append(asyncio.create_task(self.update_ticker_current_price()))
-                elif api == "/v3/ticker/24hr":
-                    tasks.append(asyncio.create_task(self.update_price_change_24h()))
+        current_apis = set(data.keys())
+        running_apis = set(self.tasks.keys()) - {"weights"}
 
-        if len(tasks) > 1:
-            self.tasks.extend(tasks)
+        outdated_apis = running_apis - current_apis
+        for api in outdated_apis:
+            print(f"stopping outdated API: {api}")
+            task = self.tasks.pop(api, None)
+            if task and not task.done():
+                task.cancel()
+
+        if "weights" not in self.tasks or self.tasks["weights"].done():
+            self.tasks["weights"] = asyncio.create_task(self.update_weights_loop())
+
+        for api, formulas_amount in data.items():
+            if formulas_amount <= 0:
+                continue
+
+            existing_task = self.tasks.get(api)
+            if existing_task and not existing_task.done():
+                continue
+
+            print(f"Starting API task: {api}")
+            if api == "/v3/ticker/price":
+                self.tasks[api] = asyncio.create_task(self.update_ticker_current_price())
+            elif api == "/v3/ticker/24hr":
+                self.tasks[api] = asyncio.create_task(self.update_price_change_24h())
 
     async def check_binance_response(self, response):
         """checks Binacne availability"""
@@ -62,7 +80,6 @@ class BinanceAPIOrchestrator:
             self.is_binance_online = True
             for task in self.tasks:
                 task.cancel()
-
             await self.launch_needed_api()
 
     async def check_api_status_loop(self, cooldown: int):

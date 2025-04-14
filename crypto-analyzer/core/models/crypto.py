@@ -21,9 +21,7 @@ class CryptoApi(Base):
 
 
 class CryptoParams(Base):
-    """
-    доступные на данный момент параметры апи, сделать чтобы они обновлялись по триггерам
-    """
+    """доступные на данный момент параметры апи"""
     parameter: Mapped[str] = mapped_column(String(500), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     last_updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -73,7 +71,7 @@ class TriggerFormulaComponent(Base):
     amount должен повышатся и понижатся в зависимости от количества указывающих на него is_active
     """
     component_id: Mapped[int] = mapped_column(Integer, ForeignKey("trigger_component.id", ondelete="CASCADE"), nullable=False)
-    formula_id: Mapped[int] = mapped_column(Integer, ForeignKey("trigger_formula.id"), nullable=False)
+    formula_id: Mapped[int] = mapped_column(Integer, ForeignKey("trigger_formula.id", ondelete="CASCADE"), nullable=False)
 
     component = relationship("TriggerComponent", back_populates="trigger_formula_components")
     formula = relationship("TriggerFormula", back_populates="components")

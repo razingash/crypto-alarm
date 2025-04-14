@@ -6,9 +6,10 @@ from colorama import Fore, Style
 from apps.analytics.crud import get_actual_formulas
 from core.analysis.graph import DependencyGraph, dependency_graph
 from core.logger import custom_logger
+from core.orchestrator import BinanceAPIOrchestrator
 
 
-class FormulaManager: # если будет слишком много функций связи с бд или различных стратегий тогда отделить в отдельного менеджера grpc
+class FormulaManager:
     """
     Выступает в роли прослойки между графом с формулами и базой данных, основная цель - загрузка значений в активный пул
     Берет на себя:
@@ -20,6 +21,10 @@ class FormulaManager: # если будет слишком много функц
         self.graph = graph
         self.client = httpx.AsyncClient(timeout=10)
         self._loaded = False
+        self.orchestrator = None
+
+    def set_orchestrator(self, orchestrator: BinanceAPIOrchestrator):
+        self.orchestrator = orchestrator
 
     async def load(self):
         self._loaded = True
@@ -66,19 +71,25 @@ class FormulaManager: # если будет слишком много функц
         else:
             print(Fore.LIGHTGREEN_EX + f"All formulas {len(formulas)} are correctly loaded into the graph {error}" + Style.RESET_ALL)
 
-    def add_formulas_to_graph(self, formula: str, pk: int):
-        return self.graph.add_formula(formula, pk)
+    async def add_formulas_to_graph(self, formula: str, pk: int):
+        res = self.graph.add_formula(formula, pk)
+        print(res, self.orchestrator)
+        if res is True and self.orchestrator:
+            await self.orchestrator.launch_needed_api()
+        return res
 
     async def remove_formulas_from_graph(self, pk: int):
         res = self.graph.remove_formula(pk)
-        if res is True:
-            await formula_manager.send_triggered_formulas(formulas_id=[pk], is_shutted_off=False)
+        if res is True and self.orchestrator:
+            await self.send_triggered_formulas(formulas_id=[pk], is_shutted_off=False)
+            await self.orchestrator.launch_needed_api()
         return res
 
-    def update_formula_in_graph(self, formula: str, pk: int):
+    async def update_formula_in_graph(self, formula: str, pk: int):
         res = self.graph.remove_formula(pk)
-        if res is True:
+        if res is True and self.orchestrator:
             res = self.graph.add_formula(formula, pk)
+            await self.orchestrator.launch_needed_api()
 
         return res
 
