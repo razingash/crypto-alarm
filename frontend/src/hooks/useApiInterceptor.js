@@ -2,11 +2,10 @@ import axios from "axios";
 import {useEffect} from "react";
 import {useAuth} from "./context/useAuth";
 
-//later change
 export const baseURL = process.env.REACT_APP_BASE_URL || 'http://localhost:8001/api/v1';
 
 const apiClient = axios.create ({
-    baseURL: baseURL,
+    baseURL,
     headers: {
         'Content-Type': 'application/json',
     }

@@ -2,7 +2,7 @@ package auth
 
 import (
 	"context"
-	"crypto-gateway/crypto-gateway/internal/db"
+	"crypto-gateway/internal/db"
 	"database/sql"
 )
 

@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"crypto-gateway/crypto-gateway/config"
+	"crypto-gateway/config"
 	"fmt"
 	"log"
 	"time"

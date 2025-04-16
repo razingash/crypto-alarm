@@ -1,9 +1,9 @@
 package main
 
 import (
-	"crypto-gateway/crypto-gateway/config"
-	"crypto-gateway/crypto-gateway/internal/db"
-	"crypto-gateway/crypto-gateway/internal/routes"
+	"crypto-gateway/config"
+	"crypto-gateway/internal/db"
+	"crypto-gateway/internal/routes"
 	"log"
 	"time"
 
@@ -17,7 +17,7 @@ func main() {
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001"},
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001", "http://localhost:80", "https://localhost:443"},
 		AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		AllowCredentials: true,

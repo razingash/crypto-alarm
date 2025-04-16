@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"context"
-	"crypto-gateway/crypto-gateway/internal/db"
-	"crypto-gateway/crypto-gateway/internal/middlewares/field_validators"
+	"crypto-gateway/internal/db"
+	"crypto-gateway/internal/middlewares/field_validators"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"

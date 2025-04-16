@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"crypto-gateway/config"
 	"fmt"
 	"io"
 	"log"
@@ -29,19 +30,19 @@ func sendHTTPRequest(method, url string) string {
 }
 
 func deleteFormulaFromGraph(formulaID string) {
-	addr := fmt.Sprintf("http://127.0.0.1:8000/api/v1/analytics/formula/%v/", formulaID)
+	addr := fmt.Sprintf("%v/analytics/formula/%v/", config.Internal_Server_Api, formulaID)
 	response := sendHTTPRequest(http.MethodDelete, addr)
 	log.Println("Internal Response:", response)
 }
 
 func addFormulaToGraph(formulaID int) {
-	addr := fmt.Sprintf("http://127.0.0.1:8000/api/v1/analytics/formula/%v/", formulaID)
+	addr := fmt.Sprintf("%v/analytics/formula/%v/", config.Internal_Server_Api, formulaID)
 	response := sendHTTPRequest(http.MethodPost, addr)
 	log.Println("Internal Response:", response)
 }
 
 func updateFormulaInGraph(formulaID string) {
-	addr := fmt.Sprintf("http://127.0.0.1:8000/api/v1/analytics/formula/%v/", formulaID)
+	addr := fmt.Sprintf("%v/analytics/formula/%v/", config.Internal_Server_Api, formulaID)
 	response := sendHTTPRequest(http.MethodPut, addr)
 	log.Println("Internal Response:", response)
 }

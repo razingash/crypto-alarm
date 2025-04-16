@@ -9,15 +9,16 @@ import (
 )
 
 var (
-	SecretKey         string
-	Vapid_Public_Key  string
-	Vapid_Private_Key string
-	Database_Url      string
+	SecretKey           string
+	Vapid_Public_Key    string
+	Vapid_Private_Key   string
+	Database_Url        string
+	Internal_Server_Api string
 )
 
 func LoadConfig() {
 	if err := godotenv.Load("../../.env"); err != nil {
-		log.Fatal("Ошибка загрузки .env файла")
+		log.Println("Application startup via docker")
 	}
 
 	SecretKey = os.Getenv("SECRET_KEY")
@@ -28,8 +29,12 @@ func LoadConfig() {
 	var Database_Password = os.Getenv("DB_PASSWORD")
 	var Database_Host = os.Getenv("DB_HOST")
 	var Database_Port = os.Getenv("DB_PORT")
+	var Internal_Server_Api = os.Getenv("INTERNAL_SERVER_API")
 
 	// учитывая как тут работает кэш коллектор и глобальные окружения лучше в ручну проверять(по крайней мере на наличие)
+	if Internal_Server_Api == "" {
+		Internal_Server_Api = "http://127.0.0.1:8000/api/v1"
+	}
 	if SecretKey == "" {
 		log.Fatal("SecretKey не установлена в окружении")
 	}

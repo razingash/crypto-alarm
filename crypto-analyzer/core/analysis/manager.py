@@ -69,7 +69,7 @@ class FormulaManager:
                 filename="Initialization.log"
             )
         else:
-            print(Fore.LIGHTGREEN_EX + f"All formulas {len(formulas)} are correctly loaded into the graph {error}" + Style.RESET_ALL)
+            print(Fore.LIGHTGREEN_EX + f"{len(formulas)} formulas are correctly loaded into the graph {error}" + Style.RESET_ALL)
 
     async def add_formulas_to_graph(self, formula: str, pk: int):
         res = self.graph.add_formula(formula, pk)

@@ -11,9 +11,9 @@ from db.postgre import postgres_db
 from .makemigrations import command_makemigrations
 
 def command_initialization():
-    command_makemigrations()
-    fill_crypto_models()
-
+    makemigrations = command_makemigrations()
+    if not makemigrations:
+        fill_crypto_models()
 
 def fill_crypto_models() -> None:
     """заполняет CryptoApi и CryptoParams модели полученными данными из списка апи в endpoints.py"""

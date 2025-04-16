@@ -9,26 +9,44 @@ from core.models import Base
 
 
 def command_makemigrations():
-    asyncio_run(makemigrations())
+    return asyncio_run(makemigrations())
 
 
-async def makemigrations() -> None:
+async def makemigrations():
     try:
         conn = await asyncpg.connect(f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/postgres")
-        databases = await conn.fetch("SELECT datname FROM pg_database")
-        db_names = [db['datname'] for db in databases]
 
-        if PG_NAME not in db_names:
+        db_exists = await conn.fetchval("""
+            SELECT 1 FROM pg_database WHERE datname = $1
+        """, PG_NAME)
+
+        if not db_exists:
             print(Fore.LIGHTYELLOW_EX + f"Database '{PG_NAME}' isn't detected and will be created")
             await conn.execute(f'CREATE DATABASE "{PG_NAME}" OWNER "{PG_USER}"')
             print(Fore.LIGHTBLACK_EX + "Database created successfully")
+            await conn.close()
+
             await init_db()
         else:
-            print(Fore.LIGHTWHITE_EX + "Database already exists, if you want to change models you need to recreate db,"
-                                       " because alembic can't work with asynchronous postgress")
-        await conn.close()
+            await conn.close()
+
+            conn_db = await asyncpg.connect(f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_NAME}")
+            table_exists = await conn_db.fetchval("""
+                SELECT 1 FROM information_schema.tables 
+                WHERE table_schema = 'public' AND table_name = 'user_user'
+            """)
+
+            if not table_exists:
+                print(Fore.LIGHTYELLOW_EX + "Database exists but appears empty. Running initialization.")
+                await conn_db.close()
+                await init_db()
+            else:
+                print(Fore.LIGHTWHITE_EX + "Database already exists and is already initialized.")
+                await conn_db.close()
+                return True
     except Exception as e:
-        print(e)
+        print(Style.BRIGHT + Fore.RED + f"Error: {str(e)}")
+        return True
 
 
 async def init_db() -> None:

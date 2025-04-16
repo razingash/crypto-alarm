@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  nginx: # with compiled react
+    build: ./frontend
+    container_name: crypto_frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment: # instead of 192.168.1.25 write your local IPV4 address, if you want to load website on other devices
+      - IS_PROD=true
+    command: >
+      /bin/sh -c "
+      if [ ! -f /etc/nginx/ssl/nginx.key ]; then
+        mkdir -p /etc/nginx/ssl && openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/nginx/ssl/nginx.key -out /etc/nginx/ssl/nginx.crt -subj '/CN=localhost';
+      fi &&
+      nginx -g 'daemon off;'"
+    restart: unless-stopped
+    depends_on:
+      - crypto-gateway
+    networks:
+      - localnet
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_DB: 'CryptoAlarm'
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'root'
+    ports:
+      - "5432:5432"
+    networks:
+      - localnet
+
+  crypto-analytics:
+    build:
+      context: ./crypto-analyzer
+    container_name: crypto-analytics
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "sleep 5 && python manage.py initialization && python main.py --addr 0.0.0.0:8000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - localnet
+
+  crypto-gateway:
+    build:
+      context: ./crypto-gateway
+    container_name: crypto-gateway
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      INTERNAL_SERVER_API: http://localhost:80/api/v1
+    ports:
+      - "8001:8001"
+    command: >
+      sh -c "sleep 10 && ./main"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - crypto-analytics
+    networks:
+      - localnet
+
+networks:
+  internet:
+    name: internet
+    driver: bridge
+  localnet:
+    name: localnet
+    driver: bridge

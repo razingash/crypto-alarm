@@ -1,9 +1,9 @@
 package routes
 
 import (
-	"crypto-gateway/crypto-gateway/internal/handlers"
-	"crypto-gateway/crypto-gateway/internal/middlewares"
-	"crypto-gateway/crypto-gateway/internal/middlewares/api_validators"
+	"crypto-gateway/internal/handlers"
+	"crypto-gateway/internal/middlewares"
+	"crypto-gateway/internal/middlewares/api_validators"
 
 	"github.com/gofiber/fiber/v3"
 )

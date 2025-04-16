@@ -2,8 +2,8 @@ package auth
 
 import (
 	"context"
-	"crypto-gateway/crypto-gateway/config"
-	"crypto-gateway/crypto-gateway/internal/db"
+	"crypto-gateway/config"
+	"crypto-gateway/internal/db"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
