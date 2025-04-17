@@ -9,11 +9,11 @@ import (
 )
 
 func SetupAuthRoutes(app *fiber.App) {
-	authGroup := app.Group("/api/v1/auth")
+	group := app.Group("/api/v1/auth")
 
-	authGroup.Post("/register", handlers.Register, api_validators.ValidateAuthenticationInfo)
-	authGroup.Post("/token", handlers.Login, api_validators.ValidateAuthenticationInfo)
-	authGroup.Post("/token/verify", handlers.ValidateToken)
-	authGroup.Post("/token/refresh", handlers.RefreshAccessToken)
-	authGroup.Post("/logout", handlers.Logout, middlewares.IsAuthorized)
+	group.Post("/register", handlers.Register, api_validators.ValidateAuthenticationInfo)
+	group.Post("/token", handlers.Login, api_validators.ValidateAuthenticationInfo)
+	group.Post("/token/verify", handlers.ValidateToken)
+	group.Post("/token/refresh", handlers.RefreshAccessToken)
+	group.Post("/logout", handlers.Logout, middlewares.IsAuthorized)
 }

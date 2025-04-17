@@ -9,14 +9,11 @@ import (
 )
 
 func SetupTriggersRoutes(app *fiber.App) {
-	authGroup := app.Group("/api/v1/triggers")
+	group := app.Group("/api/v1/triggers")
 
-	authGroup.Get("/keyboard", handlers.Keyboard, middlewares.IsAuthorized)
-	authGroup.Get("/formula", handlers.FormulaGet, middlewares.IsAuthorized)
-	authGroup.Post("/formula", handlers.FormulaPost, middlewares.IsAuthorized, api_validators.ValidateFormulaPost)
-	authGroup.Patch("/formula", handlers.FormulaPatch, middlewares.IsAuthorized, api_validators.ValidateFormulaPatch)
-	authGroup.Delete("/formula", handlers.FormulaDelete, middlewares.IsAuthorized)
-
-	// only from python service
-	authGroup.Post("/push-notifications", handlers.Keyboard, api_validators.ValidatePushNotifications)
+	group.Get("/keyboard", handlers.Keyboard, middlewares.IsAuthorized)
+	group.Get("/formula", handlers.FormulaGet, middlewares.IsAuthorized)
+	group.Post("/formula", handlers.FormulaPost, middlewares.IsAuthorized, api_validators.ValidateFormulaPost)
+	group.Patch("/formula", handlers.FormulaPatch, middlewares.IsAuthorized, api_validators.ValidateFormulaPatch)
+	group.Delete("/formula", handlers.FormulaDelete, middlewares.IsAuthorized)
 }

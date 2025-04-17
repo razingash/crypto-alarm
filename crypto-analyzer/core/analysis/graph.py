@@ -143,7 +143,7 @@ class DependencyGraph:
             print(f"Ошибка при удалении переменной '{variable_str}': {e}")
             return []
 
-    def update_variables_topological_Kahn(self, updates: dict) -> None:
+    def update_variables_topological_Kahn(self, updates: dict) -> list:
         """
         алгоритм Кана (не учитывает циклические зависимости)
         Обновляет сразу несколько переменных и пересчитывает только необходимые формулы
@@ -182,13 +182,16 @@ class DependencyGraph:
         # пересчет только нужных значений
         for formula_id in sorted_formulas:
             self.evaluate_formula(formula_id)
-        print('Updating finished')
+
+        print('substitution of variables finished')
+
+        return self.get_triggered_formulas(sorted_formulas)
 
     def update_variables_topological_Taryan(self, updates) -> None:
         """
         ЕСЛИ будут циклы(более трудные формулы) в графе, тогда простая топологическая сортировка уже не спасет и нужно
         будет использовать Алгоритм Тарьяна(с простыми выражениями он бесполезен, но для циклических даст прирост в скорости
-        и будет иметь сложность O(n), как и топологический(проверить потом что быстрее работает) )
+        и будет иметь сложность O(n), как и Кана(проверить потом что быстрее работает) )
         """
 
     def evaluate_subexpression(self, subexpr): # возвращает float или bool, зависит от sympify().subs()
@@ -204,8 +207,8 @@ class DependencyGraph:
         self.cache[cache_key] = result
         return result
 
-    def evaluate_formula(self, formula_id):
-        """Вычисляет значение формулы с учетом кэша"""
+    def evaluate_formula(self, formula_id) -> None:
+        """подставляет значение формулы с учетом кэша"""
         expr = self.formulas[formula_id]
         subexpr_values = {}
 
@@ -216,9 +219,9 @@ class DependencyGraph:
             subexpr_values[str(subexpr)] = self.evaluate_subexpression(str(subexpr))
 
         # подставление
-        return expr.subs(subexpr_values).evalf()
+        expr.subs(subexpr_values).evalf()
 
-    def get_formula_result_by_id(self, formula_id) -> int:  # возможно не нужна
+    def get_formula_result_by_id(self, formula_id) -> int:  # позже можно сделать чтобы она была частью вебхука для страницы конкретной формулы
         """Возвращает результат вычисления формулы"""
 
     def evaluate_variable_impact(self, var_name) -> dict: # отслеживать влияние подвыражения смысла пока не вижу, но лишним не будет
@@ -250,11 +253,6 @@ class DependencyGraph:
 
     def is_formula_triggered(self, formula_id) -> bool:
         """возвращает булево значение выражения"""
-        '''
-        позже может быть использована для пересчета "забущенных" выражений.
-         Нужно сделать функцию для перерасчета сразу всех значений или еще одну функцию обновления(более вероятно)
-         чтобы одна вызывалась чаще и отвечала за приоретные выражения а другая за остальные
-        '''
         expr = self.formulas[formula_id]
         func = self.compiled[formula_id]
 
@@ -267,6 +265,16 @@ class DependencyGraph:
             result = func(**args)
             self.cache[cache_key] = result
             return result
+
+    def get_triggered_formulas(self, formula_ids: list[int]) -> list:
+        """проверяет, какие из формул сработали после обновления переменных"""
+        triggered = []
+        for formula_id in formula_ids:
+            if self.is_formula_triggered(formula_id):
+                triggered.append(formula_id)
+
+        print('Updating finished')
+        return triggered
 
     @staticmethod
     def get_canonical_cache_key(args):

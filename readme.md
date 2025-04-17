@@ -6,8 +6,8 @@
 - Users can create their own expressions, custom keyboard includes fractions,
 powers up, roots and modules. Trigonometric functions will never be supported.
 
-- All cryptocurrencies are available that can be worked with in all available endpoints - more than 3000,
-about 99.8% of all cryptocurrencies on Binance, excluding only the newest ones that aren't yet supported by all endpoints
+- All cryptocurrencies supported by all available Binance endpoints are accessible — over 3000 in total.
+This covers approximately 99.8% of all cryptocurrencies on Binance, excluding only the newest ones not yet fully integrated across all endpoints.
 
 - All variables from all significant endpoints, such as /v3/ticker/24hr, /v3/ticker/price, etc. are available. There is currently no access to websockets
 

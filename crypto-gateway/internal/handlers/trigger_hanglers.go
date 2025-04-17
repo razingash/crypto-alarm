@@ -210,20 +210,3 @@ func FormulaGet(c fiber.Ctx) error {
 		"data": formulas[0],
 	})
 }
-
-func PushNotificationsPost(c fiber.Ctx) error {
-	is_shutted_off := c.Locals("is_shutted_off").(bool)
-	formulas := c.Locals("formulas").([]int)
-
-	if is_shutted_off {
-		sendPushNotifications(formulas, "")
-	} else {
-		sendPushNotifications(formulas, "")
-	}
-
-	return c.SendStatus(fiber.StatusOK)
-}
-
-func sendPushNotifications(formulas []int, message string) {
-
-}

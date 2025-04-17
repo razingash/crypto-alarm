@@ -36,6 +36,7 @@ func main() {
 
 	db.InitDB()
 
+	routes.SetupNotificationRoutes(app)
 	routes.SetupAuthRoutes(app)
 	routes.SetupTriggersRoutes(app)
 

@@ -110,22 +110,15 @@ def test_evaluate_subexpression():
     result2 = graph.evaluate_subexpression("a - b")
     assert result1 == result2
 
-"""
-def test_evaluate_formula():
+
+def test_get_triggered_formulas():
     graph = DependencyGraph()
 
-    graph.add_formula("a + b + c == 1000")
-    graph.add_formula("b + c == 100")
+    graph.add_formula("a + b + c == 1000", 1)
+    graph.add_formula("b + c == 100", 2)
 
     graph.update_variables_topological_Kahn({"a": 1200, "b": 200, "c": -100})
 
-    result = graph.evaluate_formula(0)
-    print(result)
-    #assert result == 1000
+    result = graph.get_triggered_formulas([1, 2])
 
-    #result = graph.evaluate_formula(1)
-    #assert result == 100
-
-    #result = graph.evaluate_formula(2)
-    #assert result == 1200
-"""
+    assert 2 in result

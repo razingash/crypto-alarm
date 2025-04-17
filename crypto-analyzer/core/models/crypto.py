@@ -82,19 +82,29 @@ class TriggerFormulaComponent(Base):
 class TriggerFormula(Base):
     """формула может быть активной, но если она не будет фиксировать историю, или отправлять уведомления, то она будет бесполезной"""
     formula: Mapped[str] = mapped_column(String, nullable=False)
-    name: Mapped[str] = mapped_column(String(150), nullable=True)
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str] = mapped_column(String(1500), nullable=True)
     is_notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False) # тут могут быть баги при большой нагрузке
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
     is_history_on: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False) # не работает сейчас!
     is_shutted_off: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False) # оффается из-за изменений в апи
     last_triggered: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    cooldown: Mapped[int] = mapped_column(Integer, nullable=False, default=3600) # час по дефолту, может сделать больше
 
     owner_id: Mapped[int] = mapped_column(Integer, ForeignKey("user_user.id"), nullable=False)
     owner = relationship("User", back_populates="triggers")
     components: Mapped[list["TriggerFormulaComponent"]] = relationship("TriggerFormulaComponent", back_populates="formula")
 
     __tablename__ = "trigger_formula"
+
+
+class PushSubscription(Base):
+    endpoint: Mapped[str] = mapped_column(String, nullable=False)
+    p256dh: Mapped[str] = mapped_column(String, nullable=False)
+    auth: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+    __tablename__ = "trigger_push_subscription"
 
 
 """
