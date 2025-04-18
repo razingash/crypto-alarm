@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto-gateway/internal/db"
 	"crypto-gateway/internal/middlewares/field_validators"
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -85,6 +86,7 @@ func FormulaPost(c fiber.Ctx) error {
 
 	id, err := db.SaveFormula(expression, name, userUUID)
 	if err != nil {
+		fmt.Println(err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "error during saving formula",
 		})

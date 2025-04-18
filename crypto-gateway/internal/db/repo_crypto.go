@@ -138,8 +138,8 @@ func SaveFormula(formula string, name string, uuid string) (int, error) {
 
 	var formulaId int
 	err = DB.QueryRow(context.Background(), `
-        INSERT INTO trigger_formula (formula, name, owner_id, is_notified, is_active, is_shutted_off, is_history_on) 
-        VALUES ($1, $2, $3, false, false, false, false)
+        INSERT INTO trigger_formula (formula, name, owner_id, is_notified, is_active, is_shutted_off, is_history_on, cooldown) 
+        VALUES ($1, $2, $3, false, false, false, false, 3600)
         RETURNING id
     `, formula, name, owner_id).Scan(&formulaId)
 

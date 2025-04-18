@@ -3,18 +3,19 @@ import Header from "./components/UI/Header";
 import {BrowserRouter} from "react-router-dom";
 import {AuthProvider} from "./hooks/context/useAuth";
 import "./styles/index.css"
-import {StoreProvider} from "./utils/store";
+import {NotificationProvider} from "./utils/store";
 
 function App() {
     return (
-        <StoreProvider>
-            <AuthProvider>
+        <AuthProvider>
+            <NotificationProvider>
                 <BrowserRouter>
                     <Header/>
                     <AppRouter/>
                 </BrowserRouter>
-            </AuthProvider>
-        </StoreProvider>
+            </NotificationProvider>
+        </AuthProvider>
+
     );
 }
 

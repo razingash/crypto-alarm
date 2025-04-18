@@ -13,7 +13,6 @@ import (
 
 func main() {
 	config.LoadConfig()
-
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{

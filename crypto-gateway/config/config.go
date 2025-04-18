@@ -24,12 +24,12 @@ func LoadConfig() {
 	SecretKey = os.Getenv("SECRET_KEY")
 	Vapid_Public_Key = os.Getenv("VAPID_PUBLIC_KEY")
 	Vapid_Private_Key = os.Getenv("VAPID_PRIVATE_KEY")
+	Internal_Server_Api = os.Getenv("INTERNAL_SERVER_API")
 	var Database_Name = os.Getenv("DB_NAME")
 	var Database_User = os.Getenv("DB_USER")
 	var Database_Password = os.Getenv("DB_PASSWORD")
 	var Database_Host = os.Getenv("DB_HOST")
 	var Database_Port = os.Getenv("DB_PORT")
-	var Internal_Server_Api = os.Getenv("INTERNAL_SERVER_API")
 
 	// учитывая как тут работает кэш коллектор и глобальные окружения лучше в ручну проверять(по крайней мере на наличие)
 	if Internal_Server_Api == "" {

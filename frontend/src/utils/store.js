@@ -1,4 +1,7 @@
 import {createContext, useContext, useEffect, useState} from "react";
+import NotificationService from "../API/NotificationService";
+import {urlBase64ToUint8Array} from "./utils";
+import {useAuth} from "../hooks/context/useAuth";
 
 export const StoreContext = createContext(null);
 
@@ -6,9 +9,9 @@ export const useStore = () => {
     return useContext(StoreContext);
 }
 
-export const StoreProvider = ({children}) => {
+export const NotificationProvider = ({children}) => {
+    const {isAuth} = useAuth();
     const [pushNotification, setPushNotification] = useState(Notification.permission === "granted");
-    const [pushTime, setPushTime] = useState(localStorage.getItem("pushTime") || "10:00");
     const [isPwaMode, setIsPwaMode] = useState(null);
 
     useEffect(() => {
@@ -21,31 +24,53 @@ export const StoreProvider = ({children}) => {
     }, [])
 
     useEffect(() => {
-        if (pushNotification && pushTime) {
-            const delay = calculateDelay(pushTime);
-            console.log(`Push notification scheduled in ${delay / 1000} seconds`);
+        if (isPwaMode && Notification.permission === 'default') {
+            setTimeout(async () => {
+                const wantsPush = window.confirm(
+                    "This PWA application could send reports about strategies with custom cooldowns." +
+                    "It will be difficult to turn notifications on again after blocking them, but if it happens by chance just reinstalling this application"
+                );
 
-            const timer = setTimeout(() => {
-                triggerPushNotification("Your notification");
-            }, delay);
-
-            return () => clearTimeout(timer);
+                if (wantsPush) {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        setPushNotification(true);
+                    } else {
+                        alert("You have blocked notifications. Now the application won't be able to send you reports about triggers");
+                    }
+                }
+            }, 1000);
         }
-    }, [pushNotification, pushTime]);
+    }, [isPwaMode]);
 
-    const calculateDelay = (time) => {
-        const now = new Date();
-        const [hours, minutes] = time.split(":").map(Number);
-        const targetTime = new Date();
+    useEffect(() => {
+        const setupPushSubscription = async () => {
+            if (!('serviceWorker' in navigator)) return;
+            if (Notification.permission !== 'granted') return;
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                let subscription = await registration.pushManager.getSubscription();
+                if (!subscription) {
+                    // позже добавить сохранение в локальное хранилище чтобы не делать лишних запросов
+                    const vapidKey = await NotificationService.getVapidKey();
 
-        targetTime.setHours(hours, minutes, 0, 0);
-
-        if (targetTime <= now) {
-            targetTime.setDate(targetTime.getDate() + 1);
+                    subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(vapidKey)
+                    });
+                }
+                const subscriptionJSON = subscription.toJSON();
+                console.log(subscriptionJSON)
+                const { endpoint, keys: { p256dh, auth } } = subscription.toJSON();
+                await NotificationService.subscribeToPushNotifications(endpoint, p256dh, auth);
+            } catch (err) {
+                console.error('Push subscription failed:', err);
+            }
+        };
+        if (isAuth) {
+            setupPushSubscription();
         }
-
-        return targetTime - now;
-    };
+    }, [isAuth]);
 
     const triggerPushNotification = (message) => {
         if ('serviceWorker' in navigator) {
@@ -58,16 +83,10 @@ export const StoreProvider = ({children}) => {
         }
     };
 
-    const setPushNotificationTime = (time) => {
-        localStorage.setItem("pushTime", time)
-        setPushTime(time);
-    }
-
     return (
         <StoreContext.Provider
-            value={{isPwaMode, triggerPushNotification, pushNotification, setPushNotification, pushTime, setPushNotificationTime}}>
+            value={{isPwaMode, triggerPushNotification, pushNotification, setPushNotification}}>
             {children}
         </StoreContext.Provider>
     )
 }
-

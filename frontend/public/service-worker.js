@@ -62,10 +62,9 @@ self.addEventListener('install', (event) => {
                     }
                 });
 
-                const apiUrls = [
-                    'api/solar-system/map/'
-                ];
-
+                /*
+                // API that must return json files for caching
+                const apiUrls = [];
                 const fetchPromises = apiUrls.map((url) => {
                     return fetch(url).then((response) => {
                         if (response.ok) {
@@ -73,9 +72,9 @@ self.addEventListener('install', (event) => {
                         }
                     });
                 });
-
+                */
                 return Promise.all([
-                    ...fetchPromises,
+                    //...fetchPromises,
                     cache.addAll(filesToCache)
                 ]);
             });

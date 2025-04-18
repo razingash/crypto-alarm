@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {defaultKeyboard} from "../../utils/keyboard";
+import {defaultKeyboard} from "../../utils/utils";
 import AdaptiveLoading from "../UI/AdaptiveLoading";
 import {useFetching} from "../../hooks/useFetching";
 import TriggersService from "../../API/TriggersService";

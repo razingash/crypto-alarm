@@ -7,7 +7,7 @@ export default class TriggersService {
         return response.data
     }
     static async getUserFormulas(params) {
-        const response = await apiClient.get('triggers/formula', {params: params})
+        const response = await apiClient.get('/triggers/formula', {params: params})
         return response.data
     }
     static async createFormula(formula, name) {

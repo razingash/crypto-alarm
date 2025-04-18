@@ -80,15 +80,13 @@ func SendPushNotifications(formulasID []int, message string) error {
 		log.Printf("user %d -> %v", id, names)
 	}
 
+	updateLastTriggered(formulasID)
+
 	return nil
 }
 
 // обновляет в самом конце модели где сработали формулы
 func updateLastTriggered(ids []int) {
-	if len(ids) == 0 {
-		return
-	}
-
 	placeholders := make([]string, len(ids))
 	args := make([]interface{}, len(ids))
 	for i, id := range ids {
