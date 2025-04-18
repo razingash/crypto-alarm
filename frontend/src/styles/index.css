@@ -49,6 +49,12 @@ body {
     display: flex;
     flex-grow: 1;
 }
+.header__button__app {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+}
 
 .header__items {
     display: flex;
@@ -98,6 +104,14 @@ body {
 
 .cell__error {
     color: #ff3a75;
+}
+
+.svg__translator {
+    width: 30px;
+    height: 20px;
+    fill: #fff;
+    margin: 0 15px 0 10px;
+    z-index: 1;
 }
 
 /*loading effect*/

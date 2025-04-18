@@ -7,8 +7,8 @@
     "lang":"en",
 	"scope":"/",
 	"display":"standalone",
-	"background_color":"#05000d",
-	"theme_color":"#05000d",
+	"background_color":"#171717",
+	"theme_color":"#171717",
 	"dir":"ltr",
 	"prefer_related_applications":false,
 	"display_override": [
@@ -24,5 +24,81 @@
 	    "science",
 	    "utilities",
 	    "news"
-	]
+	],
+	"icons": [
+		{
+			"src":"/static/logo/icon-maskable-180.png",
+			"sizes":"180x180",
+			"type":"image/png",
+			"purpose":"maskable"
+		},
+		{
+			"src":"/static/logo/icon-maskable-192.png",
+			"sizes":"192x192",
+			"type":"image/png",
+			"purpose":"maskable"
+		},
+		{
+			"src":"/static/logo/icon-maskable-256.png",
+			"sizes":"256x256",
+			"type":"image/png",
+			"purpose":"maskable"
+		},
+		{
+			"src":"/static/logo/icon-maskable-384.png",
+			"sizes":"384x384",
+			"type":"image/png",
+			"purpose":"maskable"
+		},
+		{
+			"src":"/static/logo/icon-maskable-512.png",
+			"sizes":"512x512",
+			"type":"image/png",
+			"purpose":"maskable"
+		},
+		{
+			"src":"/static/logo/icon-180-round.png",
+			"sizes":"180x180",
+			"type":"image/png",
+			"purpose":"any"
+		},
+		{
+			"src":"/static/logo/icon-192-round.png",
+			"sizes":"192x192",
+			"type":"image/png",
+			"purpose":"any"
+		},
+		{
+			"src":"/static/logo/icon-256-round.png",
+			"sizes":"256x256",
+			"type":"image/png",
+			"purpose":"any"
+		},
+		{
+			"src":"/static/logo/icon-384-round.png",
+			"sizes":"384x384",
+			"type":"image/png",
+			"purpose":"any"
+		},
+		{
+			"src":"/static/logo/icon-512-round.png",
+			"sizes":"512x512",
+			"type":"image/png",
+			"purpose":"any"
+		}
+	],
+	"screenshots": [
+        {
+          "src": "/static/pwa-screenshots/640x320-t2-1.png",
+          "sizes": "640x320",
+          "type": "image/png",
+          "form_factor": "wide"
+        },
+        {
+          "src": "/static/pwa-screenshots/320x640-1.png",
+          "sizes": "320x640",
+          "type": "image/png",
+          "form_factor": "narrow"
+        }
+    ]
 }
