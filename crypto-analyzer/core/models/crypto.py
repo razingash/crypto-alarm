@@ -104,6 +104,9 @@ class PushSubscription(Base):
     auth: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("user_user.id"), nullable=False)
+    user = relationship("User", back_populates="devices")
+
     __tablename__ = "trigger_push_subscription"
 
 

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"crypto-gateway/internal/webpush"
 )
 
 func SendPushNotifications(formulasID []int, message string) error {
@@ -65,19 +67,39 @@ func SendPushNotifications(formulasID []int, message string) error {
 		}
 	}
 
-	// Передаём дальше или возвращаем
-	log.Println("единичные случаи:")
-	for id, f := range singleTriggers {
-		log.Printf("user %d -> %s", id, f.Name)
-	}
+	for userID, formulas := range grouped {
+		var payload string
 
-	log.Println("множественные случаи:")
-	for id, fs := range multiTriggers {
-		names := []string{}
-		for _, f := range fs {
-			names = append(names, f.Name)
+		if len(formulas) == 1 {
+			payload = fmt.Sprintf("Сработала стратегия: %s", formulas[0].Name)
+		} else {
+			payload = "980"
 		}
-		log.Printf("user %d -> %v", id, names)
+
+		rows, err := DB.Query(context.Background(), `
+            SELECT endpoint, p256dh, auth
+            FROM trigger_push_subscription
+            WHERE user_id = $1
+        `, userID)
+		if err != nil {
+			log.Printf("ошибка получения push-подписок для user %d: %v", userID, err)
+			continue
+		}
+
+		for rows.Next() {
+			var endpoint, p256dh, auth string
+			if err := rows.Scan(&endpoint, &p256dh, &auth); err != nil {
+				log.Printf("ошибка сканирования подписки user %d: %v", userID, err)
+				continue
+			}
+
+			err := webpush.SendWebPush(endpoint, p256dh, auth, payload)
+			if err != nil {
+				log.Printf("ошибка отправки пуша user %d: %v", userID, err)
+			}
+		}
+
+		rows.Close()
 	}
 
 	updateLastTriggered(formulasID)
