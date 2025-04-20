@@ -30,9 +30,20 @@ func SendWebPush(endpoint string, p256dh string, auth string, messageJSON string
 		return err
 	}
 
-	// ECDH + HKDF
-	key, salt, err := DeriveSharedSecret(priv2, []byte(p256dh), []byte(auth))
+	// валидная кодировка
+	clientPubRaw, err := base64.RawURLEncoding.DecodeString(p256dh)
 	if err != nil {
+		return fmt.Errorf("failed to decode p256dh: %w", err)
+	}
+	authRaw, err := base64.RawURLEncoding.DecodeString(auth)
+	if err != nil {
+		return fmt.Errorf("failed to decode auth: %w", err)
+	}
+
+	// ECDH + HKDF
+	key, salt, err := DeriveSharedSecret(priv2, []byte(clientPubRaw), []byte(authRaw)) // тут поломка
+	if err != nil {
+		fmt.Println("ERROR:", err)
 		return err
 	}
 
@@ -64,7 +75,7 @@ func SendWebPush(endpoint string, p256dh string, auth string, messageJSON string
 	return nil
 }
 
-func SendPush(req *http.Request) (string, error) {
+func SendPush(req *http.Request) (string, error) { // нихера не возвращает в случае успеха
 	client := &http.Client{}
 
 	resp, err := client.Do(req)

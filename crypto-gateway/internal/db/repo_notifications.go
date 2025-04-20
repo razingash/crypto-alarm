@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"crypto-gateway/internal/webpush"
@@ -17,11 +18,13 @@ func SendPushNotifications(formulasID []int, message string) error {
 		args[i] = id
 	}
 
-	rows, err := DB.Query(context.Background(), `
-		SELECT id, owner_id, name, last_triggered, cooldown
-		FROM trigger_formula
-		WHERE id IN (%s)
-	`, args...)
+	query := fmt.Sprintf(`
+	    SELECT id, owner_id, name, last_triggered, cooldown
+	    FROM trigger_formula
+	    WHERE id IN (%s)
+	`, strings.Join(placeholders, ","))
+
+	rows, err := DB.Query(context.Background(), query, args...)
 	if err != nil {
 		return err
 	}
@@ -45,7 +48,7 @@ func SendPushNotifications(formulasID []int, message string) error {
 			return err
 		}
 
-		if f.LastTriggered != nil {
+		if f.LastTriggered != nil { // тут херня с кд возможно происходит(проверить)
 			nextAvailable := f.LastTriggered.Add(time.Duration(f.Cooldown) * time.Second)
 			if now.Before(nextAvailable) {
 				continue // cooldown не прошёл
@@ -66,14 +69,14 @@ func SendPushNotifications(formulasID []int, message string) error {
 			multiTriggers[ownerID] = formulas
 		}
 	}
-
+	fmt.Println("05: ", grouped)
 	for userID, formulas := range grouped {
 		var payload string
 
 		if len(formulas) == 1 {
 			payload = fmt.Sprintf("Сработала стратегия: %s", formulas[0].Name)
 		} else {
-			payload = "980"
+			payload = "проходняк (SendPushNotifications)"
 		}
 
 		rows, err := DB.Query(context.Background(), `
@@ -85,7 +88,7 @@ func SendPushNotifications(formulasID []int, message string) error {
 			log.Printf("ошибка получения push-подписок для user %d: %v", userID, err)
 			continue
 		}
-
+		fmt.Println("ROWS", rows, "userID:", userID)
 		for rows.Next() {
 			var endpoint, p256dh, auth string
 			if err := rows.Scan(&endpoint, &p256dh, &auth); err != nil {
@@ -102,13 +105,15 @@ func SendPushNotifications(formulasID []int, message string) error {
 		rows.Close()
 	}
 
-	updateLastTriggered(formulasID)
-
+	err = updateLastTriggered(formulasID)
+	if err != nil {
+		log.Printf("Несовсем критическая ошибка при сохранении ласт апдейта формулы, будет критичной когда добавится история триггеров")
+	}
 	return nil
 }
 
 // обновляет в самом конце модели где сработали формулы
-func updateLastTriggered(ids []int) {
+func updateLastTriggered(ids []int) error {
 	placeholders := make([]string, len(ids))
 	args := make([]interface{}, len(ids))
 	for i, id := range ids {
@@ -116,22 +121,24 @@ func updateLastTriggered(ids []int) {
 		args[i] = id
 	}
 
-	_, err := DB.Exec(context.Background(), `
+	query := fmt.Sprintf(`
 		UPDATE trigger_formula SET last_triggered = NOW()
 		WHERE id IN (%s)
-	`, args...)
+	`, strings.Join(placeholders, ","))
 
+	_, err := DB.Exec(context.Background(), query, args...)
 	if err != nil {
-		log.Printf("Ошибка при обновлении last_triggered: %v", err)
+		return err
 	}
+	return nil
 }
 
-func SaveSubscription(endpoint string, p256dh string, auth string) error {
+func SaveSubscription(endpoint string, p256dh string, auth string, userID string) error {
 	now := time.Now()
 	_, err := DB.Exec(context.Background(), `
-			INSERT INTO trigger_push_subscription (endpoint, p256dh, auth, created_at)
-			VALUES ($1, $2, $3, $4)
-		`, endpoint, p256dh, auth, now)
+			INSERT INTO trigger_push_subscription (endpoint, p256dh, auth, created_at, user_id)
+			VALUES ($1, $2, $3, $4, $5)
+		`, endpoint, p256dh, auth, now, userID)
 
 	if err != nil {
 		return err

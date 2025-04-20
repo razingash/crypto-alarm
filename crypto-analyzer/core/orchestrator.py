@@ -126,14 +126,16 @@ class BinanceAPIOrchestrator:
                 await send_triggered_formulas(formulas=triggered_formulas)
 
 
-def extract_data_from_price_change_24h(dataset: list, fields: dict[str, list]):
+def extract_data_from_price_change_24h(dataset: list, fields: dict[str, list]) -> dict:
     dataset_dict = {data["symbol"]: data for data in dataset}
     result = {}
 
     for symbol, field_list in fields.items():
         if symbol in dataset_dict:
             data = dataset_dict[symbol]
-            result[symbol] = {field: data[field] for field in field_list if field in data}
+            for field in field_list:
+                if field in data:
+                    result[f"{symbol}_{field}"] = float(data[field])
 
     return result
 
@@ -145,6 +147,6 @@ def extract_data_from_ticker_current_price(dataset: list, currencies: dict[str, 
     for symbol in currencies.keys():
         data = dataset_dict.get(symbol)
         if data:
-            result[symbol] = {"price": data["price"]}
+            result[f"{symbol}_price"] = float(data["price"])
 
     return result

@@ -67,8 +67,9 @@ def test_update_variables_topological_Kahn():
     graph.add_formula("a - b == 1000", 1)
     graph.add_formula("b + c == 100", 2)
     graph.add_formula("a - b + c <= 200", 3)
+    graph.add_formula("ETHBTC_priceChange < 1", 4)
 
-    graph.update_variables_topological_Kahn({"a": 1200, "b": 200, "c": -100})
+    result = graph.update_variables_topological_Kahn({"a": 1200, "b": 200, "c": -100, 'ETHBTC_priceChange': -0.0003})
 
     assert graph.variables["a"] == 1200
     assert graph.variables["b"] == 200
@@ -77,6 +78,9 @@ def test_update_variables_topological_Kahn():
     assert graph.is_formula_triggered(1) == True
     assert graph.is_formula_triggered(2) == True
     assert graph.is_formula_triggered(3) == False
+    assert graph.is_formula_triggered(4) == True
+
+    assert result == [1, 2, 4]
 
 
 def test_evaluate_variable_impact():  # не работает правильно метод в классе

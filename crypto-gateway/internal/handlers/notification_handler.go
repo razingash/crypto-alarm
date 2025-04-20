@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto-gateway/config"
 	"crypto-gateway/internal/db"
+	"fmt"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -14,13 +15,20 @@ func GetVAPIDKey(c fiber.Ctx) error {
 }
 
 func SavePushSubscription(c fiber.Ctx) error {
+	userUUID := c.Locals("userUUID").(string)
+	userID, err := db.GetIdbyUuid(userUUID)
+
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
 	endpoint := c.Locals("endpoint").(string)
 	p256dh := c.Locals("p256dh").(string)
 	auth := c.Locals("auth").(string)
 
-	// пока сохранение без userID
-	err := db.SaveSubscription(endpoint, p256dh, auth)
+	err = db.SaveSubscription(endpoint, p256dh, auth, userID)
 	if err != nil {
+		fmt.Println(err)
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
@@ -36,5 +44,6 @@ func PushNotificationsPost(c fiber.Ctx) error {
 	if err == nil {
 		return c.SendStatus(fiber.StatusOK)
 	}
+
 	return c.SendStatus(fiber.StatusInternalServerError)
 }

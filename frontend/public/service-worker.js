@@ -133,3 +133,34 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(networkFirst(event.request)); // Network first later
     }
 });
+
+// eslint-disable-next-line no-restricted-globals
+self.addEventListener('push', event => {
+    console.log('Service Worker: Push Received.');
+
+    let data = {};
+    try {
+        data = event.data ? event.data.json() : {};
+    } catch (e) {
+        console.warn('Push event but no JSON payload', e);
+    }
+
+    const title = data.title || 'nott';
+    const options = {
+        body: data.body ||  'events triggered',
+        icon: data.icon || '/favicon.ico',
+        badge: data.badge || '/favicon.ico',
+        data: data.data || {},
+        actions: data.actions || []
+    };
+
+    event.waitUntil(
+        // eslint-disable-next-line no-restricted-globals
+        self.registration.showNotification(title, options)
+    );
+});
+
+// eslint-disable-next-line no-restricted-globals
+self.addEventListener('notificationclick', event => { // обработка клика на уведомление(тяжко)
+    console.log('Notification was clicked');
+});

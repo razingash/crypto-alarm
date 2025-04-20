@@ -152,38 +152,50 @@ class DependencyGraph:
         Для 3000 уникальных параметров и 10000 разных формул с количеством пременных равным 3000 обновление
         3000 параметров(по сути всего графа) происхоидит примерно за 0.0004 секунды
         """
-        print('Updating variables')
+        print('Updating variables with data:', updates)
+
         self.variables.update(updates)
 
         affected_formulas = set()
         for var in updates:
-            affected_formulas.update(self.graph.get(var, set()))
+            deps = self.graph.get(var)
+            if deps:
+                affected_formulas.update(deps)
+            else:
+                for f_id, expr in self.formulas.items():
+                    if any(str(sym) == var for sym in expr.free_symbols):
+                        affected_formulas.add(f_id)
 
-        # Топологическая сортировка(нереально быстрая)
+        if not affected_formulas:
+            return []
+
         in_degree = {f_id: 0 for f_id in affected_formulas}
         for f_id in affected_formulas:
             expr = self.formulas[f_id]
-            for var in expr.free_symbols:
-                if var in updates:
-                    in_degree[f_id] += 1
+            for sym in expr.free_symbols:
+                sym_name = str(sym)
+                for dep_fid in self.graph.get(sym_name, set()):
+                    if dep_fid in affected_formulas:
+                        in_degree[dep_fid] += 1
 
-        queue = deque([f_id for f_id in in_degree if in_degree[f_id] == 0])
+        queue = deque(f_id for f_id, deg in in_degree.items() if deg == 0)
         sorted_formulas = []
+
         while queue:
-            f_id = queue.popleft()
-            sorted_formulas.append(f_id)
-            for var in self.formulas[f_id].free_symbols:
-                for dependent_f_id in self.graph.get(str(var), set()):
-                    if dependent_f_id in in_degree:
-                        in_degree[dependent_f_id] -= 1
-                        if in_degree[dependent_f_id] == 0:
-                            queue.append(dependent_f_id)
+            fid = queue.popleft()
+            sorted_formulas.append(fid)
+            for sym in self.formulas[fid].free_symbols:
+                sym_name = str(sym)
+                for dep_fid in self.graph.get(sym_name, set()):
+                    if dep_fid in in_degree:
+                        in_degree[dep_fid] -= 1
+                        if in_degree[dep_fid] == 0:
+                            queue.append(dep_fid)
 
-        # пересчет только нужных значений
-        for formula_id in sorted_formulas:
-            self.evaluate_formula(formula_id)
+        for fid in sorted_formulas:
+            self.evaluate_formula(fid)
 
-        print('substitution of variables finished')
+        print('substitution of variables finished with formulas ids: ', sorted_formulas)
 
         return self.get_triggered_formulas(sorted_formulas)
 
