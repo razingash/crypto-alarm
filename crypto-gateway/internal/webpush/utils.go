@@ -47,51 +47,73 @@ func GenerateVAPIDJWT(endpoint, subject string, privateKey *ecdsa.PrivateKey) (s
 		return "", err
 	}
 
-	sigBytes := append(r.Bytes(), s.Bytes()...)
+	sigBytes := append(padTo32(r.Bytes()), padTo32(s.Bytes())...)
 	encodedSig := base64.RawURLEncoding.EncodeToString(sigBytes)
 
 	return encodedHeader + "." + encodedPayload + "." + encodedSig, nil
 }
 
-func DeriveSharedSecret(serverPriv *ecdh.PrivateKey, clientPubBytes, authSecret []byte) ([]byte, []byte, error) {
+func DeriveSharedSecretECDH(
+	serverPriv *ecdh.PrivateKey,
+	clientPubBytes, authSecret []byte,
+) (contentEncryptionKey, nonce, salt, clientPubOut, serverPubOut []byte, err error) {
 	curve := ecdh.P256()
+
 	clientPub, err := curve.NewPublicKey(clientPubBytes)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, nil, nil, fmt.Errorf("invalid client pubkey: %w", err)
 	}
+
+	serverPub := serverPriv.PublicKey().Bytes()
+	clientPubOut = clientPubBytes
+	serverPubOut = serverPub
 
 	sharedSecret, err := serverPriv.ECDH(clientPub)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, nil, nil, fmt.Errorf("failed to derive shared secret: %w", err)
 	}
 
-	salt := make([]byte, 16) // возможно из-за этого могут быть баги
-	rand.Read(salt)
-
-	h := hkdf.New(sha256.New, sharedSecret, salt, authSecret)
-	key := make([]byte, 16) // AES-128-GCM
-	_, err = io.ReadFull(h, key)
-	if err != nil {
-		return nil, nil, err
+	salt = make([]byte, 16)
+	if _, err := rand.Read(salt); err != nil {
+		return nil, nil, nil, nil, nil, fmt.Errorf("salt gen failed: %w", err)
 	}
 
-	return key, salt, nil
+	// HKDF info
+	info := append([]byte("WebPush: info\x00"), append(clientPubBytes, serverPub...)...)
+
+	prk := hkdf.Extract(sha256.New, authSecret, sharedSecret)
+	hkdfReader := hkdf.New(sha256.New, prk, salt, info)
+
+	contentEncryptionKey = make([]byte, 16) // AES-128-GCM
+	nonce = make([]byte, 12)
+	if _, err := io.ReadFull(hkdfReader, contentEncryptionKey); err != nil {
+		return nil, nil, nil, nil, nil, fmt.Errorf("HKDF key gen failed: %w", err)
+	}
+	if _, err := io.ReadFull(hkdfReader, nonce); err != nil {
+		return nil, nil, nil, nil, nil, fmt.Errorf("HKDF nonce gen failed: %w", err)
+	}
+
+	return contentEncryptionKey, nonce, salt, clientPubOut, serverPubOut, nil
 }
 
-func EncryptPushPayload(payload, key, salt []byte) ([]byte, []byte, error) {
-	nonce := make([]byte, 12) // также могут быть баги из-за слабой вариативности
-	rand.Read(nonce)
+func EncryptPushPayload(message []byte, key, nonce []byte) ([]byte, error) {
+	paddingLen := 0
+	record := make([]byte, 1+paddingLen+len(message))
+	record[0] = byte(paddingLen)
+	copy(record[1+paddingLen:], message)
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
+
 	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	ciphertext := aesgcm.Seal(nil, nonce, payload, nil)
-	return ciphertext, nonce, nil
+
+	ciphertext := aesgcm.Seal(nil, nonce, record, nil)
+	return ciphertext, nil
 }
 
 func DecodeVAPIDPrivateKey(b64PrivKey string) (*ecdsa.PrivateKey, error) {
@@ -140,4 +162,12 @@ func DecodeVAPIDPrivateKeyECDH(b64PrivKey string) (*ecdh.PrivateKey, error) {
 func extractOrigin(endpoint string) string {
 	parts := strings.Split(endpoint, "/")
 	return parts[0] + "//" + parts[2]
+}
+
+func padTo32(b []byte) []byte {
+	if len(b) >= 32 {
+		return b
+	}
+	pad := make([]byte, 32-len(b))
+	return append(pad, b...)
 }

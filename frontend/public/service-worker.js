@@ -22,7 +22,7 @@ async function cacheFirst(request) {
         return networkResponse;
     } catch (error) {
         console.error('CacheFirst error:', error);
-        return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+        return new Response('Offline', { status: 503, statusText: 'CF: Service Unavailable' });
     }
 }
 
@@ -31,14 +31,15 @@ async function networkFirst(request) {
 
     try {
         const networkResponse = await fetch(request);
-        if (networkResponse.ok) {
+        if (request.method === 'GET' && networkResponse.ok) {
             await cache.put(request, networkResponse.clone());
         }
         return networkResponse;
     } catch (error) {
+        console.log(error)
         console.warn('Network request failed, serving from cache:', request.url);
         const cachedResponse = await caches.match(request);
-        return cachedResponse || new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+        return cachedResponse || new Response('Offline', { status: 503, statusText: 'NF: Service Unavailable' });
     }
 }
 
@@ -117,20 +118,13 @@ self.addEventListener('message', (event) => {
 
 // eslint-disable-next-line no-restricted-globals
 self.addEventListener('fetch', (event) => {
-    if (event.request.mode === 'navigate') { // this is necessary to use the same HTML file (metatags aren't important)
-        event.respondWith(
-            caches.match('en/index.html').then(response => response || fetch(event.request))
-        );
-        return;
-    }
-
     const url = new URL(event.request.url);
     if (url.pathname.startsWith('/static/json/')) { // Cache First
         event.respondWith(cacheFirst(event.request));
     } else if (url.pathname === '/index.html' || url.pathname.match(/\.(css|js|ico)$/)) { // Cache First
         event.respondWith(cacheFirst(event.request));
     } else if (url.pathname.startsWith('/api/')) {
-        event.respondWith(networkFirst(event.request)); // Network first later
+        event.respondWith(networkFirst(event.request));
     }
 });
 
@@ -149,9 +143,9 @@ self.addEventListener('push', event => {
     const options = {
         body: data.body ||  'events triggered',
         icon: data.icon || '/favicon.ico',
-        badge: data.badge || '/favicon.ico',
-        data: data.data || {},
-        actions: data.actions || []
+        //badge: data.badge || '/favicon.ico', //  для этой херни отдельная спецификация
+        //data: data.data || {},
+        //actions: data.actions || []
     };
 
     event.waitUntil(

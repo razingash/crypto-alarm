@@ -51,7 +51,6 @@ export const NotificationProvider = ({children}) => {
                 const registration = await navigator.serviceWorker.ready;
                 let subscription = await registration.pushManager.getSubscription();
                 if (!subscription) {
-                    // позже добавить сохранение в локальное хранилище чтобы не делать лишних запросов
                     const vapidKey = await NotificationService.getVapidKey();
 
                     subscription = await registration.pushManager.subscribe({

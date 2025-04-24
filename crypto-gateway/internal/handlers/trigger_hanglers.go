@@ -98,7 +98,7 @@ func FormulaPost(c fiber.Ctx) error {
 			"error": "error during saving formula variables",
 		})
 	}
-	go addFormulaToGraph(id)
+	//go addFormulaToGraph(id) // незачем добавлять, ведь по умолчанию её функции выключены
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"id": id,
 	})

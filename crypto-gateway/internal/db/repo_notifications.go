@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -38,7 +39,7 @@ func SendPushNotifications(formulasID []int, message string) error {
 		Cooldown      int
 	}
 
-	now := time.Now()
+	now := time.Now().UTC().Truncate(time.Second)
 	grouped := make(map[int][]Formula)
 
 	for rows.Next() {
@@ -48,17 +49,16 @@ func SendPushNotifications(formulasID []int, message string) error {
 			return err
 		}
 
-		if f.LastTriggered != nil { // тут херня с кд возможно происходит(проверить)
-			nextAvailable := f.LastTriggered.Add(time.Duration(f.Cooldown) * time.Second)
+		if f.LastTriggered != nil {
+			nextAvailable := f.LastTriggered.UTC().Truncate(time.Second).Add(time.Duration(f.Cooldown) * time.Second)
 			if now.Before(nextAvailable) {
 				continue // cooldown не прошёл
 			}
 		}
-
 		grouped[f.OwnerID] = append(grouped[f.OwnerID], f)
 	}
 
-	// разделение на одиночные и множественные
+	// разделение на одиночные и множественные | позже сделать разные типы пушей
 	singleTriggers := make(map[int]Formula)
 	multiTriggers := make(map[int][]Formula)
 
@@ -69,18 +69,18 @@ func SendPushNotifications(formulasID []int, message string) error {
 			multiTriggers[ownerID] = formulas
 		}
 	}
-	fmt.Println("05: ", grouped)
-	for userID, formulas := range grouped {
-		var payload string
 
-		if len(formulas) == 1 {
-			payload = fmt.Sprintf("Сработала стратегия: %s", formulas[0].Name)
-		} else {
-			payload = "проходняк (SendPushNotifications)"
+	var outdatedSubIDs []int
+
+	for userID, formulas := range grouped {
+		data := map[string]string{
+			"title": "Сработала стратегия",
+			"body":  fmt.Sprintf("Стратегия: %s", formulas[0].Name),
 		}
+		jsonPayload, _ := json.Marshal(data)
 
 		rows, err := DB.Query(context.Background(), `
-            SELECT endpoint, p256dh, auth
+            SELECT endpoint, p256dh, auth, id
             FROM trigger_push_subscription
             WHERE user_id = $1
         `, userID)
@@ -88,17 +88,19 @@ func SendPushNotifications(formulasID []int, message string) error {
 			log.Printf("ошибка получения push-подписок для user %d: %v", userID, err)
 			continue
 		}
-		fmt.Println("ROWS", rows, "userID:", userID)
+
 		for rows.Next() {
+			var subID int
 			var endpoint, p256dh, auth string
-			if err := rows.Scan(&endpoint, &p256dh, &auth); err != nil {
+			if err := rows.Scan(&endpoint, &p256dh, &auth, &subID); err != nil {
 				log.Printf("ошибка сканирования подписки user %d: %v", userID, err)
 				continue
 			}
 
-			err := webpush.SendWebPush(endpoint, p256dh, auth, payload)
+			err := webpush.SendWebPush(endpoint, p256dh, auth, jsonPayload)
 			if err != nil {
 				log.Printf("ошибка отправки пуша user %d: %v", userID, err)
+				outdatedSubIDs = append(outdatedSubIDs, subID)
 			}
 		}
 
@@ -109,6 +111,13 @@ func SendPushNotifications(formulasID []int, message string) error {
 	if err != nil {
 		log.Printf("Несовсем критическая ошибка при сохранении ласт апдейта формулы, будет критичной когда добавится история триггеров")
 	}
+
+	if len(outdatedSubIDs) > 0 {
+		if err := deleteOutdatedSubscription(outdatedSubIDs); err != nil {
+			log.Printf("ошибка при удалении устаревших подписок: %v", err)
+		}
+	}
+
 	return nil
 }
 
@@ -122,7 +131,7 @@ func updateLastTriggered(ids []int) error {
 	}
 
 	query := fmt.Sprintf(`
-		UPDATE trigger_formula SET last_triggered = NOW()
+		UPDATE trigger_formula SET last_triggered = NOW() AT TIME ZONE 'UTC'
 		WHERE id IN (%s)
 	`, strings.Join(placeholders, ","))
 
@@ -134,7 +143,7 @@ func updateLastTriggered(ids []int) error {
 }
 
 func SaveSubscription(endpoint string, p256dh string, auth string, userID string) error {
-	now := time.Now()
+	now := time.Now().UTC()
 	_, err := DB.Exec(context.Background(), `
 			INSERT INTO trigger_push_subscription (endpoint, p256dh, auth, created_at, user_id)
 			VALUES ($1, $2, $3, $4, $5)
@@ -145,4 +154,22 @@ func SaveSubscription(endpoint string, p256dh string, auth string, userID string
 	}
 
 	return nil
+}
+
+func deleteOutdatedSubscription(subscriptionIds []int) error {
+	if len(subscriptionIds) == 0 {
+		return nil
+	}
+
+	placeholders := make([]string, len(subscriptionIds))
+	args := make([]interface{}, len(subscriptionIds))
+	for i, id := range subscriptionIds {
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+		args[i] = id
+	}
+
+	query := fmt.Sprintf(`DELETE FROM trigger_push_subscription WHERE id IN (%s)`, strings.Join(placeholders, ","))
+
+	_, err := DB.Exec(context.Background(), query, args...)
+	return err
 }
