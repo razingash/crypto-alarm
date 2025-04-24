@@ -1,6 +1,7 @@
 package webpush
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/ecdh"
@@ -9,6 +10,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -33,7 +35,7 @@ func GenerateVAPIDJWT(endpoint, subject string, privateKey *ecdsa.PrivateKey) (s
 	origin := extractOrigin(endpoint)
 	exp := time.Now().Unix() + 12*60*60 // 12 часов
 	payload := map[string]interface{}{
-		"aud": origin, // позде сменить на uuid?
+		"aud": origin,
 		"exp": exp,
 		"sub": subject,
 	}
@@ -53,6 +55,7 @@ func GenerateVAPIDJWT(endpoint, subject string, privateKey *ecdsa.PrivateKey) (s
 	return encodedHeader + "." + encodedPayload + "." + encodedSig, nil
 }
 
+// тут главная проблема с шифрованием
 func DeriveSharedSecretECDH(
 	serverPriv *ecdh.PrivateKey,
 	clientPubBytes, authSecret []byte,
@@ -61,7 +64,7 @@ func DeriveSharedSecretECDH(
 
 	clientPub, err := curve.NewPublicKey(clientPubBytes)
 	if err != nil {
-		return nil, nil, nil, nil, nil, fmt.Errorf("invalid client pubkey: %w", err)
+		return nil, nil, nil, nil, nil, err
 	}
 
 	serverPub := serverPriv.PublicKey().Bytes()
@@ -70,38 +73,57 @@ func DeriveSharedSecretECDH(
 
 	sharedSecret, err := serverPriv.ECDH(clientPub)
 	if err != nil {
-		return nil, nil, nil, nil, nil, fmt.Errorf("failed to derive shared secret: %w", err)
+		return nil, nil, nil, nil, nil, err
 	}
 
 	salt = make([]byte, 16)
-	if _, err := rand.Read(salt); err != nil {
-		return nil, nil, nil, nil, nil, fmt.Errorf("salt gen failed: %w", err)
+	if _, err = rand.Read(salt); err != nil {
+		return nil, nil, nil, nil, nil, err
 	}
 
-	// HKDF info
+	hash := sha256.New
+
+	// IKM: HKDF-Expand(prk, salt, "WebPush: info\x00", 32)
 	info := append([]byte("WebPush: info\x00"), append(clientPubBytes, serverPub...)...)
-
-	prk := hkdf.Extract(sha256.New, authSecret, sharedSecret)
-	hkdfReader := hkdf.New(sha256.New, prk, salt, info)
-
-	contentEncryptionKey = make([]byte, 16) // AES-128-GCM
-	nonce = make([]byte, 12)
-	if _, err := io.ReadFull(hkdfReader, contentEncryptionKey); err != nil {
-		return nil, nil, nil, nil, nil, fmt.Errorf("HKDF key gen failed: %w", err)
+	ikmHKDF := hkdf.New(hash, sharedSecret, authSecret, info)
+	ikm := make([]byte, 32)
+	if _, err = io.ReadFull(ikmHKDF, ikm); err != nil {
+		return nil, nil, nil, nil, nil, err
 	}
-	if _, err := io.ReadFull(hkdfReader, nonce); err != nil {
-		return nil, nil, nil, nil, nil, fmt.Errorf("HKDF nonce gen failed: %w", err)
+
+	// CEK = HKDF-Expand(ikm, salt, "Content-Encoding: aes128gcm\x00", 16)
+	cekHKDF := hkdf.New(hash, ikm, salt, []byte("Content-Encoding: aes128gcm\x00"))
+	contentEncryptionKey = make([]byte, 16)
+	if _, err = io.ReadFull(cekHKDF, contentEncryptionKey); err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+
+	// nonce: HKDF-Expand(ikm, salt, "Content-Encoding: nonce\x00", 12)
+	nonceHKDF := hkdf.New(hash, ikm, salt, []byte("Content-Encoding: nonce\x00"))
+	nonce = make([]byte, 12)
+	if _, err = io.ReadFull(nonceHKDF, nonce); err != nil {
+		return nil, nil, nil, nil, nil, err
 	}
 
 	return contentEncryptionKey, nonce, salt, clientPubOut, serverPubOut, nil
 }
 
-func EncryptPushPayload(message []byte, key, nonce []byte) ([]byte, error) {
-	paddingLen := 0
-	record := make([]byte, 1+paddingLen+len(message))
-	record[0] = byte(paddingLen)
-	copy(record[1+paddingLen:], message)
+func EncryptPushPayload(message, key, nonce []byte, ecdhPub []byte) ([]byte, error) {
+	// сборка заранее, чтоб не было херни
+	headerLen := 16 /* salt */ + 4 /* recordSize */ + 1 + len(ecdhPub)
 
+	dataBuf := bytes.NewBuffer(message)
+	dataBuf.WriteByte(0x02)
+
+	recordSize := 4096
+	maxData := recordSize - 16 - headerLen
+	if dataBuf.Len() > maxData {
+		return nil, fmt.Errorf("this message too big")
+	}
+	padding := make([]byte, maxData-dataBuf.Len())
+	dataBuf.Write(padding)
+
+	// AES-GCM
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -111,9 +133,25 @@ func EncryptPushPayload(message []byte, key, nonce []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	return aesgcm.Seal(nil, nonce, dataBuf.Bytes(), nil), nil
+}
 
-	ciphertext := aesgcm.Seal(nil, nonce, record, nil)
-	return ciphertext, nil
+func BuildEncryptedBody(ciphertext, salt, ecdhPub []byte) ([]byte, error) {
+	buf := &bytes.Buffer{}
+
+	buf.Write(salt)
+
+	// recordSize
+	tmp := make([]byte, 4)
+	binary.BigEndian.PutUint32(tmp, 4096)
+	buf.Write(tmp)
+
+	buf.WriteByte(byte(len(ecdhPub)))
+	buf.Write(ecdhPub)
+
+	buf.Write(ciphertext)
+
+	return buf.Bytes(), nil
 }
 
 func DecodeVAPIDPrivateKey(b64PrivKey string) (*ecdsa.PrivateKey, error) {
@@ -138,24 +176,6 @@ func DecodeVAPIDPrivateKey(b64PrivKey string) (*ecdsa.PrivateKey, error) {
 			Y:     y,
 		},
 	}, nil
-}
-
-func DecodeVAPIDPrivateKeyECDH(b64PrivKey string) (*ecdh.PrivateKey, error) {
-	rawKey, err := base64.RawURLEncoding.DecodeString(b64PrivKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode base64 key: %w", err)
-	}
-
-	if len(rawKey) != 32 {
-		return nil, errors.New("invalid ECDH private key length")
-	}
-
-	privKey, err := ecdh.P256().NewPrivateKey(rawKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create ECDH private key: %w", err)
-	}
-
-	return privKey, nil
 }
 
 // получает 'https://fcm.googleapis.com' из endpoint

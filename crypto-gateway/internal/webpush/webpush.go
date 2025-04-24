@@ -3,6 +3,9 @@ package webpush
 import (
 	"bytes"
 	"crypto-gateway/config"
+	"crypto/ecdh"
+	"crypto/elliptic"
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -11,21 +14,20 @@ import (
 )
 
 func SendWebPush(endpoint string, p256dh string, auth string, messageJSON []byte) error {
-	// разделить vapidPub и serverECDHPub
-
 	//ключи
-	priv, err := DecodeVAPIDPrivateKey(config.Vapid_Private_Key)
+	vapidECDSA, err := DecodeVAPIDPrivateKey(config.Vapid_Private_Key)
 	if err != nil {
 		return err
 	}
-	priv2, err := DecodeVAPIDPrivateKeyECDH(config.Vapid_Private_Key)
+
+	// ECDH
+	ecdhPriv, err := ecdh.P256().GenerateKey(rand.Reader)
 	if err != nil {
 		return err
 	}
-	vapidPub := priv2.PublicKey().Bytes()
 
 	// генерация JWT
-	vapidJWT, err := GenerateVAPIDJWT(endpoint, "roumerchi@gmail.com", priv)
+	vapidJWT, err := GenerateVAPIDJWT(endpoint, "roumerchi@gmail.com", vapidECDSA)
 	if err != nil {
 		return err
 	}
@@ -41,19 +43,29 @@ func SendWebPush(endpoint string, p256dh string, auth string, messageJSON []byte
 	}
 
 	// ECDH + HKDF
-	key, nonce, salt, _, serverPub, err := DeriveSharedSecretECDH(priv2, clientPubRaw, authRaw)
+	key, nonce, salt, _, serverPub, err := DeriveSharedSecretECDH(ecdhPriv, clientPubRaw, authRaw)
 	if err != nil {
-		fmt.Println("ERROR:", err)
 		return err
 	}
 
 	// шифрование
-	ciphertext, err := EncryptPushPayload(messageJSON, key, nonce)
+	ciphertext, err := EncryptPushPayload(messageJSON, key, nonce, serverPub)
 	if err != nil {
 		return err
 	}
 
-	req, err := BuildPushRequest(endpoint, ciphertext, salt, serverPub, vapidPub, vapidJWT)
+	body, err := BuildEncryptedBody(ciphertext, salt, serverPub)
+	if err != nil {
+		return err
+	}
+
+	req, err := BuildPushRequest(
+		endpoint,
+		body,
+		salt,
+		serverPub,
+		elliptic.Marshal(elliptic.P256(), vapidECDSA.PublicKey.X, vapidECDSA.PublicKey.Y),
+		vapidJWT)
 	if err != nil {
 		return err
 	}
@@ -95,15 +107,16 @@ func BuildPushRequest(endpoint string, payload, salt, ecdhPub, vapidPub []byte, 
 		return nil, err
 	}
 
-	req.Header.Set("TTL", "86400") // 1 день, скорее хорошее значение чем плохое, нужно будет просто добавить историю
 	req.Header.Set("Content-Encoding", "aes128gcm")
 	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("TTL", "86400") // 1 день, скорее хорошее значение чем плохое, нужно будет просто добавить историю
 	req.Header.Set("Encryption", fmt.Sprintf("salt=%s", base64.RawURLEncoding.EncodeToString(salt)))
 	req.Header.Set("Crypto-Key", fmt.Sprintf("dh=%s; p256ecdsa=%s",
 		base64.RawURLEncoding.EncodeToString(ecdhPub),
 		base64.RawURLEncoding.EncodeToString(vapidPub),
 	))
-	req.Header.Set("Authorization", fmt.Sprintf("WebPush %s", vapidJWT))
+	authHeader := fmt.Sprintf("vapid t=%s, k=%s", vapidJWT, base64.RawURLEncoding.EncodeToString(vapidPub))
+	req.Header.Set("Authorization", authHeader)
 
 	return req, nil
 }
