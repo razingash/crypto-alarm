@@ -43,7 +43,7 @@ func SendWebPush(endpoint string, p256dh string, auth string, messageJSON []byte
 	}
 
 	// ECDH + HKDF
-	key, nonce, salt, _, serverPub, err := DeriveSharedSecretECDH(ecdhPriv, clientPubRaw, authRaw)
+	key, nonce, salt, serverPub, err := DeriveSharedSecretECDH(ecdhPriv, clientPubRaw, authRaw)
 	if err != nil {
 		return err
 	}

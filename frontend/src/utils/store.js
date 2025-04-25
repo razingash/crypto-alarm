@@ -12,16 +12,37 @@ export const useStore = () => {
 export const NotificationProvider = ({children}) => {
     const {isAuth} = useAuth();
     const [pushNotification, setPushNotification] = useState(Notification.permission === "granted");
-    const [isPwaMode, setIsPwaMode] = useState(null);
+
+    const getInitialPwaMode = () => {
+        const fromInstall = localStorage.getItem('wasJustInstalled') === 'true';
+
+        return (
+            window.matchMedia('(display-mode: standalone)').matches ||
+            window.matchMedia('(display-mode: window-controls-overlay)').matches ||
+            window.matchMedia('(display-mode: minimal-ui)').matches ||
+            window.matchMedia('(display-mode: fullscreen)').matches ||
+            window.navigator.standalone === true ||
+            document.referrer.startsWith('android-app://') ||
+            fromInstall
+        );
+    };
+
+    const [isPwaMode, setIsPwaMode] = useState(getInitialPwaMode());
 
     useEffect(() => {
-        const isPwa =  window.matchMedia('(display-mode: window-controls-overlay)').matches ||
-            window.matchMedia('(display-mode: standalone)').matches ||
-            window.matchMedia('(display-mode: minimal-ui)').matches ||
-            window.matchMedia('(display-mode: fullscreen)').matches;
+        if (localStorage.getItem('wasJustInstalled') === 'true') {
+            localStorage.removeItem('wasJustInstalled');
+        }
+    }, []);
 
-        setIsPwaMode(isPwa);
-    }, [])
+    useEffect(() => {
+        const onAppInstalled = () => {
+            localStorage.setItem('wasJustInstalled', 'true');
+            setIsPwaMode(true);
+        };
+        window.addEventListener('appinstalled', onAppInstalled);
+        return () => window.removeEventListener('appinstalled', onAppInstalled);
+    }, []);
 
     useEffect(() => {
         if (isPwaMode && Notification.permission === 'default') {

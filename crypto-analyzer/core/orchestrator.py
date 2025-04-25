@@ -39,9 +39,6 @@ class BinanceAPIOrchestrator:
             if task and not task.done():
                 task.cancel()
 
-        if "weights" not in self.tasks or self.tasks["weights"].done():
-            self.tasks["weights"] = asyncio.create_task(self.update_weights_loop())
-
         for api, formulas_amount in data.items():
             if formulas_amount <= 0:
                 continue
@@ -91,13 +88,6 @@ class BinanceAPIOrchestrator:
             await self.check_binance_response(response)
             if self.is_binance_online is True:
                 break
-
-    async def update_weights_loop(self): # улучшить чтобы были не все эндпоинты а используемые
-        """Периодическая актуализация весов. не добавляет сложности, просто постепенно актуализирует весы"""
-        while True:
-            await asyncio.sleep(3600)
-            response = await self.binance_api.check_and_update_weights()
-            await self.check_binance_response(response)
 
     async def update_ticker_current_price(self):
         while True:

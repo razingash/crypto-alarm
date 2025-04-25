@@ -99,7 +99,7 @@ class TriggerFormula(Base):
 
 
 class PushSubscription(Base):
-    endpoint: Mapped[str] = mapped_column(String, nullable=False)
+    endpoint: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     p256dh: Mapped[str] = mapped_column(String, nullable=False)
     auth: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

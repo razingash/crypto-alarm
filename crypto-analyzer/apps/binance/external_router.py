@@ -4,26 +4,56 @@ from httpx import HTTPStatusError, TimeoutException, ConnectError, RequestError
 from core.controller import BinanceAPIController
 from core.endpoints import endpoints
 from core.logger import custom_logger
-from core.middlewares import WeightTrackingMiddleware
 
 
 class BinanceAPI:
     """апи для получения триггеров и их запуск"""
     BASE_URL = "https://api.binance.com/api"
 
-    def __init__(self, controller: BinanceAPIController, middleware: WeightTrackingMiddleware):
+    def __init__(self, controller: BinanceAPIController):
         self.client = httpx.AsyncClient(timeout=10)
         self.controller = controller
-        self.middleware = middleware
 
-    async def get(self, endpoint: str, weight: int, response_model=None, params: dict = None):
+    @staticmethod
+    def check_and_update_endpoint_weights(response, endpoint, current_weight):
+        """
+        Method for adjusting the weights of endpoints. It isn't periodic task since the Binance weights are updated too
+        often, it makes no sense to make a periodic renewal once every few minutes, given the low cost of the operation
+        """
+        used_weight = response.headers.get("x-mbx-used-weight-1m", "0") # x-mbx-used-weight
+
+        try:
+            used_weight = int(used_weight)
+        except ValueError:
+            used_weight = None
+
+        api_weight = used_weight - current_weight
+        expected_weight = endpoints[endpoint]
+
+        if api_weight != expected_weight:
+            expected_weight = api_weight
+            custom_logger.log_with_path(
+                level=3,
+                msg=f"Endpoint updated {endpoint}: {expected_weight} -> {api_weight}",
+                filename="endpoints.log"
+            )
+        return used_weight
+
+    async def get(self, endpoint: str, endpoint_weight: int, response_model=None, params: dict = None):
         async def request():
             url = f"{self.BASE_URL}{endpoint}"
             try:
                 response = await self.client.get(url, params=params)
                 response.raise_for_status()
+
+                used_weight = self.check_and_update_endpoint_weights(
+                    response=response, endpoint=endpoint, current_weight=self.controller.current_weight
+                )
+                self.controller.current_weight = used_weight
+
                 data = response.json()
 
+                print(f'Current loading: {self.controller.current_weight}')
                 if response_model:
                     return response_model(**data)
                 return data
@@ -56,21 +86,15 @@ class BinanceAPI:
                 print(f"[UNKNOWN ERROR] {str(e)} while calling {url}")
                 raise
 
-        print(f'Current loading: {self.controller.current_weight}')
         if isinstance(request, bool): # если ошибка то будет булево значение
             return request
-        return await self.controller.request_with_limit(weight, request)
-
-    async def check_and_update_weights(self): # можно сделать из этой функции команду, и использовать после инициализации
-        """Функция для постепенной корректировки весов"""
-        print("Запуск актуализации весов через мидлвейр...")
-        self.middleware.enable_update_mode()
+        return await self.controller.request_with_limit(endpoint_weight, request)
 
     async def get_apiv3_accessibility(self):
         """проверяет доступен ли api/v3"""
         return await self.get(
             endpoint='/v3/ping',
-            weight=endpoints.get("/v3/ping")
+            endpoint_weight=endpoints.get("/v3/ping")
         )
 
     # ситуативный апи, думаю лучше всего его не использовать(для такого лучше будет вебсокет, даже в доке так пишут)
@@ -78,7 +102,7 @@ class BinanceAPI:
         """цена конкретной валюты"""
         return await self.get(
             endpoint="/v3/ticker/price",
-            weight=endpoints.get("/v3/ticker/price")
+            endpoint_weight=endpoints.get("/v3/ticker/price")
         )
 
     async def get_price_change_24h(self, symbol=None):
@@ -86,7 +110,7 @@ class BinanceAPI:
         """изменение процентного значения за 24 часа"""
         return await self.get(
             endpoint="/v3/ticker/24hr",
-            weight=endpoints.get("/v3/ticker/24hr")
+            endpoint_weight=endpoints.get("/v3/ticker/24hr")
         )
 
 # апи для торговых пар(триггеры для обмена конкретных криптовалют - на этих скачках можно также заработать)

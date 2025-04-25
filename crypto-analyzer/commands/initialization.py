@@ -22,7 +22,7 @@ def fill_crypto_models() -> None:
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-    binance_api = BinanceAPI(controller=controller, middleware=None)
+    binance_api = BinanceAPI(controller=controller)
     loop.run_until_complete(get_initial_data_params(binance_api))
     loop.run_until_complete(get_valid_currencies(binance_api))
     loop.run_until_complete(create_trigger_components())
@@ -40,7 +40,7 @@ async def get_initial_data_params(binance_api: BinanceAPI) -> dict:
             # weigth не точный но это не критично поскольку апи не так много и весы будут меньше из-за ?symbol
             data = await binance_api.get(
                 endpoint=f"{endpoint}?symbol=ETHBTC",
-                weight=weigth
+                endpoint_weight=weigth
             )
             dataset[endpoint] = data
 
@@ -74,7 +74,7 @@ async def get_valid_currencies(binance_api: BinanceAPI) -> None:
     ]
 
     for i in range(len(api)):
-        data = await binance_api.get(endpoint=api[i], weight=80)
+        data = await binance_api.get(endpoint=api[i], endpoint_weight=80)
         if data:
             if i == 0:
                 dataset["ticker_price_symbols"] = [item["symbol"] for item in data]

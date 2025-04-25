@@ -45,6 +45,14 @@
     min-height: 242px;
     max-width: 100%;
 }
+.strategy__none {
+    color: #ffffff;
+    background: var(--container-background);
+    padding: 25px 50px;
+    border-radius: 4px;
+    border: 1px solid;
+}
+
 
 .strategy__item__header {
     display: flex;
@@ -102,6 +110,8 @@
 .strategy__info__item {
     display: flex;
     justify-content: space-between;
+    column-gap: 25px;
+    flex-wrap: wrap;
 }
 
 .param__status_off {

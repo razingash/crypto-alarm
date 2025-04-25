@@ -145,9 +145,10 @@ func updateLastTriggered(ids []int) error {
 func SaveSubscription(endpoint string, p256dh string, auth string, userID string) error {
 	now := time.Now().UTC()
 	_, err := DB.Exec(context.Background(), `
-			INSERT INTO trigger_push_subscription (endpoint, p256dh, auth, created_at, user_id)
-			VALUES ($1, $2, $3, $4, $5)
-		`, endpoint, p256dh, auth, now, userID)
+    INSERT INTO trigger_push_subscription (endpoint, p256dh, auth, created_at, user_id)
+    VALUES ($1, $2, $3, $4, $5)
+    ON CONFLICT (endpoint) DO NOTHING
+	`, endpoint, p256dh, auth, now, userID)
 
 	if err != nil {
 		return err

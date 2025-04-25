@@ -3,7 +3,7 @@
 Изначально неточные - вес указан в момент моего измерения, но это не проблема поскольку
 """
 
-endpoints = {
+endpoints = { # approximate weight, which is gradually balances
     "/v3/ping": 1,
     "/v3/ticker/price": 2,
     "/v3/ticker/24hr": 80  # если с символом то 2

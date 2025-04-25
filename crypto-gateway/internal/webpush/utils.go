@@ -59,26 +59,25 @@ func GenerateVAPIDJWT(endpoint, subject string, privateKey *ecdsa.PrivateKey) (s
 func DeriveSharedSecretECDH(
 	serverPriv *ecdh.PrivateKey,
 	clientPubBytes, authSecret []byte,
-) (contentEncryptionKey, nonce, salt, clientPubOut, serverPubOut []byte, err error) {
+) (contentEncryptionKey, nonce, salt, serverPubOut []byte, err error) {
 	curve := ecdh.P256()
 
 	clientPub, err := curve.NewPublicKey(clientPubBytes)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	serverPub := serverPriv.PublicKey().Bytes()
-	clientPubOut = clientPubBytes
 	serverPubOut = serverPub
 
 	sharedSecret, err := serverPriv.ECDH(clientPub)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	salt = make([]byte, 16)
 	if _, err = rand.Read(salt); err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	hash := sha256.New
@@ -88,24 +87,24 @@ func DeriveSharedSecretECDH(
 	ikmHKDF := hkdf.New(hash, sharedSecret, authSecret, info)
 	ikm := make([]byte, 32)
 	if _, err = io.ReadFull(ikmHKDF, ikm); err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	// CEK = HKDF-Expand(ikm, salt, "Content-Encoding: aes128gcm\x00", 16)
 	cekHKDF := hkdf.New(hash, ikm, salt, []byte("Content-Encoding: aes128gcm\x00"))
 	contentEncryptionKey = make([]byte, 16)
 	if _, err = io.ReadFull(cekHKDF, contentEncryptionKey); err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	// nonce: HKDF-Expand(ikm, salt, "Content-Encoding: nonce\x00", 12)
 	nonceHKDF := hkdf.New(hash, ikm, salt, []byte("Content-Encoding: nonce\x00"))
 	nonce = make([]byte, 12)
 	if _, err = io.ReadFull(nonceHKDF, nonce); err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
-	return contentEncryptionKey, nonce, salt, clientPubOut, serverPubOut, nil
+	return contentEncryptionKey, nonce, salt, serverPubOut, nil
 }
 
 func EncryptPushPayload(message, key, nonce []byte, ecdhPub []byte) ([]byte, error) {

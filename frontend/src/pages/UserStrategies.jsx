@@ -34,7 +34,7 @@ const UserStrategies = () => {
     return (
         <div className={"section__main"}>
             <div className={"strategies__list"}>
-                {formulas.length > 0 && (
+                {formulas.length > 0 ? (
                     formulas.map((formula, index) => (
                         <div className={"strategy__item"} key={formula.id} ref={index === formulas.length - 1 ? lastElement : null}>
                             <div className={"strategy__item__header"}>
@@ -80,6 +80,8 @@ const UserStrategies = () => {
                             <div className={"button__show_more"}></div>
                         </div>
                     ))
+                ) : (
+                    <div className={"strategy__none"}>You don't possess any strategies yet</div>
                 )}
             </div>
         </div>

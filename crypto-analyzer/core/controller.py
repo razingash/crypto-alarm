@@ -54,20 +54,18 @@ class BinanceAPIController:
                 self.current_weight += weight
                 self.queue.task_done()
 
-    async def request_with_limit(self, weight: int, request_func):
+    async def request_with_limit(self, endpoint_weight: int, request_func):
         """Управляет лимитом и выполняет запрос. Если лимит превышен, запрос ставится в очередь."""
         async with self.lock:
-            if self.current_weight + weight > self.max_weight:
+            if self.current_weight + endpoint_weight > self.max_weight:
                 custom_logger.log_with_path(
                     level=1,
                     msg=f"reached the limit for Binance API. Current weight:  {self.current_weight}",
                     filename="ApiLimits.log"
                 )
-                await self.queue.put((request_func, weight))
+                await self.queue.put((request_func, endpoint_weight))
                 self.queue_event.set()
                 return None
-
-            self.current_weight += weight
 
         return await request_func()
 
