@@ -10,6 +10,10 @@ export default class TriggersService {
         const response = await apiClient.get('/triggers/formula', {params: params})
         return response.data
     }
+    static async getFormulaHistory(formula_id, page) {
+        const response = await apiClient.get(`/triggers/formula/history/${formula_id}`, {params: {page}})
+        return response.data
+    }
     static async createFormula(formula, name) {
         return await apiClient.post('/triggers/formula', {formula, name});
     }

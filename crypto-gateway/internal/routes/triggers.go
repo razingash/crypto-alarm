@@ -13,6 +13,7 @@ func SetupTriggersRoutes(app *fiber.App) {
 
 	group.Get("/keyboard", handlers.Keyboard, middlewares.IsAuthorized)
 	group.Get("/formula", handlers.FormulaGet, middlewares.IsAuthorized)
+	group.Get("/formula/history/:id", handlers.FormulaHistoryGet, middlewares.IsAuthorized)
 	group.Post("/formula", handlers.FormulaPost, middlewares.IsAuthorized, api_validators.ValidateFormulaPost)
 	group.Patch("/formula", handlers.FormulaPatch, middlewares.IsAuthorized, api_validators.ValidateFormulaPatch)
 	group.Delete("/formula", handlers.FormulaDelete, middlewares.IsAuthorized)

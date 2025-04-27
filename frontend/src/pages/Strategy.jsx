@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import {useFetching} from "../hooks/useFetching";
 import TriggersService from "../API/TriggersService";
 import '../styles/strategy.css'
+import Chart from "../components/UI/Chart";
 
 const Strategy = () => {
     const navigate = useNavigate();
@@ -12,6 +13,8 @@ const Strategy = () => {
     const [formula, setFormula] = useState(null);
     const [changeMod, setChangeMod] = useState(false);
     const [formulaNewData, setFormulaNewData] = useState(null);
+    const [page, setPage] = useState(1);
+    const [historyData, setHistoryData] = useState([])
 
     const [fetchFormula, isFormulaLoading, ] = useFetching(async () => {
         return await TriggersService.getUserFormulas({id: id})
@@ -21,6 +24,9 @@ const Strategy = () => {
     }, 0, 1000)
     const [removeFormula, , ] = useFetching(async () => {
         return await TriggersService.deleteUserFormula(id)
+    }, 0, 1000)
+    const [fetchFormulaHistory, , ] = useFetching(async (page) => {
+        return await TriggersService.getFormulaHistory(id, page)
     }, 0, 1000)
 
     useEffect(() => {
@@ -35,6 +41,16 @@ const Strategy = () => {
         }
         void loadData();
     }, [isFormulaLoading])
+
+    useEffect(() => {
+        const loadData = async () => {
+            if (formula?.is_history_on === true && historyData.length === 0) {
+                const data = await fetchFormulaHistory(page)
+                data && setHistoryData(data)
+            }
+        }
+        void loadData();
+    }, [formula?.is_history_on, historyData])
 
     const getModifiedFields = (original, modified) => {
         const changes = {};
@@ -191,6 +207,13 @@ const Strategy = () => {
                     <label className={"strategy__change__cancle"} htmlFor="strategy__checkbox">cancle</label>
                 </div>
                 <FormulaInput formula={formula.formula}/>
+                {historyData.length > 0 && (
+                    <div className={"area__chart"}>
+                        <div className="field__chart chart__strategy_history">
+                            <Chart data={historyData} />
+                        </div>
+                    </div>
+                )}
             </div>
             )}
         </div>

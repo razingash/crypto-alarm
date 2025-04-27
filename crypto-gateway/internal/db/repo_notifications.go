@@ -58,24 +58,20 @@ func SendPushNotifications(formulasID []int, message string) error {
 		grouped[f.OwnerID] = append(grouped[f.OwnerID], f)
 	}
 
-	// разделение на одиночные и множественные | позже сделать разные типы пушей
-	singleTriggers := make(map[int]Formula)
-	multiTriggers := make(map[int][]Formula)
-
-	for ownerID, formulas := range grouped {
-		if len(formulas) == 1 {
-			singleTriggers[ownerID] = formulas[0]
-		} else {
-			multiTriggers[ownerID] = formulas
-		}
-	}
-
 	var outdatedSubIDs []int
 
-	for userID, formulas := range grouped {
-		data := map[string]string{
-			"title": "Сработала стратегия",
-			"body":  fmt.Sprintf("Стратегия: %s", formulas[0].Name),
+	for ownerID, formulas := range grouped {
+		var data map[string]string
+		if len(formulas) == 1 {
+			data = map[string]string{
+				"title": "Triggered",
+				"body":  fmt.Sprintf("Strategy: %s", formulas[0].Name),
+			}
+		} else {
+			data = map[string]string{
+				"title": "Triggered",
+				"body":  fmt.Sprintf("You have %d triggered strategies", len(formulas)),
+			}
 		}
 		jsonPayload, _ := json.Marshal(data)
 
@@ -83,9 +79,9 @@ func SendPushNotifications(formulasID []int, message string) error {
             SELECT endpoint, p256dh, auth, id
             FROM trigger_push_subscription
             WHERE user_id = $1
-        `, userID)
+        `, ownerID)
 		if err != nil {
-			log.Printf("ошибка получения push-подписок для user %d: %v", userID, err)
+			log.Printf("ошибка получения push-подписок для user %d: %v", ownerID, err)
 			continue
 		}
 
@@ -93,13 +89,13 @@ func SendPushNotifications(formulasID []int, message string) error {
 			var subID int
 			var endpoint, p256dh, auth string
 			if err := rows.Scan(&endpoint, &p256dh, &auth, &subID); err != nil {
-				log.Printf("ошибка сканирования подписки user %d: %v", userID, err)
+				log.Printf("ошибка сканирования подписки user %d: %v", ownerID, err)
 				continue
 			}
 
 			err := webpush.SendWebPush(endpoint, p256dh, auth, jsonPayload)
 			if err != nil {
-				log.Printf("ошибка отправки пуша user %d: %v", userID, err)
+				log.Printf("ошибка отправки пуша user %d: %v", ownerID, err)
 				outdatedSubIDs = append(outdatedSubIDs, subID)
 			}
 		}

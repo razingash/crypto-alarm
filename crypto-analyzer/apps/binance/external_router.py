@@ -31,7 +31,6 @@ class BinanceAPI:
         expected_weight = endpoints[endpoint]
 
         if api_weight != expected_weight:
-            expected_weight = api_weight
             custom_logger.log_with_path(
                 level=3,
                 msg=f"Endpoint updated {endpoint}: {expected_weight} -> {api_weight}",

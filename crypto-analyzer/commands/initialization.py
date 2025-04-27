@@ -37,9 +37,9 @@ async def get_initial_data_params(binance_api: BinanceAPI) -> dict:
     excluded_endpoints = ["/v3/ping"]
     for endpoint, weigth in endpoints.items():
         if endpoint not in excluded_endpoints:
-            # weigth не точный но это не критично поскольку апи не так много и весы будут меньше из-за ?symbol
             data = await binance_api.get(
-                endpoint=f"{endpoint}?symbol=ETHBTC",
+                endpoint=endpoint,
+                params={"symbol": "ETHBTC"},
                 endpoint_weight=weigth
             )
             dataset[endpoint] = data
@@ -99,16 +99,19 @@ async def create_trigger_components():
         )
         crypto_apis = crypto_apis.scalars().all()
 
-        crypto_currencies = await session.execute(select(CryptoCurrencies))
+        crypto_currencies = await session.execute(
+            select(CryptoCurrencies)
+        )
         crypto_currencies = crypto_currencies.scalars().all()
 
         for api in crypto_apis:
             for param in api.params:
-                for currency in crypto_currencies:
+                for crypto_currency in crypto_currencies:
                     component = TriggerComponent(
                         api_id=api.id,
                         parameter_id=param.id,
-                        currency_id=currency.id,
+                        currency_id=crypto_currency.id,
+                        name=f"{crypto_currency.currency}_{param.parameter}"
                     )
                     session.add(component)
 

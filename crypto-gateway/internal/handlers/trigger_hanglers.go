@@ -173,6 +173,57 @@ func FormulaDelete(c fiber.Ctx) error {
 	}
 }
 
+func FormulaHistoryGet(c fiber.Ctx) error {
+	formulaIDStr := c.Params("id")
+	formulaID, err := strconv.Atoi(formulaIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid formula ID",
+		})
+	}
+	formulaHistoryError, rawRows := db.GetFormulaHistory(formulaID)
+
+	switch formulaHistoryError {
+	case 1:
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to query history",
+		})
+	case 2:
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to scan row",
+		})
+	case 3:
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error iterating over rows",
+		})
+	}
+
+	resultMap := make(map[int64]map[string]interface{})
+	var timestamps []int64
+
+	for _, r := range rawRows {
+		timestamp := r.Timestamp.Unix()
+
+		if _, ok := resultMap[timestamp]; !ok {
+			resultMap[timestamp] = map[string]interface{}{
+				"timestamp": timestamp,
+			}
+			timestamps = append(timestamps, timestamp)
+		}
+
+		if r.VarName != nil && r.Value != nil {
+			resultMap[timestamp][*r.VarName] = *r.Value
+		}
+	}
+
+	var response []map[string]interface{}
+	for _, item := range timestamps {
+		response = append(response, resultMap[item])
+	}
+
+	return c.JSON(response)
+}
+
 func FormulaGet(c fiber.Ctx) error {
 	userUUID := c.Locals("userUUID").(string)
 

@@ -1,8 +1,11 @@
+from datetime import datetime
+
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.models import TriggerFormula, CryptoApi, CryptoParams, TriggerFormulaComponent, TriggerComponent, \
-    CryptoCurrencies
+    CryptoCurrencies, TriggerHistory, TriggerComponentsHistory
 from db.postgre import postgres_db
 
 
@@ -72,3 +75,51 @@ async def get_needed_fields_from_endpoint(endpoint: str) -> dict[str, list[str]]
         needed_fields.setdefault(symbol, []).append(parameter)
 
     return needed_fields
+
+
+#  позже сделать возможность более детального учета - чтобы данная функция срабатывала всегда, это добавит много нагрузки
+async def add_trigger_history(data: dict[int, list[str]], formulas_values: dict[str, float]):
+    """записывает в историю сопутствующие данные сработавших триггеров"""
+    print(data, formulas_values)
+    async with postgres_db.session_factory() as session:
+        async with session.begin():
+            timestamp = datetime.utcnow()
+
+            for formula_id, variable_names in data.items():
+                trigger_history = TriggerHistory(
+                    formula_id=formula_id,
+                    timestamp=timestamp,
+                    status=True  # пока что всегда правда
+                )
+
+                session.add(trigger_history)
+                await session.flush()
+
+                result = await session.execute(
+                    select(TriggerFormulaComponent)
+                    .options(selectinload(TriggerFormulaComponent.component))
+                    .where(TriggerFormulaComponent.formula_id == formula_id)
+                )
+                components = result.scalars().all()
+
+                comp_map: dict[str, TriggerFormulaComponent] = {
+                    comp.component.name: comp
+                    for comp in components
+                }
+                for var_name in variable_names:
+                    value = formulas_values.get(var_name)
+                    if value is None:
+                        continue
+
+                    component = comp_map.get(var_name)
+                    if not component:
+                        continue
+
+                    component_history = TriggerComponentsHistory(
+                        trigger_history_id=trigger_history.id,
+                        component_id=component.id,
+                        value=value
+                    )
+
+                    session.add(component_history)
+            await session.commit()

@@ -288,6 +288,23 @@ class DependencyGraph:
         print('Updating finished')
         return triggered
 
+    def get_formulas_variables(self, formula_ids: list) -> (dict[int, list[str]], dict):
+        """возвращает подвязанные переменные для каждой формулы из списка ID"""
+        result = {}
+        variable_values = {}
+        for formula_id in formula_ids:
+            expr = self.formulas.get(formula_id)
+            variables = [str(var) for var in expr.free_symbols]
+            result[formula_id] = variables
+
+            for var in variables:
+                if var not in variable_values:
+                    value = self.variables.get(var)
+                    if value is not None:
+                        variable_values[var] = value
+
+        return result, variable_values
+
     @staticmethod
     def get_canonical_cache_key(args):
         """Создаёт уникальный кэш-ключ, не зависящий от порядка переменных"""

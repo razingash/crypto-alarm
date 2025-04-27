@@ -114,6 +114,20 @@ body {
     z-index: 1;
 }
 
+.area__chart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.field__chart { /* настраивать max-heiht в vh для частных случаев */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-basis: 100%;
+    /* aspect-ratio: 2 / 1; */
+}
+
 /*loading effect*/
 .loading__spinner {
     animation: rotate 2s linear infinite;
@@ -164,5 +178,8 @@ body {
 @media (max-width: 500px) {
     .section__main {
         margin: 56px 0 20px 0;
+    }
+    .field__chart {
+        margin: 0;
     }
 }

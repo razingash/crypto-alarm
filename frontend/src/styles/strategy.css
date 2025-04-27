@@ -114,6 +114,12 @@
     flex-wrap: wrap;
 }
 
+.chart__strategy_history {
+    max-width: 1000px;
+    max-height: 500px;
+    height: fit-content;
+}
+
 .param__status_off {
     color: #ff3a75;
 }

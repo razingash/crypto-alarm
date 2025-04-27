@@ -1,6 +1,6 @@
 import asyncio
 
-from apps.analytics.crud import get_actual_components, get_needed_fields_from_endpoint
+from apps.analytics.crud import get_actual_components, get_needed_fields_from_endpoint, add_trigger_history
 from apps.analytics.gateway_router import send_triggered_formulas
 from apps.binance.external_router import BinanceAPI
 from core.analysis.graph import dependency_graph
@@ -100,6 +100,9 @@ class BinanceAPIOrchestrator:
             data_for_graph = extract_data_from_ticker_current_price(response, currencies)
             triggered_formulas = dependency_graph.update_variables_topological_Kahn(data_for_graph)
             if len(triggered_formulas) > 0:
+                result, variable_values = dependency_graph.get_formulas_variables(triggered_formulas)
+                await add_trigger_history(result, variable_values)
+
                 await send_triggered_formulas(formulas=triggered_formulas)
 
     async def update_price_change_24h(self):
@@ -113,6 +116,9 @@ class BinanceAPIOrchestrator:
             data_for_graph = extract_data_from_price_change_24h(response, fields)
             triggered_formulas = dependency_graph.update_variables_topological_Kahn(data_for_graph)
             if len(triggered_formulas) > 0:
+                result, variable_values = dependency_graph.get_formulas_variables(triggered_formulas)
+                await add_trigger_history(result, variable_values)
+
                 await send_triggered_formulas(formulas=triggered_formulas)
 
 

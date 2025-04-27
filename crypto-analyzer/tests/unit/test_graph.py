@@ -82,8 +82,21 @@ def test_update_variables_topological_Kahn():
 
     assert result == [1, 2, 4]
 
+def test_get_formulas_variables():
+    graph = DependencyGraph()
 
-def test_evaluate_variable_impact():  # не работает правильно метод в классе
+    graph.add_formula("ETHBTC_priceChange - ETHBTC_weightedAvgPrice == 1000", 1)
+    graph.add_formula("ETHBTC_weightedAvgPrice + ETHBTC_lastPrice == 100", 2)
+    graph.add_formula("ETHBTC_priceChange - ETHBTC_weightedAvgPrice + c <= 200", 3)
+
+    formula_ids = graph.update_variables_topological_Kahn(
+        {"ETHBTC_priceChange": 1200, "ETHBTC_weightedAvgPrice": 200, "ETHBTC_lastPrice": -100, "c": 122}
+    )
+    _, variable_values = graph.get_formulas_variables(formula_ids)
+
+    assert variable_values == {'ETHBTC_weightedAvgPrice': 200, 'ETHBTC_priceChange': 1200, 'ETHBTC_lastPrice': -100}
+
+def test_evaluate_variable_impact():
     graph = DependencyGraph()
 
     graph.add_formula("a - b == 1000", 1)

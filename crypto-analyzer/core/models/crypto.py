@@ -1,11 +1,14 @@
 from datetime import datetime
 
-from sqlalchemy import String, DateTime, Boolean, ForeignKey, Integer
+from sqlalchemy import String, DateTime, Boolean, ForeignKey, Integer, Float
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from core.models.base import Base
 
-__all__ = ["CryptoApi", "CryptoParams", "CryptoCurrencies", "TriggerFormula", "TriggerComponent", "TriggerFormulaComponent"]
+__all__ = [
+    "CryptoApi", "CryptoParams", "CryptoCurrencies", "TriggerFormula", "TriggerComponent", "TriggerFormulaComponent",
+    "TriggerHistory", "TriggerComponentsHistory"
+]
 
 
 class CryptoApi(Base):
@@ -25,7 +28,7 @@ class CryptoParams(Base):
     parameter: Mapped[str] = mapped_column(String(500), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     last_updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    excluded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    excluded_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     crypto_api_id: Mapped[int] = mapped_column(Integer, ForeignKey("crypto_api.id", ondelete="CASCADE"), nullable=False)
     crypto_api = relationship("CryptoApi", back_populates="params")
@@ -44,7 +47,7 @@ class CryptoCurrencies(Base):
         3) https://api.binance.com/api/v3/exchangeInfo
         нужно сравнивать данные из нескольких апи поскольку новые валюты добавляются неравномерно
     """
-    currency: Mapped[str] = mapped_column(String(500), nullable=False)
+    currency: Mapped[str] = mapped_column(String(100), nullable=False)
     is_available: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     last_updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     trigger_components = relationship("TriggerComponent", back_populates="currency", cascade="all, delete-orphan")
@@ -54,12 +57,14 @@ class CryptoCurrencies(Base):
 
 class TriggerComponent(Base):
     api_id: Mapped[int] = mapped_column(ForeignKey("crypto_api.id", ondelete="CASCADE"), nullable=False)
-    currency_id: Mapped[int] = mapped_column(ForeignKey("crypto_currencies.id", ondelete="CASCADE"), nullable=False)
-    parameter_id: Mapped[int] = mapped_column(ForeignKey("crypto_params.id", ondelete="CASCADE"), nullable=False)
+    currency_id: Mapped[int] = mapped_column(ForeignKey("crypto_currencies.id", ondelete="CASCADE"), nullable=False, index=True)
+    parameter_id: Mapped[int] = mapped_column(ForeignKey("crypto_params.id", ondelete="CASCADE"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(600), nullable=False, index=True)
 
     api = relationship("CryptoApi", back_populates="trigger_components")
     currency = relationship("CryptoCurrencies", back_populates="trigger_components")
     parameter = relationship("CryptoParams", back_populates="trigger_components")
+    variable_values = relationship("TriggerComponentsHistory", back_populates="component")
     trigger_formula_components = relationship("TriggerFormulaComponent", back_populates="component", cascade="all, delete-orphan")
 
     __tablename__ = "trigger_component"
@@ -86,16 +91,44 @@ class TriggerFormula(Base):
     description: Mapped[str] = mapped_column(String(1500), nullable=True)
     is_notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False) # тут могут быть баги при большой нагрузке
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
-    is_history_on: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False) # не работает сейчас!
+    is_history_on: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_shutted_off: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False) # оффается из-за изменений в апи
     last_triggered: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    cooldown: Mapped[int] = mapped_column(Integer, nullable=False, default=3600) # час по дефолту, может сделать больше
+    cooldown: Mapped[int] = mapped_column(Integer, nullable=False, default=3600) # час по дефолту, сделать регулируемым
 
     owner_id: Mapped[int] = mapped_column(Integer, ForeignKey("user_user.id"), nullable=False)
     owner = relationship("User", back_populates="triggers")
     components: Mapped[list["TriggerFormulaComponent"]] = relationship("TriggerFormulaComponent", back_populates="formula")
+    history = relationship("TriggerHistory", back_populates="formula")
 
     __tablename__ = "trigger_formula"
+
+
+class TriggerHistory(Base):
+    """История срабатываний триггеров"""
+    formula_id: Mapped[int] = mapped_column(Integer, ForeignKey("trigger_formula.id", ondelete="CASCADE"),
+                                            nullable=False)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    status: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+    formula = relationship("TriggerFormula", back_populates="history", uselist=False)
+    variable_values = relationship("TriggerComponentsHistory", back_populates="history", cascade="all, delete-orphan")
+
+    __tablename__ = "trigger_history"
+
+
+class TriggerComponentsHistory(Base):
+    """Значения переменных для каждой стратегии"""
+    trigger_history_id: Mapped[int] = mapped_column(Integer, ForeignKey("trigger_history.id", ondelete="CASCADE"),
+                                                    nullable=False, index=True)
+    component_id = mapped_column(Integer, ForeignKey("trigger_component.id", ondelete="CASCADE"),
+                                 nullable=False)
+    value: Mapped[float] = mapped_column(Float, nullable=False)
+
+    history = relationship("TriggerHistory", back_populates="variable_values")
+    component = relationship("TriggerComponent", back_populates="variable_values")
+
+    __tablename__ = "trigger_component_history"
 
 
 class PushSubscription(Base):
@@ -108,17 +141,3 @@ class PushSubscription(Base):
     user = relationship("User", back_populates="devices")
 
     __tablename__ = "trigger_push_subscription"
-
-
-"""
-MongoDB
-class CryptoHistory(Base):
-    symbol = mapped_column(String(10), nullable=False, index=True)
-    price = mapped_column(Float, nullable=False)
-    timestamp = mapped_column(DateTime, default=datetime.utcnow)
-
-    __tablename__ = "crypto_history"
-
-    def __repr__(self):
-        return f"<CryptoHistory {self.symbol} - {self.price} at {self.timestamp}>"
-"""

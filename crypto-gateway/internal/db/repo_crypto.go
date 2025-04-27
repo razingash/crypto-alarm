@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type UserFormula struct {
@@ -22,6 +23,12 @@ type CryptoVariable struct {
 	Currency string
 	Variable string
 	//
+}
+
+type tempRow struct {
+	Timestamp time.Time
+	VarName   *string
+	Value     *float64
 }
 
 func IsValidCryptoCurrency(name string) (bool, error) {
@@ -128,6 +135,38 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
 	}
 
 	return formulas, hasNext, nil
+}
+
+func GetFormulaHistory(formulaID int) (int, []tempRow) { // добавить пагинацию
+	rows, err := DB.Query(context.Background(), `
+		SELECT th.timestamp, tc.name, tch.value
+		FROM trigger_history th
+		LEFT JOIN trigger_component_history tch ON th.id = tch.trigger_history_id
+		LEFT JOIN trigger_component tc ON tc.id = tch.component_id
+		WHERE th.formula_id = $1
+		ORDER BY th.timestamp ASC
+	`, formulaID)
+
+	if err != nil {
+		return 1, nil
+	}
+
+	defer rows.Close()
+
+	var rawRows []tempRow
+
+	for rows.Next() {
+		var r tempRow
+		if err := rows.Scan(&r.Timestamp, &r.VarName, &r.Value); err != nil {
+			return 2, nil
+		}
+		rawRows = append(rawRows, r)
+	}
+	if err := rows.Err(); err != nil {
+		return 3, nil
+	}
+
+	return 0, rawRows
 }
 
 func SaveFormula(formula string, name string, uuid string) (int, error) {
