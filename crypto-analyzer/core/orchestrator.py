@@ -92,7 +92,7 @@ class BinanceAPIOrchestrator:
     async def update_ticker_current_price(self):
         while True:
             print('update_ticker_current_price')
-            await asyncio.sleep(600)
+            await asyncio.sleep(10)
             response = await self.binance_api.get_ticker_current_price()
             await self.check_binance_response(response)
             currencies = await get_needed_fields_from_endpoint(endpoint="/v3/ticker/price")
@@ -108,7 +108,7 @@ class BinanceAPIOrchestrator:
     async def update_price_change_24h(self):
         while True:
             print('update_price_change_24h')
-            await asyncio.sleep(6)
+            await asyncio.sleep(20)
             response = await self.binance_api.get_price_change_24h()
             await self.check_binance_response(response)
             fields = await get_needed_fields_from_endpoint(endpoint="/v3/ticker/24hr")

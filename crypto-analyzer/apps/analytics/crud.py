@@ -117,7 +117,7 @@ async def add_trigger_history(data: dict[int, list[str]], formulas_values: dict[
 
                     component_history = TriggerComponentsHistory(
                         trigger_history_id=trigger_history.id,
-                        component_id=component.id,
+                        component_id=component.component_id,
                         value=value
                     )
 

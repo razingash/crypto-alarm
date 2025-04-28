@@ -47,6 +47,7 @@ const Strategy = () => {
             if (formula?.is_history_on === true && historyData.length === 0) {
                 const data = await fetchFormulaHistory(page)
                 data && setHistoryData(data)
+                data && console.log(data)
             }
         }
         void loadData();

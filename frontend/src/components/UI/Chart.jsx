@@ -7,7 +7,9 @@ export const Chart = ({data}) => {
         return <AdaptiveLoading/>;
     }
 
-    const allKeys = Object.keys(data[0]).filter(key => key !== 'timestamp');
+    const allKeys = Array.from(new Set(
+        data.flatMap(item => Object.keys(item).filter(key => key !== 'timestamp'))
+    ));
 
     const getColor = index => {
         const hue = (index * 360) / allKeys.length;
