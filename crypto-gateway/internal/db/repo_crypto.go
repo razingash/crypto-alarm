@@ -27,8 +27,8 @@ type CryptoVariable struct {
 
 type tempRow struct {
 	Timestamp time.Time
-	VarName   *string
-	Value     *float64
+	VarName   string
+	Value     string
 }
 
 func IsValidCryptoCurrency(name string) (bool, error) {
@@ -137,36 +137,52 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
 	return formulas, hasNext, nil
 }
 
-func GetFormulaHistory(formulaID int) (int, []tempRow) { // добавить пагинацию
+func GetFormulaHistory(formulaID int, limit int, page int) (int, bool, []tempRow) {
+	offset := (page - 1) * limit
+
 	rows, err := DB.Query(context.Background(), `
-		SELECT th.timestamp, tc.name, tch.value
-		FROM trigger_history th
-		LEFT JOIN trigger_component_history tch ON th.id = tch.trigger_history_id
-		LEFT JOIN trigger_component tc ON tc.id = tch.component_id
-		WHERE th.formula_id = $1
-		ORDER BY th.timestamp ASC
-	`, formulaID)
+        SELECT th.timestamp,
+               STRING_AGG(tc.name, ', ') AS names,
+               STRING_AGG(CAST(tch.value AS TEXT), ', ') AS values
+        FROM trigger_history th
+        LEFT JOIN trigger_component_history tch ON th.id = tch.trigger_history_id
+        LEFT JOIN trigger_component tc ON tc.id = tch.component_id
+        WHERE th.formula_id = $1
+        GROUP BY th.timestamp
+        ORDER BY th.timestamp ASC
+        LIMIT $2 OFFSET $3;
+    `, formulaID, limit+1, offset)
 
 	if err != nil {
-		return 1, nil
+		return 1, false, nil
 	}
 
 	defer rows.Close()
 
 	var rawRows []tempRow
+	var hasNext bool
 
 	for rows.Next() {
 		var r tempRow
-		if err := rows.Scan(&r.Timestamp, &r.VarName, &r.Value); err != nil {
-			return 2, nil
+		var names, values string
+
+		if err := rows.Scan(&r.Timestamp, &names, &values); err != nil {
+			return 2, false, nil
 		}
+		r.VarName = names
+		r.Value = values
 		rawRows = append(rawRows, r)
 	}
 	if err := rows.Err(); err != nil {
-		return 3, nil
+		return 3, false, nil
 	}
 
-	return 0, rawRows
+	if len(rawRows) > limit {
+		hasNext = true
+		rawRows = rawRows[:limit]
+	}
+
+	return 0, hasNext, rawRows
 }
 
 func SaveFormula(formula string, name string, uuid string) (int, error) {

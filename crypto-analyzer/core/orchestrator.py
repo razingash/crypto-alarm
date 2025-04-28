@@ -38,6 +38,12 @@ class BinanceAPIOrchestrator:
             task = self.tasks.pop(api, None)
             if task and not task.done():
                 task.cancel()
+            else:
+                custom_logger.log_with_path(
+                    level=3,
+                    msg=f"{type(task), task, self.tasks}",
+                    filename="StrangeError.log"
+                )
 
         for api, formulas_amount in data.items():
             if formulas_amount <= 0:
@@ -48,6 +54,7 @@ class BinanceAPIOrchestrator:
                 continue
 
             print(f"Starting API task: {api}")
+
             if api == "/v3/ticker/price":
                 self.tasks[api] = asyncio.create_task(self.update_ticker_current_price())
             elif api == "/v3/ticker/24hr":
@@ -77,7 +84,8 @@ class BinanceAPIOrchestrator:
             )
             self.is_binance_online = True
             for task in self.tasks:
-                task.cancel()
+                if isinstance(task, asyncio.Task):
+                    task.cancel()
             await self.launch_needed_api()
 
     async def check_api_status_loop(self, cooldown: int):

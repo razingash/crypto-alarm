@@ -50,8 +50,6 @@ export const formatNumber = (num) => { // маленьким учет не до�
         return (num / 1e9).toFixed(1) + 'B';
     } else if (num >= 1e6) {
         return (num / 1e6).toFixed(1) + 'M';
-    } else if (num >= 1e3) {
-        return (num / 1e3).toFixed(1) + 'K';
     }
     return num.toString();
 }
@@ -60,4 +58,19 @@ export const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp * 1000);
     return date.toLocaleDateString([],
         {hour:'2-digit',  minute:'2-digit',  day:'2-digit',  month:'2-digit',  year:'numeric'});
+}
+
+export const transformData = (data) => {
+    return data.map(item => {
+        const names = Object.keys(item).filter(key => key !== 'timestamp');
+
+        const values = item[names[0]].split(', ').map(value => parseFloat(value.trim()));
+
+        let result = { timestamp: item.timestamp };
+
+        names[0].split(', ').forEach((name, index) => {
+            result[name.trim()] = values[index];
+        });
+        return result;
+    });
 }

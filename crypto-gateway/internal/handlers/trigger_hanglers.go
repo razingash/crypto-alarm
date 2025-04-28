@@ -181,7 +181,20 @@ func FormulaHistoryGet(c fiber.Ctx) error {
 			"error": "Invalid formula ID",
 		})
 	}
-	formulaHistoryError, rawRows := db.GetFormulaHistory(formulaID)
+	defaultLimit := 100
+	defaultPage := 1
+
+	limit, err := strconv.Atoi(c.Query("limit"))
+	if err != nil || limit <= 0 {
+		limit = defaultLimit
+	}
+
+	page, err := strconv.Atoi(c.Query("page"))
+	if err != nil || page <= 0 {
+		page = defaultPage
+	}
+
+	formulaHistoryError, hasNext, rawRows := db.GetFormulaHistory(formulaID, limit, page)
 
 	switch formulaHistoryError {
 	case 1:
@@ -211,8 +224,8 @@ func FormulaHistoryGet(c fiber.Ctx) error {
 			timestamps = append(timestamps, timestamp)
 		}
 
-		if r.VarName != nil && r.Value != nil {
-			resultMap[timestamp][*r.VarName] = *r.Value
+		if r.VarName != "" && r.Value != "" {
+			resultMap[timestamp][r.VarName] = r.Value
 		}
 	}
 
@@ -221,7 +234,10 @@ func FormulaHistoryGet(c fiber.Ctx) error {
 		response = append(response, resultMap[item])
 	}
 
-	return c.JSON(response)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data":     response,
+		"has_next": hasNext,
+	})
 }
 
 func FormulaGet(c fiber.Ctx) error {

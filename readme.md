@@ -3,7 +3,7 @@
 
 ### About
 
-- Users can create their own expressions, custom keyboard includes fractions,
+- Users can create their own expressions. Custom keyboard includes fractions,
 powers up, roots and modules. Trigonometric functions will never be supported.
 
 - All cryptocurrencies supported by all available Binance endpoints are accessible — over 3000 in total.

@@ -1,6 +1,6 @@
 import {formatNumber, formatTimestamp} from "../../utils/utils";
 import AdaptiveLoading from "./AdaptiveLoading";
-import {XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Legend, Line} from 'recharts';
+import {XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Legend, Line, Brush} from 'recharts';
 
 export const Chart = ({data}) => {
     if (!data || data.length === 0) {
@@ -46,6 +46,15 @@ export const Chart = ({data}) => {
                         activeDot={{r: 6}}
                     />
                 ))}
+
+                <Brush
+                    dataKey="timestamp"
+                    height={28}
+                    stroke="#8884d8"
+                    fill="#ffffff00"
+                    travellerWidth={6}
+                    tickFormatter={formatTimestamp}
+                />
             </LineChart>
         </ResponsiveContainer>
     );

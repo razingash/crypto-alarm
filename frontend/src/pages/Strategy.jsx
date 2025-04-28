@@ -6,15 +6,17 @@ import {useFetching} from "../hooks/useFetching";
 import TriggersService from "../API/TriggersService";
 import '../styles/strategy.css'
 import Chart from "../components/UI/Chart";
+import {transformData} from "../utils/utils";
 
 const Strategy = () => {
     const navigate = useNavigate();
     const {id} = useParams();
     const [formula, setFormula] = useState(null);
     const [changeMod, setChangeMod] = useState(false);
-    const [formulaNewData, setFormulaNewData] = useState(null);
+    const [formulaNewData, setFormulaNewData] = useState(null); // changed data
     const [page, setPage] = useState(1);
-    const [historyData, setHistoryData] = useState([])
+    const [hasNext, setHasNext] = useState(false);
+    const [historyData, setHistoryData] = useState([]);
 
     const [fetchFormula, isFormulaLoading, ] = useFetching(async () => {
         return await TriggersService.getUserFormulas({id: id})
@@ -25,7 +27,7 @@ const Strategy = () => {
     const [removeFormula, , ] = useFetching(async () => {
         return await TriggersService.deleteUserFormula(id)
     }, 0, 1000)
-    const [fetchFormulaHistory, , ] = useFetching(async (page) => {
+    const [fetchFormulaHistory, isFormulaHistoryLoading, ] = useFetching(async (page) => {
         return await TriggersService.getFormulaHistory(id, page)
     }, 0, 1000)
 
@@ -46,8 +48,10 @@ const Strategy = () => {
         const loadData = async () => {
             if (formula?.is_history_on === true && historyData.length === 0) {
                 const data = await fetchFormulaHistory(page)
-                data && setHistoryData(data)
-                data && console.log(data)
+                if (data) {
+                    setHasNext(data.has_next)
+                    data.data && setHistoryData(transformData(data.data))
+                }
             }
         }
         void loadData();
@@ -207,6 +211,7 @@ const Strategy = () => {
                     <label className={"strategy__change"} htmlFor="strategy__checkbox">change</label>
                     <label className={"strategy__change__cancle"} htmlFor="strategy__checkbox">cancle</label>
                 </div>
+                <span className={"line-1"}></span>
                 <FormulaInput formula={formula.formula}/>
                 {historyData.length > 0 && (
                     <div className={"area__chart"}>
