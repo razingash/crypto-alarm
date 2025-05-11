@@ -121,8 +121,6 @@ const Keyboard = ({onKeyPress}) => {
 
     const handleVariable = (variable) => {
         if (selectedCurrency) {
-            // можно использовать разные цвета для разных валют чтобы сократить место,
-            // но тогда надо будет пошаманить с катексом а сейчас не до этого
             const v = `\\text{\\textcolor{orange}{${selectedCurrency}}\\_${variable}}`
             handleKeyClick(v)
         }
@@ -168,7 +166,8 @@ const Keyboard = ({onKeyPress}) => {
                                         <div className={"square"}>▢</div>
                                     </div>
                                 ) : item.id === "matrix" ? (
-                                    <div className={"row_button"}><div>(</div>
+                                    <div className={"row_button"}>
+                                        <div>(</div>
                                         <div className={"fraction"}>
                                             <div className={"square"}>▢</div>
                                             <div className={"span"}></div>

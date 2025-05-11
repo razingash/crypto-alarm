@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import {useEffect, useRef} from "react";
 import katex from "katex";
 import "katex/dist/katex.min.css";
 import "../../styles/keyboard.css"
@@ -9,15 +9,13 @@ const renderLatex = (latexArr) => {
         return '';
     }
 
-    let latexString = latexArr.map(item => {
+    return latexArr.map(item => {
         if (typeof item === 'object') {
             console.warn("Объект в формуле:", item);
             return '';
         }
         return item;
     }).join(" ");
-
-    return latexString;
 };
 
 const FormulaInput = ({ formula }) => {
@@ -27,7 +25,7 @@ const FormulaInput = ({ formula }) => {
         if (typeof formula === "object"){ // если список, значит редактор, если нет то строка(строка только для отображения)
             return formulaToLatex(formula)
         }
-        const regex = /\b([a-zA-Z_][a-zA-Z0-9_]*)\b|(\d+\.\d+|\d+)|(<=|>=|==|!=)|([+\-*/^()=<>])/g;
+        const regex = /\b([a-zA-Z_][a-zA-Z0-9_]*)\b|(\d+\.\d+|\d+)|(<=|>=|==|!=)|([+\-*/^()=<>,])/g;
         let tokens = [];
 
         let match;
@@ -55,10 +53,10 @@ const FormulaInput = ({ formula }) => {
                 latex.push("\\sqrt{");
                 wrapperStack.push("sqrt");
             } else if (token === "^") {
-                if (tokens[i-1] === ')') {
+                if (tokens[i - 1] === ')') {
                     for (let j = i - 2; j >= 0; j--) {
                         if (tokens[j] === "(") {
-                            if (tokens[j-1] === '^') {
+                            if (tokens[j - 1] === '^') {
                                 latex.splice(latex.length - 1, 0, tokens[i + 2]);
                             } else {
                                 latex.push("^{");
@@ -71,19 +69,28 @@ const FormulaInput = ({ formula }) => {
                     latex.push("^{");
                     wrapperStack.push("^");
                 }
+            } else if (token === "frac") { // дробь - умная // возможно это вообще лучше не реализовывать - запасная кнопка будет
+                latex.push('\\frac{');
+                wrapperStack.push('matrix');
+            } else if (token === 'matrix') {
+                latex.push('\\frac{');
+                wrapperStack.push('matrix');
+            } else if (token === ',') {
+                const last = wrapperStack[wrapperStack.length - 1];
+                if (last === 'matrix') {
+                    latex.push('}{');
+                } else {
+                    latex.push(',');
+                }
             } else if (token === ")") {
                 const lastWrapper = wrapperStack.pop();
                 if (lastWrapper === "abs") {
                     latex.push("\\right|");
-                } else if (lastWrapper === "sqrt" || lastWrapper === "^") {
+                } else if (['^', 'sqrt', "matrix"].includes(lastWrapper)) {
                     latex.push("}");
-                } else {
-                    latex.push(")"); // обычная скобка
+                } else if (lastWrapper !== "matrix") {
+                    latex.push(")");
                 }
-            } else if (token === "frac") { // дробь - умная
-                console.warn("TODO")
-            } else if (token === "matrix") { // дробь
-                console.warn("TODO 2")
             } else if (token === "÷") {
                 latex.push("\\div");
             } else if (token === "*") {
@@ -93,9 +100,7 @@ const FormulaInput = ({ formula }) => {
             } else if (token === "<=") {
                 latex.push("\\le");
             } else if (token === "(") {
-                const expressions_formula = ['^', 'sqrt', 'abs'];
-
-                const isWrapperCall = expressions_formula.includes(tokens[i-1])
+                const isWrapperCall = ['^', 'sqrt', 'abs', "matrix"].includes(tokens[i - 1])
 
                 if (!isWrapperCall) {
                     wrapperStack.push("(");
@@ -111,7 +116,7 @@ const FormulaInput = ({ formula }) => {
             const type = wrapperStack.pop();
             if (type === "abs") {
                 latex.push("\\right|");
-            } else if (type === "sqrt" || type === "^") {
+            } else if (type === "sqrt" || type === "^" || type === "matrix") {
                 latex.push("}");
             } else if (type === "(") {
                 latex.push(")");

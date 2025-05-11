@@ -212,7 +212,7 @@ const Strategy = () => {
                     <label className={"strategy__change__cancle"} htmlFor="strategy__checkbox">cancle</label>
                 </div>
                 <span className={"line-1"}></span>
-                <FormulaInput formula={formula.formula}/>
+                <FormulaInput formula={formula.formula_raw}/>
                 {historyData.length > 0 && (
                     <div className={"area__chart"}>
                         <div className="field__chart chart__strategy_history">

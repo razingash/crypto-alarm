@@ -76,7 +76,7 @@ const UserStrategies = () => {
                                     <div>{formula.last_triggered || "Never"}</div>
                                 </div>
                             </div>
-                            <FormulaInput formula={formula.formula}/>
+                            <FormulaInput formula={formula.formula_raw}/>
                             <div className={"button__show_more"}></div>
                         </div>
                     ))

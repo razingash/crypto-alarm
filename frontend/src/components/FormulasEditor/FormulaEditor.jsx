@@ -1,39 +1,36 @@
-import React, {useState} from 'react';
+import React from 'react';
 import Keyboard from "./Keyboard";
 import FormulaInput from "./FormulaInput";
 /*
 - оптимизировать эту фигню - сделать чтобы базовый вариант спавнился тут а динамические кэшировались, чтобы клавиатура не лагала
 - сделать чтобы клава вылазила когда надо будет
 */
-const FormulaEditor = ({formula, setFormula}) => {
-    const [cursorIndex, setCursorIndex] = useState(formula.length);
-
+const FormulaEditor = ({rawFormula, setRawFormula}) => {
     const moveCursor = (direction) => {
-        const currentIndex = formula.indexOf("\\textunderscore");
+        const currentIndex = rawFormula.indexOf("\\textunderscore");
         if (currentIndex === -1) return;
 
         let moveBy = 1;
 
         if (direction === 1) {
-            const nextToken = formula[currentIndex + 1];
-            if (["abs", "sqrt", "^", '^2'].includes(nextToken)) {
+            const nextToken = rawFormula[currentIndex + 1];
+            if (["abs", "sqrt", "matrix", "frac", "^", '^2'].includes(nextToken)) {
                 moveBy = 2;
             }
         } else if (direction === -1) {
-            const tokenTwoLeft = formula[currentIndex - 2];
-            if (["abs", "sqrt", "^", '^2'].includes(tokenTwoLeft)) {
+            const tokenTwoLeft = rawFormula[currentIndex - 2];
+            if (["abs", "sqrt", "matrix", "frac", "^", '^2'].includes(tokenTwoLeft)) {
                 moveBy = 2;
             }
         }
 
         const newIndex = currentIndex + (direction * moveBy);
-        if (newIndex < 0 || newIndex >= formula.length) return;
+        if (newIndex < 0 || newIndex >= rawFormula.length) return;
 
-        let newFormula = [...formula];
+        let newFormula = [...rawFormula];
         newFormula.splice(currentIndex, 1);
         newFormula.splice(newIndex, 0, "\\textunderscore");
-        setFormula(newFormula);
-        setCursorIndex(newIndex);
+        setRawFormula(newFormula);
     };
 
     const moveCursorLeft = () => moveCursor(-1);
@@ -60,60 +57,84 @@ const FormulaEditor = ({formula, setFormula}) => {
     };
 
     const insertToken = (token) => {
-        let newFormula = [...formula];
+        let newFormula = [...rawFormula];
         const cursorIndex = newFormula.indexOf("\\textunderscore");
 
         if (token === "sqrt" || token === "abs") {
             newFormula.splice(cursorIndex, 1);
             newFormula.splice(cursorIndex, 0, token, "(", "\\textunderscore", ")");
-            setCursorIndex(cursorIndex + 2);
         } else if (token === '^') {
             if (isInsidePower(newFormula, cursorIndex)) {
                 newFormula.splice(cursorIndex, 1);
                 newFormula.splice(cursorIndex - 1, 0, "\\textunderscore");
-                setCursorIndex(cursorIndex - 1);
             } else {
                 newFormula.splice(cursorIndex, 1);
                 newFormula.splice(cursorIndex, 0, "^", "(", "\\textunderscore", ")");
-                setCursorIndex(cursorIndex + 2);
             }
         } else if (token === "^2") {
             if (isInsidePower(newFormula, cursorIndex)) {
                 newFormula.splice(cursorIndex - 1, 0, "2");
-                setCursorIndex(cursorIndex + 1);
             } else {
                 newFormula.splice(cursorIndex, 1);
                 newFormula.splice(cursorIndex, 0, "^", "(", "2", "\\textunderscore", ")");
-                setCursorIndex(cursorIndex + 2);
             }
         } else if (token === "brackets-l" || token === "brackets-r") {
             newFormula.splice(cursorIndex, 1);
             newFormula.splice(cursorIndex, 0, "(", "\\textunderscore", ")");
-            setCursorIndex(cursorIndex + 1);
+        } else if (token === "matrix" || token === "frac") {
+            newFormula.splice(cursorIndex, 1);
+            newFormula.splice(cursorIndex, 0, 'matrix', '(', '\\textunderscore', ',', ')');
         } else {
             newFormula.splice(cursorIndex, 0, token);
         }
 
-        setFormula(newFormula);
+        setRawFormula(newFormula);
     };
 
     const deleteToken = () => {
-        let newFormula = [...formula];
+        let newFormula = [...rawFormula];
         const cursorIndex = newFormula.indexOf("\\textunderscore");
 
         if (cursorIndex === -1) return;
 
         const tokenBefore = newFormula[cursorIndex - 1];
-        const isWrapper = (token) => ["abs", "sqrt", "^", "^2"].includes(token);
+        const isWrapper = (token) => ["abs", "sqrt", "matrix", "^", "^2"].includes(token);
 
-        if (tokenBefore === ")") {
+        if (tokenBefore === ',') {
+            let matrixStart = -1;
+            for (let i = cursorIndex - 2; i >= 0; i--) {
+                if (rawFormula[i] === 'matrix' && rawFormula[i + 1] === '(') {
+                    matrixStart = i;
+                    break;
+                }
+            }
+
+            if (matrixStart !== -1) {
+                const openIndex = matrixStart + 1;
+                const closeIndex = rawFormula.indexOf(')', cursorIndex);
+                const outOfBounds = closeIndex === -1;
+                const isEmpty = !outOfBounds && isEmptyExpression(openIndex, closeIndex, rawFormula);
+
+                if (isEmpty) { // удалить всю дробь
+                    newFormula.splice(matrixStart, closeIndex - matrixStart + 1);
+                    newFormula.splice(matrixStart, 0, "\\textunderscore");
+                } else { // просто сдвинуть курсор влево
+                    newFormula.splice(cursorIndex, 1);
+                    newFormula.splice(cursorIndex - 1, 0, '\\textunderscore');
+                }
+
+                setRawFormula(newFormula);
+                return;
+            }
+        } else if (tokenBefore === ")") {
             let depth = 0;
             for (let i = cursorIndex - 2; i >= 0; i--) {
                 if (newFormula[i] === ")") {
                     depth++;
                 } else if (newFormula[i] === "(") {
                     if (depth === 0) {
-                        const isEmpty = i === cursorIndex - 2;
+                        const closeIndex = cursorIndex - 1;
+                        const isEmpty = isEmptyExpression(i, closeIndex, newFormula);
                         const deleteFrom = isWrapper(newFormula[i - 1]) ? i - 1 : i;
                         if (isEmpty) { // если выражение пустое
                             newFormula.splice(deleteFrom, cursorIndex - deleteFrom);
@@ -133,7 +154,7 @@ const FormulaEditor = ({formula, setFormula}) => {
                     depth++;
                 } else if (newFormula[i] === ")") {
                     if (depth === 0) {
-                        const isEmpty = i === cursorIndex + 1;
+                        const isEmpty = isEmptyExpression(cursorIndex, i, newFormula);
                         const deleteFrom = isWrapper(newFormula[cursorIndex - 2]) ? cursorIndex - 2 : cursorIndex - 1;
 
                         if (isEmpty) { // если выражение пустое | НЕ МЕНЯТЬ
@@ -142,7 +163,7 @@ const FormulaEditor = ({formula, setFormula}) => {
                             newFormula.splice(deleteFrom, 0, "\\textunderscore");
                         } else { // если выражение не пустое, переместить курсор левее | НЕ МЕНЯТЬ
                             newFormula.splice(cursorIndex, 1);
-                            const isWrapperBeforeParen = ["abs", "sqrt", "^", '^2'].includes(newFormula[cursorIndex - 2]);
+                            const isWrapperBeforeParen = ["abs", "sqrt", "matrix", "^"].includes(newFormula[cursorIndex - 2]);
                             const moveLeftBy = isWrapperBeforeParen ? 2 : 1;
                             newFormula.splice(cursorIndex - moveLeftBy, 0, "\\textunderscore");
                         }
@@ -155,7 +176,14 @@ const FormulaEditor = ({formula, setFormula}) => {
             newFormula.splice(cursorIndex - 1, 1);
         }
 
-        setFormula(newFormula);
+        setRawFormula(newFormula);
+    };
+
+    const isEmptyExpression = (openIndex, closeIndex, formula) => {
+        if (closeIndex - openIndex <= 1) return true;
+
+        const innerTokens = formula.slice(openIndex + 1, closeIndex);
+        return innerTokens.every(token => token === ',');
     };
 
     const handleKeyPress = (key) => {
@@ -172,7 +200,7 @@ const FormulaEditor = ({formula, setFormula}) => {
 
     return (
         <>
-            <FormulaInput formula={formula}/>
+            <FormulaInput formula={rawFormula}/>
             <Keyboard onKeyPress={handleKeyPress}/>
         </>
     );

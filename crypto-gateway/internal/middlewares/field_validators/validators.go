@@ -6,6 +6,7 @@ import "fmt"
 
 type FormulaValidator struct {
 	Formula     func(interface{}) string
+	FormulaRaw  func(interface{}) string
 	Name        func(interface{}) string
 	Description func(interface{}) string
 	IsNotified  func(interface{}) string

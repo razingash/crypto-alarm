@@ -80,11 +80,12 @@ func Keyboard(c fiber.Ctx) error {
 
 func FormulaPost(c fiber.Ctx) error {
 	expression := c.Locals("formula").(string)
+	raw_expression := c.Locals("formula_raw").(string)
 	name := c.Locals("name").(string)
 	userUUID := c.Locals("userUUID").(string)
 	variables := c.Locals("variables").([]db.CryptoVariable)
 
-	id, err := db.SaveFormula(expression, name, userUUID)
+	id, err := db.SaveFormula(expression, raw_expression, name, userUUID)
 	if err != nil {
 		fmt.Println(err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

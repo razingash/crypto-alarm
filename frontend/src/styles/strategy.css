@@ -45,6 +45,10 @@
     min-height: 242px;
     max-width: 100%;
 }
+.strategy__item {
+    max-width: 450px;
+}
+
 .strategy__none {
     color: #ffffff;
     background: var(--container-background);
@@ -86,6 +90,8 @@
     padding: 0 3px;
     color: #fff;
     font-size: 1em;
+    max-width: 200px;
+    width: 100%;
 }
 
 .strategy__description {

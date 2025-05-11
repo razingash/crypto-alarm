@@ -30,9 +30,9 @@ def test_add_and_update_formula_speed():
     variables = [f"var{i}" for i in range(1, num_variables + 1)]
 
     start_time = time.perf_counter()
-    for _ in range(num_formulas):
+    for i in range(num_formulas):
         formula = generate_random_formula(variables, num_variables)
-        graph.add_formula(formula)
+        graph.add_formula(formula, i)
     add_time = time.perf_counter() - start_time
 
     print(f"{num_formulas} формул добавлено за {add_time:.2f} секунд.")

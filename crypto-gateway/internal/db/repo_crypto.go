@@ -10,6 +10,7 @@ import (
 type UserFormula struct {
 	Id            string `json:"id"`
 	Formula       string `json:"formula"`
+	FormulaRaw    string `json:"formula_raw"`
 	Name          string `json:"name"`
 	Description   string `json:"description"`
 	IsNotified    bool   `json:"is_notified"`
@@ -78,7 +79,7 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
 
 	if formulaID != "" {
 		row := DB.QueryRow(context.Background(), `
-            SELECT id, formula, COALESCE(name, ''), COALESCE(description, ''), is_notified, is_active,
+            SELECT id, formula_raw, COALESCE(name, ''), COALESCE(description, ''), is_notified, is_active,
                 is_shutted_off, is_history_on, COALESCE(TO_CHAR(last_triggered, 'YYYY-MM-DD HH24:MI:SS'), '') AS last_triggered
             FROM trigger_formula
             WHERE id = $1 AND owner_id = $2;
@@ -86,7 +87,7 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
 
 		var formula UserFormula
 		err := row.Scan(
-			&formula.Id, &formula.Formula, &formula.Name, &formula.Description, &formula.IsNotified,
+			&formula.Id, &formula.FormulaRaw, &formula.Name, &formula.Description, &formula.IsNotified,
 			&formula.IsActive, &formula.IsShuttedOff, &formula.IsHistoryOn, &formula.LastTriggered,
 		)
 		if err != nil {
@@ -100,7 +101,7 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
 	offset := (page - 1) * limit
 
 	rows, err := DB.Query(context.Background(), `
-        SELECT id, formula, COALESCE(name, ''), COALESCE(description, ''), is_notified, is_active,
+        SELECT id, formula_raw, COALESCE(name, ''), COALESCE(description, ''), is_notified, is_active,
             is_shutted_off, is_history_on, COALESCE(TO_CHAR(last_triggered, 'YYYY-MM-DD HH24:MI:SS'), '') AS last_triggered
         FROM trigger_formula
         WHERE owner_id = $1
@@ -116,7 +117,7 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
 	for rows.Next() {
 		var formula UserFormula
 		err := rows.Scan(
-			&formula.Id, &formula.Formula, &formula.Name, &formula.Description, &formula.IsNotified,
+			&formula.Id, &formula.FormulaRaw, &formula.Name, &formula.Description, &formula.IsNotified,
 			&formula.IsActive, &formula.IsShuttedOff, &formula.IsHistoryOn, &formula.LastTriggered,
 		)
 		if err != nil {
@@ -185,7 +186,7 @@ func GetFormulaHistory(formulaID int, limit int, page int) (int, bool, []tempRow
 	return 0, hasNext, rawRows
 }
 
-func SaveFormula(formula string, name string, uuid string) (int, error) {
+func SaveFormula(formula string, formula_raw string, name string, uuid string) (int, error) {
 	owner_id, err := GetIdbyUuid(uuid)
 	if err != nil {
 		return 0, err
@@ -193,10 +194,10 @@ func SaveFormula(formula string, name string, uuid string) (int, error) {
 
 	var formulaId int
 	err = DB.QueryRow(context.Background(), `
-        INSERT INTO trigger_formula (formula, name, owner_id, is_notified, is_active, is_shutted_off, is_history_on, cooldown) 
-        VALUES ($1, $2, $3, false, false, false, false, 3600)
+        INSERT INTO trigger_formula (formula, formula_raw, name, owner_id, is_notified, is_active, is_shutted_off, is_history_on, cooldown) 
+        VALUES ($1, $2, $3, $4, false, false, false, false, 3600)
         RETURNING id
-    `, formula, name, owner_id).Scan(&formulaId)
+    `, formula, formula_raw, name, owner_id).Scan(&formulaId)
 
 	if err != nil {
 		return 0, err

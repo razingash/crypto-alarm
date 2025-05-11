@@ -85,8 +85,11 @@ class TriggerFormulaComponent(Base):
 
 
 class TriggerFormula(Base):
-    """формула может быть активной, но если она не будет фиксировать историю, или отправлять уведомления, то она будет бесполезной"""
-    formula: Mapped[str] = mapped_column(String, nullable=False)
+    """
+    формула может быть активной, но если она не будет фиксировать историю, или отправлять уведомления, то она будет бесполезной
+    """
+    formula: Mapped[str] = mapped_column(String, nullable=False) # used for graph class;    simplified version
+    formula_raw: Mapped[str] = mapped_column(String, nullable=False) # used with fractals;  latex version
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str] = mapped_column(String(1500), nullable=True)
     is_notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False) # тут могут быть баги при большой нагрузке

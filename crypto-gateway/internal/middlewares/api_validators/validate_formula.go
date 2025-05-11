@@ -9,8 +9,9 @@ import (
 
 func ValidateFormulaPost(c fiber.Ctx) error {
 	var body struct {
-		Formula string `json:"formula"`
-		Name    string `json:"name"`
+		Formula    string `json:"formula"`
+		FormulaRaw string `json:"formula_raw"`
+		Name       string `json:"name"`
 	}
 
 	if err := json.Unmarshal(c.Body(), &body); err != nil {
@@ -23,6 +24,7 @@ func ValidateFormulaPost(c fiber.Ctx) error {
 	switch errCode {
 	case 0:
 		c.Locals("formula", body.Formula)
+		c.Locals("formula_raw", body.FormulaRaw)
 		c.Locals("name", body.Name)
 		c.Locals("variables", variables)
 		return c.Next()
@@ -101,7 +103,8 @@ func ValidateFormulaPatch(c fiber.Ctx) error {
 	}
 
 	validator := field_validators.FormulaValidator{
-		Formula:     field_validators.ValidateText(0, 50000),
+		Formula:     field_validators.ValidateText(3, 50000),
+		FormulaRaw:  field_validators.ValidateText(3, 50000),
 		Name:        field_validators.ValidateText(0, 150),
 		Description: field_validators.ValidateText(0, 1500),
 		IsNotified:  field_validators.ValidateBool,
@@ -111,6 +114,7 @@ func ValidateFormulaPatch(c fiber.Ctx) error {
 
 	fieldValidators := map[string]func(interface{}) string{
 		"formula":       validator.Formula,
+		"formula_raw":   validator.FormulaRaw,
 		"name":          validator.Name,
 		"description":   validator.Description,
 		"is_notified":   validator.IsNotified,

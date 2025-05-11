@@ -381,4 +381,10 @@
     .keyboard__labels, .basic_keyboard__list, .dynamic_keyboard__list {
         padding: 0 12px;
     }
+    .span {
+        margin: 0;
+    }
+    .square {
+        font-size: 13px;
+    }
 }

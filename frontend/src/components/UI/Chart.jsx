@@ -1,6 +1,6 @@
 import {formatNumber, formatTimestamp} from "../../utils/utils";
 import AdaptiveLoading from "./AdaptiveLoading";
-import {XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Legend, Line, Brush} from 'recharts';
+import {XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Brush} from 'recharts';
 
 export const Chart = ({data}) => {
     if (!data || data.length === 0) {
@@ -16,6 +16,40 @@ export const Chart = ({data}) => {
         return `hsl(${hue}, 70%, 50%)`;
     };
 
+    const colorMap = {};
+    allKeys.forEach((key, index) => {
+        colorMap[key] = getColor(index);
+    });
+
+    const CustomTooltip = ({active, payload, label, colors}) => {
+        if (!active || !payload || payload.length === 0) return null;
+
+        return (
+            <div style={{
+                backgroundColor: '#333',
+                color: '#fff',
+                padding: 10,
+                borderRadius: 5
+            }}>
+                <p style={{marginBottom: 5}}>{formatTimestamp(label)}</p>
+                {payload.map((entry) => (
+                    <p
+                        key={entry.name}
+                        style={{
+                            color: colors[entry.name] || '#fff',
+                            backgroundColor: '#222',
+                            padding: '2px 4px',
+                            margin: 0,
+                            borderRadius: 3
+                        }}
+                    >
+                        {entry.name}: {formatNumber(entry.value)}
+                    </p>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <ResponsiveContainer width="100%" height={300}>
             <LineChart data={data} margin={{top: 20, right: 20, left: 0, bottom: 20}}>
@@ -27,12 +61,10 @@ export const Chart = ({data}) => {
                 />
                 <YAxis tick={{fill: '#aaa'}}/>
                 <Tooltip
+                    content={<CustomTooltip colors={colorMap} />}
                     labelFormatter={formatTimestamp}
                     formatter={(value, key) => [formatNumber(value), key]}
-                    contentStyle={{backgroundColor: '#333', color: '#fff', borderRadius: 5}}
-                    itemStyle={{color: '#f700ff', backgroundColor: '#222'}}
                 />
-                <Legend verticalAlign="top" height={36}/>
 
                 {allKeys.map((key, index) => (
                     <Line

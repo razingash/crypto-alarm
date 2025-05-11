@@ -11,13 +11,13 @@ import (
 func sendHTTPRequest(method, url string) string {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		log.Fatalf("Failed to create %s request: %v", method, err)
+		log.Printf("Failed to create %s request: %v", method, err)
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatalf("Failed to perform %s request: %v", method, err)
+		log.Printf("Failed to perform %s request: %v", method, err)
 	}
 	defer resp.Body.Close()
 
