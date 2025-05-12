@@ -126,6 +126,16 @@
     height: fit-content;
 }
 
+.chart_additional_data {
+    position: absolute;
+    bottom: 15px;
+    left: -40px;
+    width: 40px;
+    height: 40px;
+    fill: var(--active-element);
+    cursor: pointer;
+}
+
 .param__status_off {
     color: #ff3a75;
 }
@@ -238,6 +248,15 @@
 
 .checkbox_zipline input:checked + .slider:before {
     transform: translateX(19px);
+}
+
+@media (max-width: 1150px) {
+    .chart_additional_data {
+        bottom: 18px;
+        left: 9px;
+        width: 30px;
+        height: 30px;
+    }
 }
 
 @media (max-width: 500px) {

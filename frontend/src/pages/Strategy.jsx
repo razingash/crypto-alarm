@@ -14,9 +14,9 @@ const Strategy = () => {
     const [formula, setFormula] = useState(null);
     const [changeMod, setChangeMod] = useState(false);
     const [formulaNewData, setFormulaNewData] = useState(null); // changed data
-    const [page, setPage] = useState(1);
-    const [hasNext, setHasNext] = useState(false);
+    const [hasNext, setHasNext] = useState(null)
     const [historyData, setHistoryData] = useState([]);
+    const [prevCursor, setPrevCursor] = useState(0); // by timestamp
 
     const [fetchFormula, isFormulaLoading, ] = useFetching(async () => {
         return await TriggersService.getUserFormulas({id: id})
@@ -27,9 +27,28 @@ const Strategy = () => {
     const [removeFormula, , ] = useFetching(async () => {
         return await TriggersService.deleteUserFormula(id)
     }, 0, 1000)
-    const [fetchFormulaHistory, isFormulaHistoryLoading, ] = useFetching(async (page) => {
-        return await TriggersService.getFormulaHistory(id, page)
-    }, 0, 1000)
+    const [fetchFormulaHistory, isFormulaHistoryLoading, ] = useFetching(async () => {
+        return await TriggersService.getFormulaHistory(id, 1, prevCursor)
+    }, 1000, 1000)
+
+    const loadPrevHistory = async () => {
+        const data = await fetchFormulaHistory()
+        if (data?.data) {
+            let newItems = transformData(data.data);
+            if (prevCursor === 0) {
+                newItems = newItems.reverse();
+                setHistoryData(newItems);
+            } else {
+                setHistoryData(prev => [...newItems, ...prev]);
+            }
+            setHasNext(data.has_next)
+            setPrevCursor(data.data[data.data.length - 1].timestamp)
+        }
+    }
+
+    useEffect(() => {
+        console.log(hasNext)
+    }, [hasNext])
 
     useEffect(() => {
         const loadData = async () => {
@@ -47,11 +66,7 @@ const Strategy = () => {
     useEffect(() => {
         const loadData = async () => {
             if (formula?.is_history_on === true && historyData.length === 0) {
-                const data = await fetchFormulaHistory(page)
-                if (data) {
-                    setHasNext(data.has_next)
-                    data.data && setHistoryData(transformData(data.data))
-                }
+                await loadPrevHistory()
             }
         }
         void loadData();
@@ -217,6 +232,11 @@ const Strategy = () => {
                     <div className={"area__chart"}>
                         <div className="field__chart chart__strategy_history">
                             <Chart data={historyData} />
+                            {!isFormulaHistoryLoading && hasNext && <svg onClick={loadPrevHistory} className="chart_additional_data" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                                <path
+                                    d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.2 288 416 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-306.7 0L214.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z">
+                                </path>
+                            </svg>}
                         </div>
                     </div>
                 )}

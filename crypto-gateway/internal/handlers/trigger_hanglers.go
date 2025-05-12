@@ -182,20 +182,23 @@ func FormulaHistoryGet(c fiber.Ctx) error {
 			"error": "Invalid formula ID",
 		})
 	}
-	defaultLimit := 100
-	defaultPage := 1
+
+	prevCursor, err := strconv.Atoi(c.Query("prevCursor"))
+	if err != nil || prevCursor <= 0 {
+		prevCursor = 0
+	}
 
 	limit, err := strconv.Atoi(c.Query("limit"))
 	if err != nil || limit <= 0 {
-		limit = defaultLimit
+		limit = 100
 	}
 
 	page, err := strconv.Atoi(c.Query("page"))
 	if err != nil || page <= 0 {
-		page = defaultPage
+		page = 1
 	}
 
-	formulaHistoryError, hasNext, rawRows := db.GetFormulaHistory(formulaID, limit, page)
+	formulaHistoryError, hasNext, rawRows := db.GetFormulaHistory(formulaID, limit, page, prevCursor)
 
 	switch formulaHistoryError {
 	case 1:

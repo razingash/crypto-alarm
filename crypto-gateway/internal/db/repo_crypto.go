@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type UserFormula struct {
@@ -138,21 +140,38 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
 	return formulas, hasNext, nil
 }
 
-func GetFormulaHistory(formulaID int, limit int, page int) (int, bool, []tempRow) {
-	offset := (page - 1) * limit
+func GetFormulaHistory(formulaID int, limit int, page int, prevCursor int) (int, bool, []tempRow) {
+	var rows pgx.Rows
+	var err error
 
-	rows, err := DB.Query(context.Background(), `
-        SELECT th.timestamp,
-               STRING_AGG(tc.name, ', ') AS names,
-               STRING_AGG(CAST(tch.value AS TEXT), ', ') AS values
-        FROM trigger_history th
-        LEFT JOIN trigger_component_history tch ON th.id = tch.trigger_history_id
-        LEFT JOIN trigger_component tc ON tc.id = tch.component_id
-        WHERE th.formula_id = $1
-        GROUP BY th.timestamp
-        ORDER BY th.timestamp ASC
-        LIMIT $2 OFFSET $3;
-    `, formulaID, limit+1, offset)
+	if prevCursor == 0 {
+		rows, err = DB.Query(context.Background(), `
+			SELECT th.timestamp,
+				   STRING_AGG(tc.name, ', ') AS names,
+				   STRING_AGG(CAST(tch.value AS TEXT), ', ') AS values
+			FROM trigger_history th
+			LEFT JOIN trigger_component_history tch ON th.id = tch.trigger_history_id
+			LEFT JOIN trigger_component tc ON tc.id = tch.component_id
+			WHERE th.formula_id = $1
+			GROUP BY th.timestamp
+			ORDER BY th.timestamp DESC
+			LIMIT $2;
+		`, formulaID, limit+1)
+	} else {
+		cursorTime := time.Unix(int64(prevCursor), 0).UTC()
+		rows, err = DB.Query(context.Background(), `
+			SELECT th.timestamp,
+				   STRING_AGG(tc.name, ', ') AS names,
+				   STRING_AGG(CAST(tch.value AS TEXT), ', ') AS values
+			FROM trigger_history th
+			LEFT JOIN trigger_component_history tch ON th.id = tch.trigger_history_id
+			LEFT JOIN trigger_component tc ON tc.id = tch.component_id
+			WHERE th.formula_id = $1 AND th.timestamp < $2
+			GROUP BY th.timestamp
+			ORDER BY th.timestamp DESC
+			LIMIT $3;
+		`, formulaID, cursorTime, limit+1)
+	}
 
 	if err != nil {
 		return 1, false, nil
