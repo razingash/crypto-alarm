@@ -15,7 +15,8 @@ class BinanceAPIOrchestrator:
     def __init__(self, binance_api: BinanceAPI):
         self.binance_api = binance_api
         self.is_binance_online = True
-        self.tasks = {}
+        self.tasks: dict[str, asyncio.Task] = {} # лучше это не менять
+        self.task_cooldowns: dict[str, int] = {}
 
     async def start(self):
         """Запуск фоновых задач. первая задача должна быть проверка апи"""
@@ -35,7 +36,10 @@ class BinanceAPIOrchestrator:
         outdated_apis = running_apis - current_apis
         for api in outdated_apis:
             print(f"stopping outdated API: {api}")
+
             task = self.tasks.pop(api, None)
+            self.task_cooldowns.pop(api, None)
+
             if task and not task.done():
                 task.cancel()
             else:
@@ -45,7 +49,7 @@ class BinanceAPIOrchestrator:
                     filename="StrangeError.log"
                 )
 
-        for api, formulas_amount in data.items():
+        for api, (cooldown, formulas_amount) in data.items():
             if formulas_amount <= 0:
                 continue
 
@@ -53,12 +57,31 @@ class BinanceAPIOrchestrator:
             if existing_task and not existing_task.done():
                 continue
 
-            print(f"Starting API task: {api}")
+            print(f"Starting API task: {api} (cooldown: {cooldown}seconds)")
+            self.launch_api(api, cooldown)
 
-            if api == "/v3/ticker/price":
-                self.tasks[api] = asyncio.create_task(self.update_ticker_current_price())
-            elif api == "/v3/ticker/24hr":
-                self.tasks[api] = asyncio.create_task(self.update_price_change_24h())
+    async def adjust_api_task_cooldown(self, api: str, new_cooldown: int) -> None:
+        """Updates the frequency of proxification for a particular API, if necessary"""
+        if api not in self.tasks:
+            return
+
+        old_cooldown = self.task_cooldowns.get(api)
+        if old_cooldown == new_cooldown:
+            return
+
+        task = self.tasks.pop(api)
+        self.task_cooldowns.pop(api)
+        if not task.done():
+            task.cancel()
+        self.launch_api(api, new_cooldown)
+
+    def launch_api(self, api: str, cooldown: int) -> None:
+        if api == "/v3/ticker/price":
+            self.tasks[api] = asyncio.create_task(self.update_ticker_current_price(cooldown=cooldown))
+            self.task_cooldowns[api] = cooldown
+        elif api == "/v3/ticker/24hr":
+            self.tasks[api] = asyncio.create_task(self.update_price_change_24h(cooldown=cooldown))
+            self.task_cooldowns[api] = cooldown
 
     async def check_binance_response(self, response):
         """checks Binacne availability"""
@@ -97,10 +120,10 @@ class BinanceAPIOrchestrator:
             if self.is_binance_online is True:
                 break
 
-    async def update_ticker_current_price(self):
+    async def update_ticker_current_price(self, cooldown: int):
         while True:
             print('update_ticker_current_price')
-            await asyncio.sleep(10)
+            await asyncio.sleep(cooldown)
             response = await self.binance_api.get_ticker_current_price()
             await self.check_binance_response(response)
             currencies = await get_needed_fields_from_endpoint(endpoint="/v3/ticker/price")
@@ -113,10 +136,10 @@ class BinanceAPIOrchestrator:
 
                 await send_triggered_formulas(formulas=triggered_formulas)
 
-    async def update_price_change_24h(self):
+    async def update_price_change_24h(self, cooldown: int):
         while True:
             print('update_price_change_24h')
-            await asyncio.sleep(20)
+            await asyncio.sleep(cooldown)
             response = await self.binance_api.get_price_change_24h()
             await self.check_binance_response(response)
             fields = await get_needed_fields_from_endpoint(endpoint="/v3/ticker/24hr")

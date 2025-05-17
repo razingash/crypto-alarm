@@ -136,16 +136,6 @@
     cursor: pointer;
 }
 
-.param__status_off {
-    color: #ff3a75;
-}
-.param__status_on {
-    color: #00ff37;
-}
-.param__status_unsaved {
-    color: #ffe900;
-}
-
 .button__show_more {
 
 }

@@ -36,12 +36,11 @@ const Header = () => {
                         <>
                         <Link to={"/new-strategy"} className={"header__item"}>New strategy</Link>
                         <Link to={"/strategies"} className={"header__item"}>Strategies</Link>
+                        <Link to={"/settings"} className={"header__item"}>Settings</Link>
+                        <div onClick={async () => await logout()} className={"header__item"}>log out</div>
                         </>
                     )}
-                    <Link to={"#"} className={"header__item"}>Settings</Link>
-                    {isAuth ? (
-                        <div onClick={async () => await logout()} className={"header__item"}>log out</div>
-                    ) : (
+                    {!isAuth && (
                         <Link to={"/authentication"} className={"header__item"}>log in</Link>
                     )}
                 </div>

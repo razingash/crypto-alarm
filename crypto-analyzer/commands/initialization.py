@@ -34,7 +34,7 @@ async def get_initial_data_params(binance_api: BinanceAPI) -> dict:
     """
     dataset = {}
 
-    excluded_endpoints = ["/v3/ping"]
+    excluded_endpoints = ["/v3/ping", "/v3/exchangeInfo"]
     for endpoint, weigth in endpoints.items():
         if endpoint not in excluded_endpoints:
             data = await binance_api.get(

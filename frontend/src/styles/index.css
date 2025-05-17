@@ -136,6 +136,16 @@ body {
     /* aspect-ratio: 2 / 1; */
 }
 
+.param__status_off {
+    color: #ff3a75;
+}
+.param__status_on {
+    color: #00ff37;
+}
+.param__status_unsaved {
+    color: #ffe900;
+}
+
 /*loading effect*/
 .loading__spinner {
     animation: rotate 2s linear infinite;

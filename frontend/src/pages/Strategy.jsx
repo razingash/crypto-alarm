@@ -34,9 +34,8 @@ const Strategy = () => {
     const loadPrevHistory = async () => {
         const data = await fetchFormulaHistory()
         if (data?.data) {
-            let newItems = transformData(data.data);
+            let newItems = transformData(data.data).reverse();
             if (prevCursor === 0) {
-                newItems = newItems.reverse();
                 setHistoryData(newItems);
             } else {
                 setHistoryData(prev => [...newItems, ...prev]);

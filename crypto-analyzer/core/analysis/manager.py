@@ -85,13 +85,17 @@ class FormulaManager:
             await self.orchestrator.launch_needed_api()
         return res
 
-    async def update_formula_in_graph(self, formula: str, pk: int):
+    async def update_formula_in_graph(self, pk: int, formula: str):
         res = self.graph.remove_formula(pk)
         if res is True and self.orchestrator:
             res = self.graph.add_formula(formula, pk)
             await self.orchestrator.launch_needed_api()
 
         return res
+
+    async def update_api_frequency_cooldown(self, cooldown: int, api: str):
+        result = await self.orchestrator.adjust_api_task_cooldown(api=api, new_cooldown=cooldown)
+        return result
 
     def get_graph_full_size(self, obj, seen=None) -> int: # нигде больше не понадобится поэтому оставить тут
         """вычисляет полный размер объекта в байтах"""

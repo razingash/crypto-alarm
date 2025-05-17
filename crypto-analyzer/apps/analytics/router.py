@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from apps.analytics.crud import get_formula_by_id
+from apps.analytics.crud import get_formula_by_id, get_api_cooldown
 from core.analysis.manager import formula_manager
 from core.models import TriggerFormula
 from db.postgre import postgres_db
@@ -34,8 +34,18 @@ async def remove_formula(pk: int):
 async def update_formula(pk: int, session: AsyncSession = Depends(postgres_db.session_dependency)):
     """обновляет(удаляет и заново создает) формулу в графе"""
     formula_data = await get_formula_by_id(session, pk, TriggerFormula.formula, TriggerFormula.is_active)
-    res = await formula_manager.update_formula_in_graph(formula_data, pk)
+    res = await formula_manager.update_formula_in_graph(pk, formula_data)
 
     if not res:
         return {"error": res}
     return status.HTTP_200_OK
+
+@router.put(path='/endpoint/{pk}/')
+async def update_api_cooldown(pk: int, session: AsyncSession = Depends(postgres_db.session_dependency)):
+    """Changes the proxying frequency of a specific Binance API"""
+    cooldown, api = await get_api_cooldown(session, pk)
+    res = await formula_manager.update_api_frequency_cooldown(cooldown, api)
+
+    if res is None:
+        return status.HTTP_200_OK
+    return {"error": res}

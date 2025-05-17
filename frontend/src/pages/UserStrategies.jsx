@@ -49,7 +49,7 @@ const UserStrategies = () => {
                             <div className={"strategy__info"}>
                                 <div className={"strategy__info__item"}>
                                     <div>History</div>
-                                    {formula.is_history_on === 'true' ? (
+                                    {formula.is_history_on === true ? (
                                         <div className={"param__status_on"}>On</div>
                                     ) : (
                                         <div className={"param__status_off"}>Off</div>
@@ -57,7 +57,7 @@ const UserStrategies = () => {
                                 </div>
                                 <div className={"strategy__info__item"}>
                                     <div>Notifications</div>
-                                    {formula.is_notified === 'true' ? (
+                                    {formula.is_notified === true ? (
                                         <div className={"param__status_on"}>On</div>
                                     ) : (
                                         <div className={"param__status_off"}>Off</div>
@@ -65,7 +65,7 @@ const UserStrategies = () => {
                                 </div>
                                 <div className={"strategy__info__item"}>
                                     <div>Active</div>
-                                    {formula.is_active === 'true' ? (
+                                    {formula.is_active === true ? (
                                         <div className={"param__status_on"}>On</div>
                                     ) : (
                                         <div className={"param__status_off"}>Off</div>

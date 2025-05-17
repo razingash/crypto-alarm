@@ -9,6 +9,14 @@ from core.models import TriggerFormula, CryptoApi, CryptoParams, TriggerFormulaC
 from db.postgre import postgres_db
 
 
+async def get_api_cooldown(session: AsyncSession, pk: int) -> (int, str):
+    query = await session.execute(select(CryptoApi.cooldown, CryptoApi.api).where(
+        CryptoApi.id == pk,
+    ))
+    cooldown, api = query.one_or_none()
+
+    return cooldown, api
+
 async def get_formula_by_id(session: AsyncSession, pk: int, *fields) -> str:
     query = await session.execute(select(*fields).where(
         TriggerFormula.id == pk,
@@ -28,11 +36,12 @@ async def get_actual_formulas():
 
     return result
 
-async def get_actual_components() -> dict: # возможная оптимизация - добавть formulas_num в CryptoApi и относительно его уже плясать
+# возможная оптимизация - добавть formulas_num в CryptoApi и относительно его уже плясать
+async def get_actual_components() -> dict:
     """получает необходимые апи, к которым нужно делать запрос в зависимости от актальности формул и компонентов"""
     async with postgres_db.session_factory() as session:
         query = await session.execute(
-            select(CryptoApi.api, func.count().label("count"))
+            select(CryptoApi.api, CryptoApi.cooldown, func.count().label("count"))
             .join(TriggerComponent, CryptoApi.id == TriggerComponent.api_id)
             .join(CryptoParams, TriggerComponent.parameter_id == CryptoParams.id)
             .join(TriggerFormulaComponent, TriggerFormulaComponent.component_id == TriggerComponent.id)
@@ -42,11 +51,11 @@ async def get_actual_components() -> dict: # возможная оптимиза
                 CryptoParams.is_active.is_(True),
                 TriggerFormula.is_active.is_(True),
             )
-            .group_by(CryptoApi.api)
+            .group_by(CryptoApi.api, CryptoApi.cooldown)
         )
         rows = query.all()
 
-        return {api: count for api, count in rows}
+        return {api: (cooldown, count) for api, cooldown, count in rows}
 
 async def get_needed_fields_from_endpoint(endpoint: str) -> dict[str, list[str]]:
     """получает список необходимых параметров для конкретного эндпоинта"""

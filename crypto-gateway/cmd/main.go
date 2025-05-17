@@ -38,6 +38,7 @@ func main() {
 	routes.SetupNotificationRoutes(app)
 	routes.SetupAuthRoutes(app)
 	routes.SetupTriggersRoutes(app)
+	routes.SetupSettingsRoutes(app)
 
 	log.Fatal(app.Listen(":8001"))
 }

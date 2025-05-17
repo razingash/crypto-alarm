@@ -46,3 +46,9 @@ func updateFormulaInGraph(formulaID string) {
 	response := sendHTTPRequest(http.MethodPut, addr)
 	log.Println("Internal Response:", response)
 }
+
+func updateApiCooldown(apiId int) {
+	addr := fmt.Sprintf("%v/analytics/endpoint/%v/", config.Internal_Server_Api, apiId)
+	response := sendHTTPRequest(http.MethodPut, addr)
+	log.Println("Internal Response:", response)
+}

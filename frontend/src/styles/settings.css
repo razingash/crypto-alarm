@@ -1,0 +1,56 @@
+
+
+.field__settings__api {
+
+}
+
+.api__list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    background: var(--container-background);
+    color: #ffffff;
+    padding: 20px;
+}
+
+.api__item {
+    display: flex;
+    align-items: center;
+    column-gap: 20px;
+}
+
+.api__status {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+}
+.api-actual {
+    background: var(--lines);
+}
+.api-unactual {
+    background: #ff0000;
+}
+
+.api__endpoint {
+
+}
+.input__api__cooldown, .api__cooldown {
+    width: 145px;
+}
+.input__api__cooldown {
+    background: #ffffff00;
+    color: #fff;
+    border: 1px solid #ffffff75;
+    border-radius: 2px;
+}
+.api__cooldown {
+
+}
+.api__lastUpdate {
+
+}
+
+.api__change {
+    cursor: pointer;
+}

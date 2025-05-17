@@ -14,8 +14,9 @@ __all__ = [
 class CryptoApi(Base):
     """список доступных апи"""
     api: Mapped[str] = mapped_column(String(500), nullable=False, unique=True, index=True)
+    cooldown: Mapped[int] = mapped_column(Integer, nullable=False, default=20)
     is_actual: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    last_updated: Mapped[bool] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    last_updated: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
     params = relationship("CryptoParams", back_populates="crypto_api", cascade="all, delete-orphan")
     trigger_components = relationship("TriggerComponent", back_populates="api", cascade="all, delete-orphan")

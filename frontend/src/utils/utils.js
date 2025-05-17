@@ -74,3 +74,18 @@ export const transformData = (data) => {
         return result;
     });
 }
+
+export const formatDuration = (stringSeconds) => {
+    const days = Math.floor(+stringSeconds / 86400);
+    const hours = Math.floor((+stringSeconds % 86400) / 3600);
+    const minutes = Math.floor((+stringSeconds % 3600) / 60);
+    const seconds = Math.floor(+stringSeconds % 60);
+
+    const parts = [];
+    if (days) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
+    if (hours) parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
+    if (minutes) parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
+    if (seconds || parts.length === 0) parts.push(`${seconds} second${seconds !== 1 ? 's' : ''}`);
+
+    return parts.join(', ');
+};
