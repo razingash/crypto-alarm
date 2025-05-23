@@ -12,12 +12,29 @@ type FormulaValidator struct {
 	IsNotified  func(interface{}) string
 	IsActive    func(interface{}) string
 	IsHistoryOn func(interface{}) string
+	Cooldown    func(interface{}) string
 }
 
 func ValidateBool(value interface{}) string {
 	_, ok := value.(bool)
 	if !ok {
 		return "value must be a boolean"
+	}
+	return ""
+}
+
+func ValidateCooldown(value interface{}) string {
+	num, ok := value.(float64)
+	if !ok {
+		return "cooldown must be a number"
+	}
+
+	cooldown := int(num)
+	if cooldown < 1 {
+		return "cooldown must be at least 1 second"
+	}
+	if cooldown > 604800 {
+		return "cooldown must not exceed 604800 seconds (7 days)"
 	}
 	return ""
 }

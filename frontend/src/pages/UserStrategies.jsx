@@ -38,7 +38,7 @@ const UserStrategies = () => {
                     formulas.map((formula, index) => (
                         <div className={"strategy__item"} key={formula.id} ref={index === formulas.length - 1 ? lastElement : null}>
                             <div className={"strategy__item__header"}>
-                                <div className={"strategy__weight"}>Weight: 80</div>
+                                <div className={"strategy__weight"}>Cooldown: {formula.cooldown}</div>
                                 <Link to={`/strategy/${formula.id}`} className={"strategy__name"}>
                                     {formula.name || `Nameless formula with id ${formula.id}`}
                                 </Link>

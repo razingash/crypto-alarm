@@ -82,6 +82,9 @@ class BinanceAPIOrchestrator:
         elif api == "/v3/ticker/24hr":
             self.tasks[api] = asyncio.create_task(self.update_price_change_24h(cooldown=cooldown))
             self.task_cooldowns[api] = cooldown
+        elif api == "/v3/ping":
+            self.tasks[api] = asyncio.create_task(self.check_api_status_loop(cooldown=cooldown))
+            self.task_cooldowns[api] = cooldown
 
     async def check_binance_response(self, response):
         """checks Binacne availability"""
@@ -96,9 +99,7 @@ class BinanceAPIOrchestrator:
             if len(self.tasks) > 1:
                 for task in self.tasks:
                     task.cancel()
-                self.tasks = [
-                    asyncio.create_task(self.check_api_status_loop(60))
-                ]
+                self.launch_api("/v3/ping", 60)
         elif self.is_binance_online is False:  # бинанс ожил
             custom_logger.log_with_path(
                 level=3,

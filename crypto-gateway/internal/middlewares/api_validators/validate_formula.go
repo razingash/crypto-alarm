@@ -110,6 +110,7 @@ func ValidateFormulaPatch(c fiber.Ctx) error {
 		IsNotified:  field_validators.ValidateBool,
 		IsActive:    field_validators.ValidateBool,
 		IsHistoryOn: field_validators.ValidateBool,
+		Cooldown:    field_validators.ValidateCooldown,
 	}
 
 	fieldValidators := map[string]func(interface{}) string{
@@ -120,6 +121,7 @@ func ValidateFormulaPatch(c fiber.Ctx) error {
 		"is_notified":   validator.IsNotified,
 		"is_active":     validator.IsActive,
 		"is_history_on": validator.IsHistoryOn,
+		"cooldown":      validator.Cooldown,
 	}
 
 	validData := make(map[string]interface{})

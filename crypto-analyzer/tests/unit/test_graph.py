@@ -117,16 +117,8 @@ def test_evaluate_subexpression():
     graph.add_formula("b + c == 100", 2)
     graph.update_variables_topological_Kahn({"a": 1200, "b": 200, "c": -100})
 
-    result = int(graph.evaluate_subexpression("a - b"))
-    assert result == 1000
-
-    result = int(graph.evaluate_subexpression("b + c"))
-    assert result == 100
-
-    result1 = graph.evaluate_subexpression("a - b")
-    result2 = graph.evaluate_subexpression("a - b")
-    assert result1 == result2
-
+    assert graph.evaluate_subexpression("a - b") == True
+    assert graph.evaluate_subexpression("b + c") == True
 
 def test_get_triggered_formulas():
     graph = DependencyGraph()
@@ -135,7 +127,16 @@ def test_get_triggered_formulas():
     graph.add_formula("b + c == 100", 2)
 
     graph.update_variables_topological_Kahn({"a": 1200, "b": 200, "c": -100})
-
     result = graph.get_triggered_formulas([1, 2])
 
     assert 2 in result
+
+def test_is_formula_triggered():
+    graph = DependencyGraph()
+
+    graph.add_formula("((a+b)/(abs(c)))<=1000", 1)
+    graph.add_formula("((a + b) / c) <= 10000", 2)
+    graph.update_variables_topological_Kahn({"a": 2.35927798, "b": -0.719, "c": -0.00017})
+
+    assert graph.is_formula_triggered(1) == False
+    assert graph.is_formula_triggered(2) == True

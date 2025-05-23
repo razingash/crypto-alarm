@@ -20,6 +20,7 @@ type UserFormula struct {
 	IsHistoryOn   bool   `json:"is_history_on"`
 	IsShuttedOff  bool   `json:"is_shutted_off"`
 	LastTriggered string `json:"last_triggered"`
+	Cooldown      int    `json:"cooldown"`
 }
 
 type CryptoVariable struct {
@@ -81,8 +82,8 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
 
 	if formulaID != "" {
 		row := DB.QueryRow(context.Background(), `
-            SELECT id, formula_raw, COALESCE(name, ''), COALESCE(description, ''), is_notified, is_active,
-                is_shutted_off, is_history_on, COALESCE(TO_CHAR(last_triggered, 'YYYY-MM-DD HH24:MI:SS'), '') AS last_triggered
+            SELECT id, formula_raw, COALESCE(name, ''), COALESCE(description, ''), is_notified, is_active, is_shutted_off,
+				is_history_on, cooldown, COALESCE(TO_CHAR(last_triggered, 'YYYY-MM-DD HH24:MI:SS'), '') AS last_triggered
             FROM trigger_formula
             WHERE id = $1 AND owner_id = $2;
         `, formulaID, ownerID)
@@ -90,7 +91,7 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
 		var formula UserFormula
 		err := row.Scan(
 			&formula.Id, &formula.FormulaRaw, &formula.Name, &formula.Description, &formula.IsNotified,
-			&formula.IsActive, &formula.IsShuttedOff, &formula.IsHistoryOn, &formula.LastTriggered,
+			&formula.IsActive, &formula.IsShuttedOff, &formula.IsHistoryOn, &formula.Cooldown, &formula.LastTriggered,
 		)
 		if err != nil {
 			return nil, false, err
@@ -103,8 +104,8 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
 	offset := (page - 1) * limit
 
 	rows, err := DB.Query(context.Background(), `
-        SELECT id, formula_raw, COALESCE(name, ''), COALESCE(description, ''), is_notified, is_active,
-            is_shutted_off, is_history_on, COALESCE(TO_CHAR(last_triggered, 'YYYY-MM-DD HH24:MI:SS'), '') AS last_triggered
+        SELECT id, formula_raw, COALESCE(name, ''), COALESCE(description, ''), is_notified, is_active, is_shutted_off,
+			is_history_on, cooldown, COALESCE(TO_CHAR(last_triggered, 'YYYY-MM-DD HH24:MI:SS'), '') AS last_triggered
         FROM trigger_formula
         WHERE owner_id = $1
         ORDER BY id DESC
@@ -120,7 +121,7 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
 		var formula UserFormula
 		err := rows.Scan(
 			&formula.Id, &formula.FormulaRaw, &formula.Name, &formula.Description, &formula.IsNotified,
-			&formula.IsActive, &formula.IsShuttedOff, &formula.IsHistoryOn, &formula.LastTriggered,
+			&formula.IsActive, &formula.IsShuttedOff, &formula.IsHistoryOn, &formula.Cooldown, &formula.LastTriggered,
 		)
 		if err != nil {
 			return nil, false, err

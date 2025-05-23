@@ -47,6 +47,7 @@
 }
 .strategy__item {
     max-width: 450px;
+    height: 280px;
 }
 
 .strategy__none {
@@ -118,6 +119,15 @@
     justify-content: space-between;
     column-gap: 25px;
     flex-wrap: wrap;
+    align-items: center;
+}
+
+.input__strategy__cooldown {
+    border-radius: 2px;
+    padding: 4px 0 4px 4px;
+    background: #c4c4c40b;
+    border: 1px solid #4a4a4a;
+    color: #fff;
 }
 
 .chart__strategy_history {

@@ -6,6 +6,8 @@
     width: 100%;
     overflow: auto;
     color: #fff;
+    align-content: center;
+    height: 100%;
 }
 #cursor {
     display: inline-block;

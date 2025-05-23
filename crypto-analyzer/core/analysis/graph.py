@@ -269,12 +269,12 @@ class DependencyGraph:
         func = self.compiled[formula_id]
 
         args = {str(var): self.variables.get(str(var), 0) for var in expr.free_symbols}
-        cache_key = self.get_canonical_cache_key(args)
+        cache_key = self.get_canonical_cache_key(args, formula_id)
 
         if cache_key in self.cache:
             return self.cache[cache_key]
         else:
-            result = func(**args)
+            result = bool(func(**args))
             self.cache[cache_key] = result
             return result
 
@@ -306,10 +306,11 @@ class DependencyGraph:
         return result, variable_values
 
     @staticmethod
-    def get_canonical_cache_key(args):
+    def get_canonical_cache_key(args, formula_id=None): # None for subexpressions
         """Создаёт уникальный кэш-ключ, не зависящий от порядка переменных"""
         sorted_args = tuple(sorted(args.items()))
-        return hashlib.md5(str(sorted_args).encode('utf-8')).hexdigest()
+        base = (formula_id, sorted_args)
+        return hashlib.md5(str(base).encode('utf-8')).hexdigest()
 
     @staticmethod
     def normalize_expression(expr):

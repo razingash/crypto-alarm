@@ -214,6 +214,23 @@ const Strategy = () => {
                         )}
                     </div>
                     <div className={"strategy__info__item"}>
+                        <div>Cooldown</div>
+                        {changeMod ? (
+                            <input type="number" min={1} max={604800} className={"input__strategy__cooldown"}
+                                value={formulaNewData.cooldown}
+                                onChange={(e) => setFormulaNewData((prev) => ({
+                                    ...prev,
+                                    cooldown: +e.target.value,
+                                    }))
+                                }
+                            />
+                        ) : (
+                            <div className={`${formulaNewData.cooldown !== formula.cooldown &&"param__status_unsaved"}`}>
+                                {formulaNewData.cooldown}
+                            </div>
+                        )}
+                    </div>
+                    <div className={"strategy__info__item"}>
                         <div>Last Triggered</div>
                         <div>{formula.last_triggered || "Never"}</div>
                     </div>

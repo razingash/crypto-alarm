@@ -1,9 +1,9 @@
 import {lazy} from "react";
-import Strategy from "../pages/Strategy";
 
 const Main = lazy(() => import("../pages/Main"));
 const Auth = lazy(() => import("../pages/Auth"));
 const NewStrategy = lazy(() => import("../pages/NewStrategy"))
+const Strategy = lazy(() => import("../pages/Strategy"))
 const UserStrategies = lazy(() => import("../pages/UserStrategies"));
 const Settigns = lazy(() => import("../pages/Settings"));
 

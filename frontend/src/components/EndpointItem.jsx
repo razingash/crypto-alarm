@@ -13,7 +13,7 @@ const EndpointItem = ({endpoint, handleSaveChanges}) => {
             ) : (
                 <div className={"api__status api-unactual"}></div>
             )}
-            <div className={"api__endpoint"}>https://api.binance.com/api{endpoint.Api}</div>
+            <div className={"api__endpoint"}>{endpoint.Api}</div>
             {changeMod ? (
                  <input className={"input__api__cooldown"} value={cooldown} placeholder={"cooldown in seconds..."}
                     type={"number"} min={1} max={999999} onChange={(e) => setCooldown(() => e.target.value)}
