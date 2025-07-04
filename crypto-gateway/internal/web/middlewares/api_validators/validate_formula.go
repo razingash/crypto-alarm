@@ -1,7 +1,7 @@
 package api_validators
 
 import (
-	"crypto-gateway/internal/middlewares/field_validators"
+	"crypto-gateway/internal/web/middlewares/field_validators"
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v3"

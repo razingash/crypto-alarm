@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 	"crypto-gateway/config"
-	"crypto-gateway/internal/db"
+	"crypto-gateway/internal/web/db"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"

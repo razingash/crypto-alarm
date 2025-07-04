@@ -2,7 +2,7 @@ package field_validators
 
 import (
 	"context"
-	"crypto-gateway/internal/db"
+	"crypto-gateway/internal/web/db"
 	"fmt"
 	"regexp"
 	"strings"

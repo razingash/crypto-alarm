@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"crypto-gateway/config"
-	"crypto-gateway/internal/db"
+	"crypto-gateway/internal/web/db"
 	"fmt"
 
 	"github.com/gofiber/fiber/v3"

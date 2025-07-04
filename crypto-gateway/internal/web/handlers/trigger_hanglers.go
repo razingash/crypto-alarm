@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"context"
-	"crypto-gateway/internal/db"
-	"crypto-gateway/internal/middlewares/field_validators"
+	"crypto-gateway/internal/web/db"
+	"crypto-gateway/internal/web/middlewares/field_validators"
 	"fmt"
 	"strconv"
 

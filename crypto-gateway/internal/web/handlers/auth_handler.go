@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"context"
-	"crypto-gateway/internal/auth"
-	"crypto-gateway/internal/db"
+	"crypto-gateway/internal/web/auth"
+	"crypto-gateway/internal/web/db"
 	"encoding/json"
 	"strings"
 

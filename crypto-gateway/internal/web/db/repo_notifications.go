@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"crypto-gateway/internal/webpush"
+	"crypto-gateway/internal/web/webpush"
 )
 
 func SendPushNotifications(formulasID []int, message string) error {

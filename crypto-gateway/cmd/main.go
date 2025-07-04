@@ -2,8 +2,8 @@ package main
 
 import (
 	"crypto-gateway/config"
-	"crypto-gateway/internal/db"
-	"crypto-gateway/internal/routes"
+	"crypto-gateway/internal/web/db"
+	"crypto-gateway/internal/web/routes"
 	"log"
 	"time"
 

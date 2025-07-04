@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"crypto-gateway/internal/auth"
+	"crypto-gateway/internal/web/auth"
 	"strings"
 
 	"github.com/gofiber/fiber/v3"

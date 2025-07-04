@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"crypto-gateway/internal/db"
+	"crypto-gateway/internal/web/db"
 
 	"github.com/gofiber/fiber/v3"
 )
