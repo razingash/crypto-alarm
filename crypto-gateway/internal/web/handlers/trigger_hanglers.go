@@ -119,11 +119,11 @@ func FormulaPatch(c fiber.Ctx) error {
 
 		if isActiveRaw, hasIsActive := data["is_active"]; hasIsActive {
 			if isActive, ok := isActiveRaw.(bool); ok {
+				id, _ := strconv.Atoi(formulaId)
 				if isActive {
-					id, _ := strconv.Atoi(formulaId)
 					go addFormulaToGraph(id)
 				} else {
-					go deleteFormulaFromGraph(formulaId)
+					go deleteFormulaFromGraph(id)
 				}
 			}
 		}
@@ -169,7 +169,8 @@ func FormulaDelete(c fiber.Ctx) error {
 			"error": "Database error",
 		})
 	default:
-		go deleteFormulaFromGraph(formulaId)
+		id, _ := strconv.Atoi(formulaId)
+		go deleteFormulaFromGraph(id)
 		return c.SendStatus(fiber.StatusOK)
 	}
 }

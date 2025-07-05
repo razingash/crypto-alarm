@@ -11,7 +11,7 @@ import (
 
 // отвечает за запуск периодических задач
 type BinanceAPIOrchestrator struct {
-	dependencyGraph *DependencyGraph
+	DependencyGraph *DependencyGraph
 	binanceAPI      *BinanceAPI
 	isBinanceOnline bool
 
@@ -22,7 +22,7 @@ type BinanceAPIOrchestrator struct {
 
 func NewBinanceAPIOrchestrator(api *BinanceAPI) *BinanceAPIOrchestrator {
 	return &BinanceAPIOrchestrator{
-		dependencyGraph: NewDependencyGraph(),
+		DependencyGraph: NewDependencyGraph(),
 		binanceAPI:      api,
 		isBinanceOnline: true,
 		tasks:           make(map[string]context.CancelFunc),
@@ -32,7 +32,7 @@ func NewBinanceAPIOrchestrator(api *BinanceAPI) *BinanceAPIOrchestrator {
 
 // Запуск фоновых задач. первая задача должна быть проверка доступности апи бинанса
 func (o *BinanceAPIOrchestrator) Start(ctx context.Context) error {
-	response, err := o.binanceAPI.Get(ctx, "/v3/ping", endpoints["/v3/ping"], nil) // get Binance accessibility
+	response, err := o.binanceAPI.Get(context.Background(), "/v3/ping", endpoints["/v3/ping"], nil) // get Binance accessibility
 	if err != nil {
 		o.checkBinanceResponse(nil)
 	} else {
@@ -40,7 +40,7 @@ func (o *BinanceAPIOrchestrator) Start(ctx context.Context) error {
 	}
 
 	if o.isBinanceOnline {
-		o.LaunchNeededAPI(ctx)
+		o.LaunchNeededAPI(context.Background())
 	}
 
 	return nil
@@ -51,6 +51,7 @@ func (o *BinanceAPIOrchestrator) LaunchNeededAPI(ctx context.Context) {
 	fmt.Println("Launching needed API tasks...")
 
 	data, err := GetActualComponents(ctx)
+	fmt.Println(data)
 	if err != nil {
 		panic("GetActualComponents returned error in LaunchNeededAPI function")
 	}
@@ -179,9 +180,9 @@ func (o *BinanceAPIOrchestrator) updateTickerCurrentPrice(ctx context.Context, c
 			}
 			dataForGraph := extractDataFromTickerCurrentPrice(response, currencies)
 
-			triggeredFormulas := o.dependencyGraph.UpdateVariablesTopologicalKahn(dataForGraph)
+			triggeredFormulas := o.DependencyGraph.UpdateVariablesTopologicalKahn(dataForGraph)
 			if len(triggeredFormulas) > 0 {
-				result, variableValues := o.dependencyGraph.GetFormulasVariables(triggeredFormulas)
+				result, variableValues := o.DependencyGraph.GetFormulasVariables(triggeredFormulas)
 				AddTriggerHistory(ctx, result, variableValues)
 			}
 		}
@@ -211,9 +212,9 @@ func (o *BinanceAPIOrchestrator) updatePriceChange24h(ctx context.Context, coold
 			}
 			dataForGraph := extractDataFromPriceChange24h(response, fields)
 
-			triggeredFormulas := o.dependencyGraph.UpdateVariablesTopologicalKahn(dataForGraph)
+			triggeredFormulas := o.DependencyGraph.UpdateVariablesTopologicalKahn(dataForGraph)
 			if len(triggeredFormulas) > 0 {
-				result, variableValues := o.dependencyGraph.GetFormulasVariables(triggeredFormulas)
+				result, variableValues := o.DependencyGraph.GetFormulasVariables(triggeredFormulas)
 				AddTriggerHistory(ctx, result, variableValues)
 			}
 		}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/parser"
+	"log"
 	"slices"
 	"sort"
 	"strconv"
@@ -290,9 +291,10 @@ func (dg *DependencyGraph) UpdateVariablesTopologicalKahn(updates map[string]flo
 		}
 	}
 
-	for fid := range queue {
+	for fid, v := range queue {
+		fmt.Println(fid, v)
 		if _, err := dg.EvaluateFormula(fid); err != nil {
-			fmt.Printf("Ошибка вычисления формулы %d: %v\n", fid, err)
+			log.Printf("Ошибка вычисления формулы %d: %v\n", fid, err)
 		}
 	}
 

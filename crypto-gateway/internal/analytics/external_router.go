@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-// 3
-
 // структура для получения данных из бинанса путем запуска разных апи
 type BinanceAPI struct {
 	baseURL    string

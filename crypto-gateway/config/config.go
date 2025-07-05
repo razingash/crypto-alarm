@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/joho/godotenv"
 )
@@ -12,12 +13,13 @@ var (
 	SecretKey           string
 	Vapid_Public_Key    string
 	Vapid_Private_Key   string
+	Database_Name       string
 	Database_Url        string
 	Internal_Server_Api string
 )
 
 func LoadConfig() {
-	if err := godotenv.Load("../../.env"); err != nil {
+	if err := godotenv.Load(filepath.Join("..", ".env")); err != nil {
 		log.Println("Application startup via docker")
 	}
 
@@ -25,7 +27,7 @@ func LoadConfig() {
 	Vapid_Public_Key = os.Getenv("VAPID_PUBLIC_KEY")
 	Vapid_Private_Key = os.Getenv("VAPID_PRIVATE_KEY")
 	Internal_Server_Api = os.Getenv("INTERNAL_SERVER_API")
-	var Database_Name = os.Getenv("DB_NAME")
+	Database_Name = os.Getenv("DB_NAME")
 	var Database_User = os.Getenv("DB_USER")
 	var Database_Password = os.Getenv("DB_PASSWORD")
 	var Database_Host = os.Getenv("DB_HOST")

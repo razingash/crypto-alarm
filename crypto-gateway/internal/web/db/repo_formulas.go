@@ -71,6 +71,30 @@ func IsValidVariable(name string) (bool, error) {
 	return isAvailable, nil
 }
 
+func GetApiAndCooldownByID(id int) (string, int) {
+	// это тоже изменить и удалить позже
+	var api string
+	var cooldown int
+	err := DB.QueryRow(context.Background(), `
+        SELECT api, cooldown FROM crypto_api WHERE id = $1
+    `, id).Scan(&api, &cooldown)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return api, cooldown
+}
+func GetFormulaById(formulaID int) string {
+	// удалить функцию, сейчас это заглушка, возможно лучше сделать чтобы бралась из графа
+	var formula string
+	err := DB.QueryRow(context.Background(), `
+        SELECT formula FROM trigger_formula WHERE id = $1
+    `, formulaID).Scan(&formula)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return formula
+}
+
 func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]UserFormula, bool, error) {
 	ownerID, err := GetIdbyUuid(uuid)
 	if err != nil {
