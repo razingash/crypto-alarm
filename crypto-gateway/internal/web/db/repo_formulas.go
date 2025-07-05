@@ -72,7 +72,6 @@ func IsValidVariable(name string) (bool, error) {
 }
 
 func GetApiAndCooldownByID(id int) (string, int) {
-	// это тоже изменить и удалить позже
 	var api string
 	var cooldown int
 	err := DB.QueryRow(context.Background(), `
@@ -83,6 +82,7 @@ func GetApiAndCooldownByID(id int) (string, int) {
 	}
 	return api, cooldown
 }
+
 func GetFormulaById(formulaID int) string {
 	// удалить функцию, сейчас это заглушка, возможно лучше сделать чтобы бралась из графа
 	var formula string
