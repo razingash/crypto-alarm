@@ -27,7 +27,7 @@ func SendWebPush(endpoint string, p256dh string, auth string, messageJSON []byte
 	}
 
 	// генерация JWT
-	vapidJWT, err := GenerateVAPIDJWT(endpoint, "roumerchi@gmail.com", vapidECDSA)
+	vapidJWT, err := GenerateVAPIDJWT(endpoint, "testmail@gmail.com", vapidECDSA)
 	if err != nil {
 		return err
 	}

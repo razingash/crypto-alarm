@@ -82,10 +82,9 @@ func FormulaPost(c fiber.Ctx) error {
 	expression := c.Locals("formula").(string)
 	raw_expression := c.Locals("formula_raw").(string)
 	name := c.Locals("name").(string)
-	userUUID := c.Locals("userUUID").(string)
 	variables := c.Locals("variables").([]db.CryptoVariable)
-
-	id, err := db.SaveFormula(expression, raw_expression, name, userUUID)
+	fmt.Println(expression, raw_expression, name)
+	id, err := db.SaveFormula(expression, raw_expression, name)
 	if err != nil {
 		fmt.Println(err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -143,8 +142,7 @@ func FormulaDelete(c fiber.Ctx) error {
 		})
 	}
 
-	userUUID := c.Locals("userUUID").(string)
-	errCode := field_validators.ValidateTriggerFormulaId(userUUID, formulaId)
+	errCode := field_validators.ValidateTriggerFormulaId(formulaId)
 	switch errCode {
 	case 0: // дальше по коду
 	case 1:
@@ -246,8 +244,6 @@ func FormulaHistoryGet(c fiber.Ctx) error {
 }
 
 func FormulaGet(c fiber.Ctx) error {
-	userUUID := c.Locals("userUUID").(string)
-
 	defaultLimit := 10
 	defaultPage := 1
 
@@ -263,7 +259,7 @@ func FormulaGet(c fiber.Ctx) error {
 
 	formulaID := c.Query("id")
 
-	formulas, hasNext, err := db.GetUserFormulas(userUUID, limit, page, formulaID)
+	formulas, hasNext, err := db.GetFormulas(limit, page, formulaID)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "something went wrong",

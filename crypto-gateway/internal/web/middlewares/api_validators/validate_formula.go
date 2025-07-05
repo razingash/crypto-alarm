@@ -10,8 +10,8 @@ import (
 func ValidateFormulaPost(c fiber.Ctx) error {
 	var body struct {
 		Formula    string `json:"formula"`
-		FormulaRaw string `json:"formula_raw"`
-		Name       string `json:"name"`
+		FormulaRaw string `json:"formula_raw"` // нет нормального валидатора!
+		Name       string `json:"name"`        // идентично
 	}
 
 	if err := json.Unmarshal(c.Body(), &body); err != nil {
@@ -84,14 +84,9 @@ func ValidateFormulaPatch(c fiber.Ctx) error {
 	}
 	delete(payload, "formula_id")
 
-	userUUID := c.Locals("userUUID").(string)
-	errCode := field_validators.ValidateTriggerFormulaId(userUUID, formulaId)
+	errCode := field_validators.ValidateTriggerFormulaId(formulaId)
 	switch errCode {
 	case 0: // дальше по коду
-	case 1:
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "user does not exist",
-		})
 	case 2:
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Database error",

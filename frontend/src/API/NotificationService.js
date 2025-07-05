@@ -1,9 +1,8 @@
-import apiClient, {baseURL} from "../hooks/useApiInterceptor";
-import axios from "axios";
+import apiClient from "../hooks/useApiInterceptor";
 
 export default class NotificationService {
     static async getVapidKey() {
-        const response = await axios.get(`${baseURL}/notifications/vapid-key`);
+        const response = await apiClient.get('/notifications/vapid-key')
         return response.data.vapidPublicKey;
     }
     static async subscribeToPushNotifications(endpoint, p256dh, auth) {

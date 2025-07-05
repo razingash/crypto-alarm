@@ -15,18 +15,11 @@ func GetVAPIDKey(c fiber.Ctx) error {
 }
 
 func SavePushSubscription(c fiber.Ctx) error {
-	userUUID := c.Locals("userUUID").(string)
-	userID, err := db.GetIdbyUuid(userUUID)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
-	}
-
 	endpoint := c.Locals("endpoint").(string)
 	p256dh := c.Locals("p256dh").(string)
 	auth := c.Locals("auth").(string)
 
-	err = db.SaveSubscription(endpoint, p256dh, auth, userID)
+	err := db.SaveSubscription(endpoint, p256dh, auth)
 	if err != nil {
 		fmt.Println(err)
 		return c.SendStatus(fiber.StatusInternalServerError)

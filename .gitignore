@@ -1,11 +1,7 @@
-venv/
-alembic/versions/*.py
-alembic/__pycache__
-alembic/versions/__pycache__
-readme.md
 .env
+crypto-analyzer/
 crypto-analyzer/logs/
 crypto-analyzer/tests/.pytest_cache
+venv/
 frontend/node_modules
 crypto-gateway/logs
-

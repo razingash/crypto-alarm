@@ -40,20 +40,15 @@ func ValidateTriggerFormulaFormula(formula string) ([]db.CryptoVariable, int) {
 }
 
 // проверяет существует ли формула с таким id, и является ли пользователь её автором
-func ValidateTriggerFormulaId(userUUID string, formulaId string) int {
-	userId, err := db.GetIdbyUuid(userUUID)
-	if err != nil {
-		return 1
-	}
+func ValidateTriggerFormulaId(formulaId string) int {
 
 	var count int
-	err2 := db.DB.QueryRow(context.Background(), `
+	err := db.DB.QueryRow(context.Background(), `
 		SELECT COUNT(*) 
 		FROM trigger_formula
-		WHERE id = $1 AND owner_id = $2
-	`, formulaId, userId).Scan(&count)
-
-	if err2 != nil {
+		WHERE id = $1
+	`, formulaId).Scan(&count)
+	if err != nil {
 		return 2
 	}
 

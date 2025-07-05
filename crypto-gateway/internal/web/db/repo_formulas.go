@@ -95,12 +95,7 @@ func GetFormulaById(formulaID int) string {
 	return formula
 }
 
-func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]UserFormula, bool, error) {
-	ownerID, err := GetIdbyUuid(uuid)
-	if err != nil {
-		return nil, false, err
-	}
-
+func GetFormulas(limit int, page int, formulaID string) ([]UserFormula, bool, error) {
 	var formulas []UserFormula
 	var hasNext bool
 
@@ -109,8 +104,8 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
             SELECT id, formula_raw, COALESCE(name, ''), COALESCE(description, ''), is_notified, is_active, is_shutted_off,
 				is_history_on, cooldown, COALESCE(TO_CHAR(last_triggered, 'YYYY-MM-DD HH24:MI:SS'), '') AS last_triggered
             FROM trigger_formula
-            WHERE id = $1 AND owner_id = $2;
-        `, formulaID, ownerID)
+            WHERE id = $1;
+        `, formulaID)
 
 		var formula UserFormula
 		err := row.Scan(
@@ -131,10 +126,9 @@ func GetUserFormulas(uuid string, limit int, page int, formulaID string) ([]User
         SELECT id, formula_raw, COALESCE(name, ''), COALESCE(description, ''), is_notified, is_active, is_shutted_off,
 			is_history_on, cooldown, COALESCE(TO_CHAR(last_triggered, 'YYYY-MM-DD HH24:MI:SS'), '') AS last_triggered
         FROM trigger_formula
-        WHERE owner_id = $1
         ORDER BY id DESC
-        LIMIT $2 OFFSET $3;
-    `, ownerID, limit+1, offset)
+        LIMIT $1 OFFSET $2;
+    `, limit+1, offset)
 
 	if err != nil {
 		return nil, false, err
@@ -230,18 +224,13 @@ func GetFormulaHistory(formulaID int, limit int, page int, prevCursor int) (int,
 	return 0, hasNext, rawRows
 }
 
-func SaveFormula(formula string, formula_raw string, name string, uuid string) (int, error) {
-	owner_id, err := GetIdbyUuid(uuid)
-	if err != nil {
-		return 0, err
-	}
-
+func SaveFormula(formula string, formula_raw string, name string) (int, error) {
 	var formulaId int
-	err = DB.QueryRow(context.Background(), `
-        INSERT INTO trigger_formula (formula, formula_raw, name, owner_id, is_notified, is_active, is_shutted_off, is_history_on, cooldown) 
-        VALUES ($1, $2, $3, $4, false, false, false, false, 3600)
+	err := DB.QueryRow(context.Background(), `
+        INSERT INTO trigger_formula (formula, formula_raw, name, is_notified, is_active, is_shutted_off, is_history_on, cooldown) 
+        VALUES ($1, $2, $3, false, false, false, false, 3600)
         RETURNING id
-    `, formula, formula_raw, name, owner_id).Scan(&formulaId)
+    `, formula, formula_raw, name).Scan(&formulaId)
 
 	if err != nil {
 		return 0, err

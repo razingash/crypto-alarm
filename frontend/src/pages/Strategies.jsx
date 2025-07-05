@@ -6,7 +6,7 @@ import {useObserver} from "../hooks/useObserver";
 import {Link} from "react-router-dom";
 import FormulaInput from "../components/FormulasEditor/FormulaInput";
 
-const UserStrategies = () => {
+const Strategies = () => {
     const [page, setPage] = useState(1);
     const [hasNext, setNext] = useState(false);
     const lastElement = useRef();
@@ -88,4 +88,4 @@ const UserStrategies = () => {
     );
 };
 
-export default UserStrategies;
+export default Strategies;

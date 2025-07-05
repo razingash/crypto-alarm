@@ -1,11 +1,9 @@
 import React, {useEffect, useState} from 'react';
 import {Link} from "react-router-dom";
-import {useAuth} from "../../hooks/context/useAuth";
 import {useStore} from "../../utils/store";
 
 const Header = () => {
     const {isPwaMode} = useStore();
-    const { isAuth, logout } = useAuth();
     const [deferredPrompt, setDeferredPrompt] = useState(null);
 
     useEffect(() => {
@@ -32,17 +30,9 @@ const Header = () => {
         <div className={"section__header"}>
             <div className={"header__field"}>
                 <div className={"header__items"}>
-                    {isAuth && (
-                        <>
-                        <Link to={"/new-strategy"} className={"header__item"}>New strategy</Link>
-                        <Link to={"/strategies"} className={"header__item"}>Strategies</Link>
-                        <Link to={"/settings"} className={"header__item"}>Settings</Link>
-                        <div onClick={async () => await logout()} className={"header__item"}>log out</div>
-                        </>
-                    )}
-                    {!isAuth && (
-                        <Link to={"/authentication"} className={"header__item"}>log in</Link>
-                    )}
+                    <Link to={"/new-strategy"} className={"header__item"}>New strategy</Link>
+                    <Link to={"/strategies"} className={"header__item"}>Strategies</Link>
+                    <Link to={"/settings"} className={"header__item"}>Settings</Link>
                 </div>
             </div>
             {!isPwaMode &&

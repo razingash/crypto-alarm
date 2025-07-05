@@ -46,7 +46,6 @@ func main() {
 	analytics.StOrchestrator.Start(ctx)
 
 	routes.SetupNotificationRoutes(app)
-	routes.SetupAuthRoutes(app)
 	routes.SetupTriggersRoutes(app)
 	routes.SetupSettingsRoutes(app)
 

@@ -13,34 +13,6 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 SET search_path TO public;
 
-CREATE TABLE user_user (
-    id BIGSERIAL,
-    uuid character varying(36) NOT NULL,
-    username character varying(50) NOT NULL,
-    password character varying NOT NULL,
-    registered_date timestamp without time zone NOT NULL DEFAULT now(),
-    ispremium boolean NOT NULL DEFAULT FALSE,
-    since timestamp without time zone,
-    "to" timestamp without time zone
-);
-
-CREATE TABLE access_tokens (
-    id BIGSERIAL,
-    user_uuid character varying(36) NOT NULL,
-    token character varying NOT NULL,
-    expires_at timestamp without time zone NOT NULL,
-    created_at timestamp without time zone NOT NULL DEFAULT now()
-);
-
-CREATE TABLE refresh_tokens (
-    id BIGSERIAL,
-    user_uuid character varying(36) NOT NULL,
-    token character varying NOT NULL,
-    revoked boolean NOT NULL,
-    expires_at timestamp without time zone NOT NULL,
-    created_at timestamp without time zone NOT NULL DEFAULT now()
-);
-
 CREATE TABLE crypto_api (
     id BIGSERIAL,
     api character varying(500) NOT NULL,
@@ -91,8 +63,7 @@ CREATE TABLE trigger_formula (
     is_history_on boolean NOT NULL DEFAULT FALSE,
     is_shutted_off boolean NOT NULL DEFAULT FALSE,
     last_triggered timestamp without time zone,
-    cooldown integer NOT NULL DEFAULT 3600,
-    owner_id integer NOT NULL
+    cooldown integer NOT NULL DEFAULT 3600
 );
 
 CREATE TABLE trigger_formula_component (
@@ -113,6 +84,5 @@ CREATE TABLE trigger_push_subscription (
     endpoint character varying NOT NULL,
     p256dh character varying NOT NULL,
     auth character varying NOT NULL,
-    created_at timestamp without time zone NOT NULL DEFAULT now(),
-    user_id integer NOT NULL
+    created_at timestamp without time zone NOT NULL DEFAULT now()
 );

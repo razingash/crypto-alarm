@@ -37,7 +37,7 @@ const Keyboard = ({onKeyPress}) => {
     }, [isKeyboardLoading])
 
     useEffect(() => {
-        //поиск начинается спустя 500мс после того как пользователь закончит вводить инфу
+        // поиск начинается спустя 500мс после того как пользователь закончит вводить инфу
         const timeout = setTimeout(() => {
             setDelayedSearchKey(searchKey);
             setIsSearch(true);

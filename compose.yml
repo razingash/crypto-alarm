@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  nginx: # with compiled react
+  nginx: # with compiled react | удалить Nginx, когда пойму как правильно без него обходится
     build: ./frontend
     container_name: crypto_frontend
     ports:
@@ -33,26 +33,7 @@ services:
     networks:
       - localnet
 
-  crypto-analytics:
-    build:
-      context: ./crypto-analyzer
-    container_name: crypto-analytics
-    env_file:
-      - .env
-    environment:
-      DB_HOST: postgres
-      INTERNAL_SERVER_API: http://localhost:80/api/v1
-    ports:
-      - "8000:8000"
-    command: >
-      sh -c "sleep 5 && python manage.py initialization && python main.py --addr 0.0.0.0:8000"
-    restart: unless-stopped
-    depends_on:
-      - postgres
-    networks:
-      - localnet
-
-  crypto-gateway:
+  core: # both analytics of strategies and backend
     build:
       context: ./crypto-gateway
     container_name: crypto-gateway
@@ -68,7 +49,6 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
-      - crypto-analytics
     networks:
       - localnet
 

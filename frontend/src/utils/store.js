@@ -1,7 +1,6 @@
 import {createContext, useContext, useEffect, useState} from "react";
 import NotificationService from "../API/NotificationService";
 import {urlBase64ToUint8Array} from "./utils";
-import {useAuth} from "../hooks/context/useAuth";
 
 export const StoreContext = createContext(null);
 
@@ -10,7 +9,6 @@ export const useStore = () => {
 }
 
 export const NotificationProvider = ({children}) => {
-    const {isAuth} = useAuth();
     const [pushNotification, setPushNotification] = useState(Notification.permission === "granted");
 
     const getInitialPwaMode = () => {
@@ -87,10 +85,8 @@ export const NotificationProvider = ({children}) => {
                 console.error('Push subscription failed:', err);
             }
         };
-        if (isAuth) {
-            setupPushSubscription();
-        }
-    }, [isAuth]);
+        setupPushSubscription();
+    }, []);
 
     const triggerPushNotification = (message) => {
         if ('serviceWorker' in navigator) {

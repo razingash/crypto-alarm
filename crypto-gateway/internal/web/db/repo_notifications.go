@@ -20,7 +20,7 @@ func SendPushNotifications(formulasID []int, message string) error {
 	}
 
 	query := fmt.Sprintf(`
-	    SELECT id, owner_id, name, last_triggered, cooldown
+	    SELECT id, name, last_triggered, cooldown
 	    FROM trigger_formula
 	    WHERE id IN (%s)
 	`, strings.Join(placeholders, ","))
@@ -33,7 +33,6 @@ func SendPushNotifications(formulasID []int, message string) error {
 
 	type Formula struct {
 		ID            int
-		OwnerID       int
 		Name          string
 		LastTriggered *time.Time
 		Cooldown      int
@@ -44,7 +43,7 @@ func SendPushNotifications(formulasID []int, message string) error {
 
 	for rows.Next() {
 		var f Formula
-		err := rows.Scan(&f.ID, &f.OwnerID, &f.Name, &f.LastTriggered, &f.Cooldown)
+		err := rows.Scan(&f.ID, &f.Name, &f.LastTriggered, &f.Cooldown)
 		if err != nil {
 			return err
 		}
@@ -55,7 +54,7 @@ func SendPushNotifications(formulasID []int, message string) error {
 				continue // cooldown не прошёл
 			}
 		}
-		grouped[f.OwnerID] = append(grouped[f.OwnerID], f)
+		grouped[f.ID] = append(grouped[f.ID], f)
 	}
 
 	var outdatedSubIDs []int
@@ -138,13 +137,13 @@ func updateLastTriggered(ids []int) error {
 	return nil
 }
 
-func SaveSubscription(endpoint string, p256dh string, auth string, userID string) error {
+func SaveSubscription(endpoint string, p256dh string, auth string) error {
 	now := time.Now().UTC()
 	_, err := DB.Exec(context.Background(), `
-    INSERT INTO trigger_push_subscription (endpoint, p256dh, auth, created_at, user_id)
-    VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO trigger_push_subscription (endpoint, p256dh, auth, created_at)
+    VALUES ($1, $2, $3, $4)
     ON CONFLICT (endpoint) DO NOTHING
-	`, endpoint, p256dh, auth, now, userID)
+	`, endpoint, p256dh, auth, now)
 
 	if err != nil {
 		return err
