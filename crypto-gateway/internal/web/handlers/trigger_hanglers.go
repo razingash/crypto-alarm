@@ -83,7 +83,7 @@ func FormulaPost(c fiber.Ctx) error {
 	raw_expression := c.Locals("formula_raw").(string)
 	name := c.Locals("name").(string)
 	variables := c.Locals("variables").([]db.CryptoVariable)
-	fmt.Println(expression, raw_expression, name)
+
 	id, err := db.SaveFormula(expression, raw_expression, name)
 	if err != nil {
 		fmt.Println(err)
@@ -98,7 +98,7 @@ func FormulaPost(c fiber.Ctx) error {
 			"error": "error during saving formula variables",
 		})
 	}
-	//go addFormulaToGraph(id) // незачем добавлять, ведь по умолчанию её функции выключены
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"id": id,
 	})
@@ -108,30 +108,27 @@ func FormulaPatch(c fiber.Ctx) error {
 	formulaId := c.Locals("formulaId").(string)
 	data := c.Locals("updateData").(map[string]interface{})
 
-	errCode := db.UpdateUserFormula(formulaId, data)
-
-	switch errCode {
-	case 0:
-		if _, hasFormula := data["formula"]; hasFormula {
-			go updateFormulaInGraph(formulaId)
-		}
-
-		if isActiveRaw, hasIsActive := data["is_active"]; hasIsActive {
-			if isActive, ok := isActiveRaw.(bool); ok {
-				id, _ := strconv.Atoi(formulaId)
-				if isActive {
-					go addFormulaToGraph(id)
-				} else {
-					go deleteFormulaFromGraph(id)
-				}
-			}
-		}
-		return c.SendStatus(fiber.StatusOK)
-	default:
+	err := db.UpdateUserFormula(formulaId, data)
+	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "unprocessed error",
+			"error": err.Error(),
 		})
 	}
+	if _, hasFormula := data["formula"]; hasFormula {
+		go updateFormulaInGraph(formulaId)
+	}
+
+	if isActiveRaw, hasIsActive := data["is_active"]; hasIsActive {
+		if isActive, ok := isActiveRaw.(bool); ok {
+			id, _ := strconv.Atoi(formulaId)
+			if isActive {
+				go addFormulaToGraph(id)
+			} else {
+				go deleteFormulaFromGraph(id)
+			}
+		}
+	}
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func FormulaDelete(c fiber.Ctx) error {
@@ -142,35 +139,23 @@ func FormulaDelete(c fiber.Ctx) error {
 		})
 	}
 
-	errCode := field_validators.ValidateTriggerFormulaId(formulaId)
-	switch errCode {
-	case 0: // дальше по коду
-	case 1:
+	err := field_validators.ValidateTriggerFormulaId(formulaId)
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "user does not exist",
-		})
-	case 2:
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Database error",
-		})
-	case 3:
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "formula does not exists",
+			"error": err.Error(),
 		})
 	}
 
-	code := db.DeleteUserFormula(formulaId)
-
-	switch code {
-	case 2:
+	err2 := db.DeleteUserFormula(formulaId)
+	if err2 != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Database error",
+			"error": err2.Error(),
 		})
-	default:
-		id, _ := strconv.Atoi(formulaId)
-		go deleteFormulaFromGraph(id)
-		return c.SendStatus(fiber.StatusOK)
 	}
+
+	id, _ := strconv.Atoi(formulaId)
+	go deleteFormulaFromGraph(id)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func FormulaHistoryGet(c fiber.Ctx) error {
@@ -197,20 +182,10 @@ func FormulaHistoryGet(c fiber.Ctx) error {
 		page = 1
 	}
 
-	formulaHistoryError, hasNext, rawRows := db.GetFormulaHistory(formulaID, limit, page, prevCursor)
-
-	switch formulaHistoryError {
-	case 1:
+	hasNext, rawRows, err := db.GetFormulaHistory(formulaID, limit, page, prevCursor)
+	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to query history",
-		})
-	case 2:
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to scan row",
-		})
-	case 3:
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Error iterating over rows",
+			"error": err.Error(),
 		})
 	}
 

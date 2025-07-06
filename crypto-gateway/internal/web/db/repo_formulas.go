@@ -159,7 +159,7 @@ func GetFormulas(limit int, page int, formulaID string) ([]UserFormula, bool, er
 	return formulas, hasNext, nil
 }
 
-func GetFormulaHistory(formulaID int, limit int, page int, prevCursor int) (int, bool, []tempRow) {
+func GetFormulaHistory(formulaID int, limit int, page int, prevCursor int) (bool, []tempRow, error) {
 	var rows pgx.Rows
 	var err error
 
@@ -193,7 +193,7 @@ func GetFormulaHistory(formulaID int, limit int, page int, prevCursor int) (int,
 	}
 
 	if err != nil {
-		return 1, false, nil
+		return false, nil, fmt.Errorf("failed to query history")
 	}
 
 	defer rows.Close()
@@ -206,14 +206,14 @@ func GetFormulaHistory(formulaID int, limit int, page int, prevCursor int) (int,
 		var names, values string
 
 		if err := rows.Scan(&r.Timestamp, &names, &values); err != nil {
-			return 2, false, nil
+			return false, nil, fmt.Errorf("failed to scan row")
 		}
 		r.VarName = names
 		r.Value = values
 		rawRows = append(rawRows, r)
 	}
 	if err := rows.Err(); err != nil {
-		return 3, false, nil
+		return false, nil, fmt.Errorf("error iterating over rows")
 	}
 
 	if len(rawRows) > limit {
@@ -221,7 +221,7 @@ func GetFormulaHistory(formulaID int, limit int, page int, prevCursor int) (int,
 		rawRows = rawRows[:limit]
 	}
 
-	return 0, hasNext, rawRows
+	return hasNext, rawRows, nil
 }
 
 func SaveFormula(formula string, formula_raw string, name string) (int, error) {
@@ -270,8 +270,7 @@ func SaveCryptoVariables(formulaID int, variables []CryptoVariable) error {
 	return nil
 }
 
-// позже переделать обработку ошибок
-func UpdateUserFormula(formulaId string, data map[string]interface{}) int {
+func UpdateUserFormula(formulaId string, data map[string]interface{}) error {
 	var setClauses []string
 	var args []interface{}
 	argIndex := 1
@@ -283,7 +282,7 @@ func UpdateUserFormula(formulaId string, data map[string]interface{}) int {
 	}
 
 	if len(setClauses) == 0 {
-		return 1
+		return fmt.Errorf("unprocessed error")
 	}
 
 	query := fmt.Sprintf("UPDATE trigger_formula SET %s WHERE id = $%d", strings.Join(setClauses, ", "), argIndex)
@@ -291,19 +290,18 @@ func UpdateUserFormula(formulaId string, data map[string]interface{}) int {
 
 	_, err := DB.Exec(context.Background(), query, args...)
 	if err != nil {
-		return 2
+		return fmt.Errorf("database error")
 	}
 
-	return 0
+	return nil
 }
 
-func DeleteUserFormula(formulaId string) int {
+func DeleteUserFormula(formulaId string) error {
 	_, err := DB.Exec(context.Background(), `DELETE FROM trigger_formula WHERE id = $1`, formulaId)
 
 	if err != nil {
 		fmt.Println(err)
-		return 2
+		return fmt.Errorf("database error")
 	}
-
-	return 0
+	return nil
 }

@@ -27,16 +27,3 @@ func SavePushSubscription(c fiber.Ctx) error {
 
 	return c.SendStatus(fiber.StatusOK)
 }
-
-func PushNotificationsPost(c fiber.Ctx) error {
-	message := c.Locals("message").(string)
-	formulas := c.Locals("formulas").([]int)
-
-	err := db.SendPushNotifications(formulas, message)
-
-	if err == nil {
-		return c.SendStatus(fiber.StatusOK)
-	}
-
-	return c.SendStatus(fiber.StatusInternalServerError)
-}

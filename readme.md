@@ -17,23 +17,22 @@ system will block access to these data and deactivates all related formulas and 
 
 ### Quickstart
 
-1) Database initialization: run following command in crypto-analyzer directory
+1) Database initialization: run following command in crypto-gateway directory
     ```bash 
-    python manage.py initialization
+    go run .\cmd\migrate\
    ```
 
-2) Frontend: run this command in frontend directory to run ReactJs server 
+2) Filling the database: run following command in the same directory to save information about actual APIs and cryptocurrencies into the database
+    ```bash 
+   go run .\cmd\initialization\
+   ```
+
+3) System startup: run following command in the same directory to run web application
+    ```bash 
+   go run .\cmd\core\
+   ```
+
+4) Frontend: run this command in frontend directory to run ReactJs server 
     ```bash 
     npm start
-   ```
-
-3) Client's connection with the database: in crypto-gateway/cmd/ run following command to run fiber server
-    ```bash 
-    go run main.go
-   ```
-
-4) Analytics: This service is only responsible for periodic analytics and requests for Baninas.
-   run following command in crypto-analyzer directory 
-   ```bash 
-    python main.py
    ```

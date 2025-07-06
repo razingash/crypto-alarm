@@ -12,7 +12,4 @@ func SetupNotificationRoutes(app *fiber.App) {
 
 	group.Get("/vapid-key", handlers.GetVAPIDKey)
 	group.Post("/subscribe", handlers.SavePushSubscription, api_validators.ValidatePostPushSubscriptions)
-
-	// only from python service
-	group.Post("/push", handlers.PushNotificationsPost, api_validators.ValidatePushNotifications)
 }

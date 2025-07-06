@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"context"
+	"crypto-gateway/internal/web/db"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -184,6 +185,7 @@ func (o *BinanceAPIOrchestrator) updateTickerCurrentPrice(ctx context.Context, c
 			if len(triggeredFormulas) > 0 {
 				result, variableValues := o.DependencyGraph.GetFormulasVariables(triggeredFormulas)
 				AddTriggerHistory(ctx, result, variableValues)
+				db.SendPushNotifications(triggeredFormulas, "TEST MESSAGE IN ORCHESTRATOR")
 			}
 		}
 	}
@@ -216,6 +218,7 @@ func (o *BinanceAPIOrchestrator) updatePriceChange24h(ctx context.Context, coold
 			if len(triggeredFormulas) > 0 {
 				result, variableValues := o.DependencyGraph.GetFormulasVariables(triggeredFormulas)
 				AddTriggerHistory(ctx, result, variableValues)
+				db.SendPushNotifications(triggeredFormulas, "TEST MESSAGE IN ORCHESTRATOR")
 			}
 		}
 	}

@@ -6,23 +6,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-func ValidatePushNotifications(c fiber.Ctx) error {
-	var body struct {
-		Message  string `json:"message"`
-		Formulas []int  `json:"formulas"`
-	}
-
-	if err := json.Unmarshal(c.Body(), &body); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid JSON",
-		})
-	}
-
-	c.Locals("message", body.Message)
-	c.Locals("formulas", body.Formulas)
-	return c.Next()
-}
-
 func ValidatePostPushSubscriptions(c fiber.Ctx) error {
 	var body struct {
 		Endpoint string `json:"endpoint"`

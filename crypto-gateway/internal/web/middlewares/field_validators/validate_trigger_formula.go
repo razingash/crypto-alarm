@@ -27,21 +27,20 @@ type Token struct {
 }
 
 // проверяет формулу на валидность
-func ValidateTriggerFormulaFormula(formula string) ([]db.CryptoVariable, int) {
-	tokens, variables, errCode := tokenize(formula)
+func ValidateTriggerFormulaFormula(formula string) ([]db.CryptoVariable, error) {
+	tokens, variables, err := tokenize(formula)
 
-	if errCode != 0 {
-		return nil, errCode
+	if err != nil {
+		return nil, err
 	}
 
-	errCode = validateTokens(tokens)
+	err2 := validateTokens(tokens)
 
-	return variables, errCode
+	return variables, err2
 }
 
 // проверяет существует ли формула с таким id, и является ли пользователь её автором
-func ValidateTriggerFormulaId(formulaId string) int {
-
+func ValidateTriggerFormulaId(formulaId string) error {
 	var count int
 	err := db.DB.QueryRow(context.Background(), `
 		SELECT COUNT(*) 
@@ -49,18 +48,18 @@ func ValidateTriggerFormulaId(formulaId string) int {
 		WHERE id = $1
 	`, formulaId).Scan(&count)
 	if err != nil {
-		return 2
+		return fmt.Errorf("database error")
 	}
 
 	if count == 0 {
-		return 3
+		return fmt.Errorf("formula does not exists")
 	}
 
-	return 0
+	return nil
 }
 
 // проверка на синтаксис
-func tokenize(expression string) ([]Token, []db.CryptoVariable, int) {
+func tokenize(expression string) ([]Token, []db.CryptoVariable, error) {
 	var tokens []Token
 	var variables []db.CryptoVariable
 
@@ -87,13 +86,13 @@ func tokenize(expression string) ([]Token, []db.CryptoVariable, int) {
 					// Проверяем, является ли переменная допустимой
 					parts := strings.Split(match, "_")
 					if len(parts) != 2 { // неправильная переменная
-						return nil, nil, 2
+						return nil, nil, fmt.Errorf("incorrect variable")
 					}
 
 					isValid, err := db.IsValidCryptoCurrency(parts[0])
 					if err != nil {
 						fmt.Println(err)
-						return nil, nil, 10
+						return nil, nil, fmt.Errorf("database error")
 					}
 					if !isValid {
 						fmt.Println("недопустимая переменная:", match)
@@ -101,13 +100,13 @@ func tokenize(expression string) ([]Token, []db.CryptoVariable, int) {
 							3 - переменной нет в базе данных
 							4 - переменная не актуальна
 						*/
-						return nil, nil, 4
+						return nil, nil, fmt.Errorf("variable %v is outdated", VARIABLE)
 					}
 
 					isValid, err = db.IsValidVariable(parts[1])
 					if err != nil {
 						fmt.Println(err)
-						return nil, nil, 10
+						return nil, nil, fmt.Errorf("database error")
 					}
 					if !isValid {
 						fmt.Println("недопустимая переменная:", match)
@@ -115,7 +114,7 @@ func tokenize(expression string) ([]Token, []db.CryptoVariable, int) {
 							3 - переменной нет в базе данных
 							4 - переменная не актуальна
 						*/
-						return nil, nil, 4
+						return nil, nil, fmt.Errorf("variable %v is outdated", VARIABLE)
 					}
 					variables = append(variables, db.CryptoVariable{Currency: parts[0], Variable: parts[1]})
 				}
@@ -128,15 +127,15 @@ func tokenize(expression string) ([]Token, []db.CryptoVariable, int) {
 		}
 
 		if !matched { // неизвестный символ
-			return nil, nil, 1
+			return nil, nil, fmt.Errorf("unknown symbol")
 		}
 	}
 
-	return tokens, variables, 0
+	return tokens, variables, nil
 }
 
 // проверка на правильность
-func validateTokens(tokens []Token) int {
+func validateTokens(tokens []Token) error {
 	stack := []Token{}
 	lastTokenType := ""
 	comparisonFound := false
@@ -154,18 +153,18 @@ func validateTokens(tokens []Token) int {
 		case NUMBER, VARIABLE:
 			// Два числа переменные подряд недопустимы
 			if lastTokenType == NUMBER || lastTokenType == VARIABLE {
-				return 5
+				return fmt.Errorf("incorrect sequence of symbols")
 			}
 		case OPERATOR:
 			//Оператор не может стоять в начале или после другого оператора
 			if i == 0 || lastTokenType == OPERATOR || lastTokenType == LPAREN || lastTokenType == COMPARISON {
-				return 5
+				return fmt.Errorf("incorrect sequence of symbols")
 			}
 		case COMPARISON:
 			// Оператор сравнения не может стоять в начале, после другого сравнения или скобки
 			comparisonFound = true
 			if i == 0 || lastTokenType == COMPARISON || lastTokenType == LPAREN {
-				return 5
+				return fmt.Errorf("incorrect sequence of symbols")
 			}
 		case FUNCTION:
 			// Функция требует открывающую скобку сразу после
@@ -174,7 +173,7 @@ func validateTokens(tokens []Token) int {
 			stack = append(stack, token)
 		case RPAREN:
 			if len(stack) == 0 {
-				return 6
+				return fmt.Errorf("incorrect brackets")
 			}
 			stack = stack[:len(stack)-1]
 		}
@@ -183,11 +182,11 @@ func validateTokens(tokens []Token) int {
 	}
 
 	if !comparisonFound {
-		return 7
+		return fmt.Errorf("there are no comparison operators")
 	}
 	if len(stack) > 0 {
-		return 6
+		return fmt.Errorf("incorrect brackets")
 	}
 
-	return 0
+	return nil
 }
