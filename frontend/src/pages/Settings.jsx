@@ -3,10 +3,12 @@ import {useFetching} from "../hooks/useFetching";
 import SettingsService from "../API/SettingsService";
 import "../styles/settings.css"
 import EndpointItem from "../components/EndpointItem";
+import AdaptiveLoading from "../components/UI/AdaptiveLoading";
+import ErrorField from "../components/UI/ErrorField";
 
 const Settings = () => {
     const [endpointsSettings, setEndpointsSettings] = useState(null);
-    const [fetchSettings, isSettingsLoading, ] = useFetching(async () => {
+    const [fetchSettings, isSettingsLoading, SettingsError] = useFetching(async () => {
         return await SettingsService.getSettings()
     }, 1000, 1000)
     const [fetchUpdateCooldown, , ] = useFetching(async (id, cooldown) => {
@@ -40,15 +42,23 @@ const Settings = () => {
 
     return (
         <div className={"section__main"}>
-            <div className={"field__settings__api"}>
-                <div className={"api__list"}>
-                    {endpointsSettings && endpointsSettings.map((item) => (
-                        <div className={"api__item"} key={item.Id}>
-                            <EndpointItem endpoint={item} handleSaveChanges={handleSaveChanges}/>
-                        </div>
-                    ))}
+            {isSettingsLoading ? (
+                <div className={"loading__center"}>
+                    <AdaptiveLoading/>
                 </div>
-            </div>
+            ) : SettingsError ? (
+                <ErrorField/>
+            ) : (
+                <div className={"field__settings__api"}>
+                    <div className={"api__list"}>
+                        {endpointsSettings && endpointsSettings.map((item) => (
+                            <div className={"api__item"} key={item.Id}>
+                                <EndpointItem endpoint={item} handleSaveChanges={handleSaveChanges}/>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

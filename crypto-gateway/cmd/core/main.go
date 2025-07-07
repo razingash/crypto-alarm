@@ -7,6 +7,9 @@ import (
 	"crypto-gateway/internal/web/db"
 	"crypto-gateway/internal/web/routes"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -45,9 +48,35 @@ func main() {
 
 	analytics.StOrchestrator.Start(ctx)
 
+	analytics.AvailabilityMetricEvent(1, 1, "webserwer UP")
+
 	routes.SetupNotificationRoutes(app)
 	routes.SetupTriggersRoutes(app)
 	routes.SetupSettingsRoutes(app)
 
-	log.Fatal(app.Listen(":8001"))
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-quit
+		log.Println("Shutdown signal received")
+
+		analytics.AvailabilityMetricEvent(1, 0, "webserver DOWN")
+
+		_, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer shutdownCancel()
+
+		if err := app.Shutdown(); err != nil {
+			log.Printf("Error during server shutdown: %v", err)
+		}
+
+		cancel()
+		log.Println("Server gracefully stopped")
+		os.Exit(0)
+	}()
+
+	log.Println("Server started on port 8001")
+	if err := app.Listen(":8001"); err != nil {
+		log.Printf("Server encountered an error: %v", err)
+	}
 }

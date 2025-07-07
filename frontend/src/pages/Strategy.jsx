@@ -7,6 +7,8 @@ import TriggersService from "../API/TriggersService";
 import '../styles/strategy.css'
 import Chart from "../components/UI/Chart";
 import {transformData} from "../utils/utils";
+import ErrorField from "../components/UI/ErrorField";
+import AdaptiveLoading from "../components/UI/AdaptiveLoading";
 
 const Strategy = () => {
     const navigate = useNavigate();
@@ -18,7 +20,7 @@ const Strategy = () => {
     const [historyData, setHistoryData] = useState([]);
     const [prevCursor, setPrevCursor] = useState(0); // by timestamp
 
-    const [fetchFormula, isFormulaLoading, ] = useFetching(async () => {
+    const [fetchFormula, isFormulaLoading, FormulaError] = useFetching(async () => {
         return await TriggersService.getUserFormulas({id: id})
     }, 0, 1000)
     const [updateFormulaData, , ] = useFetching(async (newData) => {
@@ -51,7 +53,7 @@ const Strategy = () => {
 
     useEffect(() => {
         const loadData = async () => {
-            if (!isFormulaLoading && formula === null){
+            if (!isFormulaLoading && formula === null && !FormulaError){
                 const data = await fetchFormula();
                 if (data) {
                     setFormula(data.data);
@@ -116,7 +118,13 @@ const Strategy = () => {
 
     return (
         <div className={"section__main"}>
-            {formula && (
+            {FormulaError === "Network Error" && formula === null ? (
+                <ErrorField/>
+            ) : isFormulaLoading ? (
+                <div className={"loading__center"}>
+                    <AdaptiveLoading/>
+                </div>
+            ) : formula ? (
             <div className={"formula__field"}>
                 <div className={"strategy__item__header"}>
                     <div className={"strategy__weight"}>Weight: 80</div>
@@ -257,6 +265,8 @@ const Strategy = () => {
                     </div>
                 )}
             </div>
+            ) : (isFormulaLoading === false && FormulaError) && (
+                <ErrorField message={`The formula with ID ${id} does not exist`}/>
             )}
         </div>
     );

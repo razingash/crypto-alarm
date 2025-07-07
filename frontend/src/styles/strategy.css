@@ -55,9 +55,8 @@
     background: var(--container-background);
     padding: 25px 50px;
     border-radius: 4px;
-    border: 1px solid;
+    border: 1px solid var(--container-border-1);
 }
-
 
 .strategy__item__header {
     display: flex;

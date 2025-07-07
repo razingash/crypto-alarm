@@ -25,19 +25,48 @@ func NewBinanceAPIOrchestrator(api *BinanceAPI) *BinanceAPIOrchestrator {
 	return &BinanceAPIOrchestrator{
 		DependencyGraph: NewDependencyGraph(),
 		binanceAPI:      api,
-		isBinanceOnline: true,
+		isBinanceOnline: getBinanceStatusOnStartUp(),
 		tasks:           make(map[string]context.CancelFunc),
 		taskCooldowns:   make(map[string]int),
 	}
 }
 
+// определеяет начальное значение переменной isBinanceOnline и устанавливает начальные логи бинанса
+func getBinanceStatusOnStartUp() bool {
+	response, err := StBinanceApi.Get(context.Background(), "/v3/ping", endpoints["/v3/ping"], nil)
+	var data map[string]interface{}
+	err2 := json.Unmarshal(response, &data)
+
+	if err == nil && err2 == nil && len(data) == 0 {
+		fmt.Println("Binance UP")
+		AvailabilityMetricEvent(2, 1, "Binance UP")
+		return true
+	} else {
+		fmt.Println("Binance DOWN")
+		AvailabilityMetricEvent(2, 0, "Binance DOWN")
+		return false
+	}
+
+	/*
+		// относительно менее надежная проверка
+		if err != nil { // Binance DOWN
+			fmt.Println("Binance DOWN")
+			AvailabilityMetricEvent(2, 0, "Binance DOWN")
+			return false
+		} else { // Binance UP
+			fmt.Println("Binance UP")
+			AvailabilityMetricEvent(2, 1, "Binance UP")
+			return true
+		}
+	*/
+}
+
 // Запуск фоновых задач. первая задача должна быть проверка доступности апи бинанса
 func (o *BinanceAPIOrchestrator) Start(ctx context.Context) error {
-	response, err := o.binanceAPI.Get(context.Background(), "/v3/ping", endpoints["/v3/ping"], nil) // get Binance accessibility
-	if err != nil {
-		o.checkBinanceResponse(nil)
+	if o.isBinanceOnline {
+		o.checkBinanceResponse([]int{})
 	} else {
-		o.checkBinanceResponse(response)
+		o.checkBinanceResponse(nil)
 	}
 
 	if o.isBinanceOnline {
@@ -228,7 +257,7 @@ func (o *BinanceAPIOrchestrator) updatePriceChange24h(ctx context.Context, coold
 func (o *BinanceAPIOrchestrator) checkBinanceResponse(response interface{}) {
 	if response == nil { // Binance DOWN
 		if o.isBinanceOnline {
-			DefaultLogging(1, "Binance DOWN")
+			AvailabilityMetricEvent(2, 0, "Binance DOWN")
 			o.isBinanceOnline = false
 		}
 
@@ -248,9 +277,8 @@ func (o *BinanceAPIOrchestrator) checkBinanceResponse(response interface{}) {
 		if _, exists := o.tasks["/v3/ping"]; !exists {
 			o.launchAPI(context.Background(), "/v3/ping", 60)
 		}
-
 	} else if !o.isBinanceOnline { // Binance UP
-		DefaultLogging(1, "Binance UP")
+		AvailabilityMetricEvent(2, 1, "Binance UP")
 		o.isBinanceOnline = true
 
 		o.mu.Lock()

@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"os"
+	"path/filepath"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -27,7 +28,7 @@ func CustomLoggerSetup(debugMode bool) *zap.Logger {
 
 	var cores []zapcore.Core
 
-	logFile, err := os.OpenFile("../logs/test.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	logFile, err := os.OpenFile(filepath.Join("logs", "test.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err == nil {
 		fileCore := zapcore.NewCore(encoder, zapcore.AddSync(logFile), logLevel)
 		cores = append(cores, fileCore)
@@ -62,4 +63,46 @@ func DefaultLogging(loggingType int, message string) {
 	default:
 		panic("wrong integer in DefaultLogging(loggingType int), should be 1-4")
 	}
+}
+
+// metrics for Webserver and Binance availability
+//
+// serviceType:
+//
+//	1 - WebServer
+//	2 - Binance
+//
+// isAvailable:
+//
+//	1 - available
+//	0 - unavailable
+//
+// event - additional info
+func AvailabilityMetricEvent(serviceType int, isAvailable int, event string) { // не остается открытым
+	encoderCfg := zap.NewProductionEncoderConfig()
+	encoderCfg.TimeKey = "timestamp"
+	encoderCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoderCfg.LevelKey = "level"
+	encoderCfg.MessageKey = "message"
+	encoderCfg.EncodeLevel = zapcore.LowercaseLevelEncoder
+	encoder := zapcore.NewJSONEncoder(encoderCfg)
+
+	path := filepath.Join("logs", "AvailabilityMetrics.log")
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic("Failed to open metrics log: " + err.Error())
+	}
+
+	core := zapcore.NewCore(encoder, zapcore.AddSync(file), zapcore.InfoLevel)
+	logger := zap.New(core)
+
+	logger.Info("Metric event",
+		zap.Int("type", serviceType),
+		zap.String("event", event),
+		zap.Int("isAvailable", isAvailable),
+	)
+
+	// очистка буферов и закрытие дескриптора файла
+	_ = logger.Sync()
+	_ = file.Close()
 }

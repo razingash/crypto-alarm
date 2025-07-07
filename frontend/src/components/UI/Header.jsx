@@ -30,6 +30,8 @@ const Header = () => {
         <div className={"section__header"}>
             <div className={"header__field"}>
                 <div className={"header__items"}>
+                    <Link to={"/"} className={"header__item"}>Main</Link>
+                    <Link to={"/logs"} className={"header__item"}>Logs</Link>
                     <Link to={"/new-strategy"} className={"header__item"}>New strategy</Link>
                     <Link to={"/strategies"} className={"header__item"}>Strategies</Link>
                     <Link to={"/settings"} className={"header__item"}>Settings</Link>

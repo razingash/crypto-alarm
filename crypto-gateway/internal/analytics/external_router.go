@@ -48,6 +48,7 @@ func (api *BinanceAPI) checkAndUpdateEndpointWeights(resp *http.Response, endpoi
 	return usedWeight, nil
 }
 
+// добавить отлов 500 чтобы устанавливать бибанс на неактивность
 func (api *BinanceAPI) Get(ctx context.Context, endpoint string, endpointExpectedWeight int, params map[string]string) ([]byte, error) {
 	// добавить обработку остальных ошибок
 	var responseBody []byte

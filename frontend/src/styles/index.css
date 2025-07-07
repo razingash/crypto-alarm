@@ -7,6 +7,7 @@
     --background: #212123;
     --container-background: #171717;
     --container-background-2: #1e1e2c; /*2c2c37*/
+    --container-border-1: #727272;
     --lines: #00ff37;
     --hovered-element: #39c559;
     --blocked-element: #ff8800;
@@ -127,6 +128,17 @@ body {
     justify-content: center;
 }
 
+.field__ise {
+    display: flex;
+    justify-content: center;
+}
+.ise_description {
+    color: #fff;
+    background: #161616;
+    padding: 20px;
+    border: 1px solid var(--container-border-1);
+}
+
 .field__chart { /* настраивать max-heiht в vh для частных случаев */
     position: relative;
     display: flex;
@@ -147,6 +159,16 @@ body {
 }
 
 /*loading effect*/
+.loading__center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 36px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    position: absolute;
+}
 .loading__spinner {
     animation: rotate 2s linear infinite;
     top: 50%;

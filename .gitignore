@@ -4,4 +4,4 @@ crypto-analyzer/logs/
 crypto-analyzer/tests/.pytest_cache
 venv/
 frontend/node_modules
-crypto-gateway/logs
+crypto-gateway/logs/
