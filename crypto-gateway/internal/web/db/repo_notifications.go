@@ -11,6 +11,7 @@ import (
 	"crypto-gateway/internal/web/webpush"
 )
 
+// адаптировать под новую систему без пользователей
 func SendPushNotifications(formulasID []int, message string) error {
 	placeholders := make([]string, len(formulasID))
 	args := make([]interface{}, len(formulasID))

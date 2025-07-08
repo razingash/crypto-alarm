@@ -1,16 +1,33 @@
 import React, {useEffect, useState} from 'react';
 import {useFetching} from "../hooks/useFetching";
-import SettingsService from "../API/SettingsService";
 import AdaptiveLoading from "../components/UI/AdaptiveLoading";
 import ErrorField from "../components/UI/ErrorField";
-import ChartAvailability from "../components/UI/ChartAvailability";
+import ChartAvailability from "../components/UI/metrics/ChartAvailability";
+import MetricsService from "../API/MetricsService";
+import Speedometer from "../components/UI/metrics/Speedometer";
+import DefaultMetric from "../components/UI/metrics/DefaultMetric";
+import {formatUptime} from "../utils/utils";
+import "../styles/metrics.css"
+import useWebSocket from "../hooks/useWebSocket";
 
 const Logs = () => {
+    const [dynamicMetrics, setDynamicMetrics] = useState(null)
+    const [staticMetrics, setStaticMetrics] = useState(null); // можно сделать авторендер для formatUptime чтобы время обновлялось
     const [logs, setLogs] = useState(null);
     const [fetchLogs, isLogsLoading, LogsError] = useFetching(async () => {
-        return await SettingsService.getLogs()
+        return await MetricsService.getAvailabilityLogs()
     }, 1000, 1000)
+    const [fetchStaticMetrics, isStaticMetricsLoading, ] = useFetching(async () => {
+        return await MetricsService.getStaticMetrics()
+    }, 1000, 1000)
+    const [metrics] = useWebSocket('/metrics/ws');
 
+    useEffect(() => {
+        if (metrics && metrics?.mem_alloc_mb && logs?.length > 0) {
+            setDynamicMetrics(metrics);
+            console.log(dynamicMetrics)
+        }
+    }, [metrics]);
 
     useEffect(() => {
         const loadData = async () => {
@@ -18,12 +35,23 @@ const Logs = () => {
                 const data = await fetchLogs();
                 if (data) {
                     setLogs(data.data);
-                    console.log(data.data)
                 }
             }
         }
         void loadData();
     }, [isLogsLoading])
+
+     useEffect(() => {
+        const loadData = async () => {
+            if (!isLogsLoading && !LogsError){
+                const data = await fetchStaticMetrics();
+                if (data) {
+                    setStaticMetrics(data.data);
+                }
+            }
+        }
+        void loadData();
+    }, [isStaticMetricsLoading])
 
     return (
         <div className={"section__main"}>
@@ -34,8 +62,23 @@ const Logs = () => {
             ) : LogsError ? (
                 <ErrorField/>
             ) : logs?.length > 0 ? (
-                <div className={"field__settings__api"}>
-                   <ChartAvailability data={logs}/>
+                <div className={"area__metrics"}>
+                    {staticMetrics && (
+                        <div className={"metrics__list__1x1"}>
+                            <DefaultMetric header={"CPU Total"} value={staticMetrics.total_cpu}/>
+                            <DefaultMetric header={"RAM Total"} value={staticMetrics?.total_memory_mb}/>
+                            <DefaultMetric header={"uptime"} value={formatUptime(staticMetrics.start_time)}/>
+
+                            <DefaultMetric header={"CPU Used"} value={dynamicMetrics?.cpu_used_percent.toFixed(3)}/>
+                            <DefaultMetric header={"RAM Used"} value={dynamicMetrics?.ram_used_mb}/>
+                            <DefaultMetric header={"Binance Overload"} value={dynamicMetrics?.binanceOverload}/>
+                        </div>
+                    )}
+                    <Speedometer header={"CPU Usage"} percentage={dynamicMetrics?.cpu_usage_percent.toFixed(3)}/>
+                    <Speedometer header={"Mem Usage"} percentage={dynamicMetrics?.memory_usage_percent}/>
+                    <Speedometer header={"CPU Allocation"} percentage={dynamicMetrics?.cpu_allocation.toFixed(3)}/>
+                    <Speedometer header={"Mem Allocation"} percentage={dynamicMetrics?.mem_alloc_mb}/>
+                    <ChartAvailability data={logs}/>
                 </div>
             ) : (isLogsLoading === false && logs.length === 0) && (
                 <ErrorField message={"logs are empty, this is non-standard situation"}/>

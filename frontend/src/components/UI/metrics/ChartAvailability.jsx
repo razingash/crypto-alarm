@@ -50,46 +50,35 @@ const ChartAvailability = ({ data }) => {
     }
 
     return (
-        <ResponsiveContainer width="100%" height={400}>
-            <AreaChart data={reducedData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                    dataKey="timestamp"
-                    tickFormatter={(tick) => new Date(tick).toLocaleTimeString()}
-                />
-                <YAxis domain={[0, 1]} ticks={[0, 1]} />
-                <Tooltip />
-
-                {binanceIntervals.map(({ start, end, available }, index) => (
-                    <ReferenceArea
-                        key={index}
-                        x1={start}
-                        x2={end}
-                        y1={0}
-                        y2={1}
-                        fill={available ? "rgba(0,255,0,0.1)" : "rgba(255,0,0,0.1)"}
-                        stroke="none"
+        <div className={"field__metric__default metric__chart__full"}>
+            <div className={"metric__header__default"}>Webserver and Binance availability</div>
+            <ResponsiveContainer width="100%" height={400}>
+                <AreaChart data={reducedData}>
+                    <CartesianGrid strokeDasharray="3 3"/>
+                    <XAxis
+                        dataKey="timestamp"
+                        tickFormatter={(tick) => new Date(tick).toLocaleTimeString()}
                     />
-                ))}
+                    <YAxis domain={[0, 1]} ticks={[0, 1]} />
+                    <Tooltip />
 
-                <Area
-                    type="monotone"
-                    dataKey="webserver"
-                    stroke="#007bff"
-                    fill="#007bff55"
-                    name="Webserver"
-                    connectNulls
-                />
-                <Area
-                    type="monotone"
-                    dataKey="binance"
-                    stroke="#28a745"
-                    fill="#28a74555"
-                    name="Binance"
-                    connectNulls
-                />
-            </AreaChart>
-        </ResponsiveContainer>
+                    {binanceIntervals.map(({ start, end, available }, index) => (
+                        <ReferenceArea
+                            key={index}
+                            x1={start}
+                            x2={end}
+                            y1={0}
+                            y2={1}
+                            fill={available ? "rgba(0,255,0,0.1)" : "rgba(255,0,0,0.1)"}
+                            stroke="none"
+                        />
+                    ))}
+
+                    <Area type="monotone" dataKey="webserver" stroke="#007bff" fill="#007bff55" name="Webserver" connectNulls/>
+                    <Area type="monotone" dataKey="binance" stroke="#28a745" fill="#28a74555" name="Binance" connectNulls/>
+                </AreaChart>
+            </ResponsiveContainer>
+        </div>
     );
 };
 

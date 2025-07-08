@@ -1,0 +1,71 @@
+
+.area__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.metrics__list__1x1 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-width: 620px;
+}
+
+.field__metric__default {
+    display: flex;
+    flex-direction: column;
+    width: 200px;
+    height: 90px;
+    background: var(--container-background);
+    border: 1px solid var(--container-border-1);
+    padding: 4px;
+    border-radius: 2px;
+}
+
+.metric__2x2 {
+    position: relative;
+    width: 200px;
+    height: 190px;
+}
+
+.metric__chart__full {
+    width: -webkit-fill-available;
+    height: auto;
+}
+
+.metric__header__default {
+    color: #cccccc;
+}
+
+.metric__value__default {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    color: #ececec;
+    font-size: 2em;
+}
+
+.speedometer__value {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 40px;
+    width: 100%;
+    text-align: center;
+    font-size: 1.5em;
+    color: #fff;
+}
+
+.speedometer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 50px;
+}
+
+.speedometer__circle {
+    fill: none;
+    stroke-width: 15;
+}

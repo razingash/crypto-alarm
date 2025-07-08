@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"context"
+	"crypto-gateway/internal/appmetrics"
 	"fmt"
 	"io"
 	"log"
@@ -42,7 +43,7 @@ func (api *BinanceAPI) checkAndUpdateEndpointWeights(resp *http.Response, endpoi
 	}
 
 	api.controller.mu.Lock()
-	api.controller.currentWeight = usedWeight
+	api.controller.CurrentWeight = usedWeight
 	api.controller.mu.Unlock()
 
 	return usedWeight, nil
@@ -79,7 +80,7 @@ func (api *BinanceAPI) Get(ctx context.Context, endpoint string, endpointExpecte
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			DefaultLogging(2, fmt.Sprintf("BINANCE ERROR: status %d, body: %s", resp.StatusCode, string(responseBody)))
+			appmetrics.DefaultLogging(2, fmt.Sprintf("BINANCE ERROR: status %d, body: %s", resp.StatusCode, string(responseBody)))
 			log.Printf("BINANCE ERROR: status %d, body: %s", resp.StatusCode, string(responseBody))
 			return fmt.Errorf("bad status code: %d", resp.StatusCode)
 		}

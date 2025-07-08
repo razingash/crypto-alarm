@@ -54,11 +54,7 @@ export const Chart = ({data}) => {
         <ResponsiveContainer width="100%" height={300}>
             <LineChart data={data} margin={{top: 20, right: 20, left: 0, bottom: 20}}>
                 <CartesianGrid stroke="#444" strokeDasharray="3 3" vertical={false}/>
-                <XAxis
-                    dataKey="timestamp"
-                    tick={{fill: '#aaa'}}
-                    tickFormatter={formatTimestamp}
-                />
+                <XAxis dataKey="timestamp" tick={{fill: '#aaa'}} tickFormatter={formatTimestamp}/>
                 <YAxis tick={{fill: '#aaa'}}/>
                 <Tooltip
                     content={<CustomTooltip colors={colorMap} />}

@@ -12,7 +12,4 @@ func SetupSettingsRoutes(app *fiber.App) {
 
 	group.Get("/", handlers.GetSettings)
 	group.Patch("/update/", handlers.PatchUpdateSettings, api_validators.ValidatePatchSettings)
-
-	// если логов/метрик которые нужны пользователю будет больше(сомнительно) то сделать отдельный роутер
-	group.Get("/logs", handlers.GetAvailabilityMetrics)
 }

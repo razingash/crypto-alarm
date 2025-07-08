@@ -4,6 +4,7 @@ var ( // изменить этот позор на адекватную сист
 	StController   *BinanceAPIController
 	StBinanceApi   *BinanceAPI
 	StOrchestrator *BinanceAPIOrchestrator
+	StartTime      int64
 )
 
 var endpoints = map[string]int{ // придумать лучший способ хранения и удалить это

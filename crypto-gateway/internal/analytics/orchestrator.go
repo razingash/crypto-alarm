@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"context"
+	"crypto-gateway/internal/appmetrics"
 	"crypto-gateway/internal/web/db"
 	"encoding/json"
 	"fmt"
@@ -39,11 +40,11 @@ func getBinanceStatusOnStartUp() bool {
 
 	if err == nil && err2 == nil && len(data) == 0 {
 		fmt.Println("Binance UP")
-		AvailabilityMetricEvent(2, 1, "Binance UP")
+		appmetrics.AvailabilityMetricEvent(2, 1, "Binance UP")
 		return true
 	} else {
 		fmt.Println("Binance DOWN")
-		AvailabilityMetricEvent(2, 0, "Binance DOWN")
+		appmetrics.AvailabilityMetricEvent(2, 0, "Binance DOWN")
 		return false
 	}
 
@@ -83,7 +84,7 @@ func (o *BinanceAPIOrchestrator) LaunchNeededAPI(ctx context.Context) {
 	data, err := GetActualComponents(ctx)
 	fmt.Println(data)
 	if err != nil {
-		panic("GetActualComponents returned error in LaunchNeededAPI function")
+		appmetrics.ApplicationCriticalErrorsLogging("GetActualComponents returned error in LaunchNeededAPI function", err)
 	}
 
 	o.mu.Lock()
@@ -206,7 +207,7 @@ func (o *BinanceAPIOrchestrator) updateTickerCurrentPrice(ctx context.Context, c
 
 			currencies, err := GetNeededFieldsFromEndpoint(ctx, "/v3/ticker/price")
 			if err != nil {
-				panic(fmt.Errorf("in updateTickerCurrentPrice - GetNeededFieldsFromEndpoint returned Error %v", err))
+				appmetrics.ApplicationCriticalErrorsLogging("in updateTickerCurrentPrice - GetNeededFieldsFromEndpoint returned Error", err)
 			}
 			dataForGraph := extractDataFromTickerCurrentPrice(response, currencies)
 
@@ -239,7 +240,7 @@ func (o *BinanceAPIOrchestrator) updatePriceChange24h(ctx context.Context, coold
 
 			fields, err := GetNeededFieldsFromEndpoint(ctx, "/v3/ticker/24hr")
 			if err != nil {
-				panic(fmt.Errorf("in updatePriceChange24h - GetNeededFieldsFromEndpoint returned Error %v", err))
+				appmetrics.ApplicationCriticalErrorsLogging("in updatePriceChange24h - GetNeededFieldsFromEndpoint returned Error", err)
 			}
 			dataForGraph := extractDataFromPriceChange24h(response, fields)
 
@@ -257,7 +258,7 @@ func (o *BinanceAPIOrchestrator) updatePriceChange24h(ctx context.Context, coold
 func (o *BinanceAPIOrchestrator) checkBinanceResponse(response interface{}) {
 	if response == nil { // Binance DOWN
 		if o.isBinanceOnline {
-			AvailabilityMetricEvent(2, 0, "Binance DOWN")
+			appmetrics.AvailabilityMetricEvent(2, 0, "Binance DOWN")
 			o.isBinanceOnline = false
 		}
 
@@ -278,7 +279,7 @@ func (o *BinanceAPIOrchestrator) checkBinanceResponse(response interface{}) {
 			o.launchAPI(context.Background(), "/v3/ping", 60)
 		}
 	} else if !o.isBinanceOnline { // Binance UP
-		AvailabilityMetricEvent(2, 1, "Binance UP")
+		appmetrics.AvailabilityMetricEvent(2, 1, "Binance UP")
 		o.isBinanceOnline = true
 
 		o.mu.Lock()
@@ -300,7 +301,7 @@ func extractDataFromPriceChange24h(rawData []byte, fields map[string][]string) m
 	var dataset []map[string]interface{}
 	err := json.Unmarshal(rawData, &dataset)
 	if err != nil {
-		panic("ERROR IN extractDataFromPriceChange24h")
+		appmetrics.ApplicationCriticalErrorsLogging("ERROR IN extractDataFromPriceChange24h", err)
 	}
 
 	datasetDict := make(map[string]map[string]interface{})
@@ -340,7 +341,7 @@ func extractDataFromTickerCurrentPrice(rawData []byte, currencies map[string][]s
 	var dataset []map[string]interface{}
 	err := json.Unmarshal(rawData, &dataset)
 	if err != nil {
-		panic("ERROR IN extractDataFromPriceChange24h")
+		appmetrics.ApplicationCriticalErrorsLogging("ERROR IN extractDataFromPriceChange24h", err)
 	}
 	datasetDict := make(map[string]map[string]interface{})
 	for _, data := range dataset {

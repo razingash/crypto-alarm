@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto-gateway/config"
 	"crypto-gateway/internal/analytics"
+	"crypto-gateway/internal/appmetrics"
 	"crypto-gateway/internal/web/db"
 	"crypto-gateway/internal/web/routes"
 	"log"
@@ -17,6 +18,7 @@ import (
 )
 
 func main() {
+	analytics.StartTime = time.Now().Unix()
 	config.LoadConfig()
 	app := fiber.New()
 
@@ -27,7 +29,8 @@ func main() {
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001", "http://localhost:80", "https://localhost:443"},
 		AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "Upgrade", "Connection"},
+		ExposeHeaders:    []string{"Upgrade"},
 		AllowCredentials: true,
 	}))
 
@@ -48,11 +51,12 @@ func main() {
 
 	analytics.StOrchestrator.Start(ctx)
 
-	analytics.AvailabilityMetricEvent(1, 1, "webserwer UP")
+	appmetrics.AvailabilityMetricEvent(1, 1, "webserwer UP")
 
 	routes.SetupNotificationRoutes(app)
 	routes.SetupTriggersRoutes(app)
 	routes.SetupSettingsRoutes(app)
+	routes.SetupMetricsRoutes(app)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -61,7 +65,7 @@ func main() {
 		<-quit
 		log.Println("Shutdown signal received")
 
-		analytics.AvailabilityMetricEvent(1, 0, "webserver DOWN")
+		appmetrics.AvailabilityMetricEvent(1, 0, "webserver DOWN")
 
 		_, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer shutdownCancel()

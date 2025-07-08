@@ -60,6 +60,19 @@ export const formatTimestamp = (timestamp) => {
         {hour:'2-digit',  minute:'2-digit',  day:'2-digit',  month:'2-digit',  year:'numeric'});
 }
 
+export const formatUptime = (timestamp) => {
+    const timestampMs = Number(timestamp) * 1000;
+    const now = Date.now();
+
+    const diffMs = now - timestampMs;
+    const diffSec = diffMs / 1000;
+
+    if (diffSec < 60) return `${diffSec.toFixed(1)}s`;
+    if (diffSec < 3600) return `${(diffSec / 60).toFixed(1)}min`;
+    if (diffSec < 86400) return `${(diffSec / 3600).toFixed(1)}hour`;
+    return `${(diffSec / 86400).toFixed(2)}day`;
+};
+
 export const transformData = (data) => {
     return data.map(item => {
         const names = Object.keys(item).filter(key => key !== 'timestamp');
@@ -89,3 +102,4 @@ export const formatDuration = (stringSeconds) => {
 
     return parts.join(', ');
 };
+
