@@ -179,6 +179,13 @@ func validateTokens(tokens []Token) error {
 		}
 
 		lastTokenType = token.Type
+		if (lastTokenType == RPAREN) &&
+			i+1 < len(tokens) {
+			nextToken := tokens[i+1]
+			if nextToken.Type == NUMBER || nextToken.Type == VARIABLE || nextToken.Type == FUNCTION || nextToken.Type == LPAREN {
+				return fmt.Errorf("missing operator between ')' and next token")
+			}
+		}
 	}
 
 	if !comparisonFound {

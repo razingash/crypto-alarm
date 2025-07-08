@@ -25,7 +25,7 @@ type RuntimeMetrics struct {
 	CPUUsagePercent    float64 `json:"cpu_usage_percent"`
 	CPUAllocation      float64 `json:"cpu_allocation"`
 	NumGC              uint32  `json:"num_gc"`
-	BinanceOverload    int     `json:"binanceOverload"`
+	BinanceOverload    int     `json:"binance_overload"`
 }
 
 func GetAvailabilityMetrics(c fiber.Ctx) error {

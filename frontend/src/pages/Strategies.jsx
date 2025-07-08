@@ -89,8 +89,8 @@ const Strategies = () => {
                     </div>
                     ))}
                 </div>
-            ) : (isFormulasLoading === false && formulasError) && (
-                <div className={"strategy__none"}>You don't possess any strategies yet</div>
+            ) : (isFormulasLoading === false && !formulasError) && (
+                <ErrorField message={"You don't possess any strategies yet"}/>
             )}
         </div>
     );

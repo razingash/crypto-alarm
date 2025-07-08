@@ -12,7 +12,7 @@ import useWebSocket from "../hooks/useWebSocket";
 
 const Logs = () => {
     const [dynamicMetrics, setDynamicMetrics] = useState(null)
-    const [staticMetrics, setStaticMetrics] = useState(null); // можно сделать авторендер для formatUptime чтобы время обновлялось
+    const [staticMetrics, setStaticMetrics] = useState(null);
     const [logs, setLogs] = useState(null);
     const [fetchLogs, isLogsLoading, LogsError] = useFetching(async () => {
         return await MetricsService.getAvailabilityLogs()
@@ -25,7 +25,6 @@ const Logs = () => {
     useEffect(() => {
         if (metrics && metrics?.mem_alloc_mb && logs?.length > 0) {
             setDynamicMetrics(metrics);
-            console.log(dynamicMetrics)
         }
     }, [metrics]);
 
@@ -71,7 +70,7 @@ const Logs = () => {
 
                             <DefaultMetric header={"CPU Used"} value={dynamicMetrics?.cpu_used_percent.toFixed(3)}/>
                             <DefaultMetric header={"RAM Used"} value={dynamicMetrics?.ram_used_mb}/>
-                            <DefaultMetric header={"Binance Overload"} value={dynamicMetrics?.binanceOverload}/>
+                            <DefaultMetric header={"Binance Overload"} value={dynamicMetrics?.binance_overload}/>
                         </div>
                     )}
                     <Speedometer header={"CPU Usage"} percentage={dynamicMetrics?.cpu_usage_percent.toFixed(3)}/>
