@@ -5,8 +5,8 @@ export default class SettingsService {
         const response = await apiClient.get("/settings/");
         return response.data;
     }
-    static async updateApiCooldown(id, cooldown) {
-        const response = await apiClient.patch("/settings/update/", {id: id, cooldown: cooldown})
+    static async updateApiSettings(data) {
+        const response = await apiClient.patch("/settings/update/", data)
         return response.data
     }
 }

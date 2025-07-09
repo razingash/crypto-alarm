@@ -18,7 +18,15 @@ CREATE TABLE crypto_api (
     api character varying(500) NOT NULL,
     cooldown integer NOT NULL DEFAULT 20,
     is_actual boolean NOT NULL DEFAULT TRUE,
+    is_history_on boolean NOT NULL DEFAULT FALSE,
     last_updated timestamp without time zone NOT NULL DEFAULT now()
+);
+
+CREATE TABLE crypto_api_history (
+    id BIGSERIAL,
+    crypto_api_id integer NOT NULL,
+    weight smallint NOT NULL,
+    created_at timestamp without time zone NOT NULL DEFAULT now()
 );
 
 CREATE TABLE crypto_currencies (
@@ -30,11 +38,11 @@ CREATE TABLE crypto_currencies (
 
 CREATE TABLE crypto_params (
     id BIGSERIAL,
+    crypto_api_id integer NOT NULL,
     parameter character varying(500) NOT NULL,
     is_active boolean NOT NULL DEFAULT TRUE,
     last_updated timestamp without time zone NOT NULL DEFAULT now(),
-    excluded_at timestamp without time zone,
-    crypto_api_id integer NOT NULL
+    excluded_at timestamp without time zone
 );
 
 CREATE TABLE trigger_component (

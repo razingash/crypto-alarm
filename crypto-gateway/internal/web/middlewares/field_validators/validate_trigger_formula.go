@@ -3,6 +3,7 @@ package field_validators
 import (
 	"context"
 	"crypto-gateway/internal/web/db"
+	"crypto-gateway/internal/web/repositories"
 	"fmt"
 	"regexp"
 	"strings"
@@ -27,7 +28,7 @@ type Token struct {
 }
 
 // проверяет формулу на валидность
-func ValidateTriggerFormulaFormula(formula string) ([]db.CryptoVariable, error) {
+func ValidateTriggerFormulaFormula(formula string) ([]repositories.CryptoVariable, error) {
 	tokens, variables, err := tokenize(formula)
 
 	if err != nil {
@@ -59,9 +60,9 @@ func ValidateTriggerFormulaId(formulaId string) error {
 }
 
 // проверка на синтаксис
-func tokenize(expression string) ([]Token, []db.CryptoVariable, error) {
+func tokenize(expression string) ([]Token, []repositories.CryptoVariable, error) {
 	var tokens []Token
-	var variables []db.CryptoVariable
+	var variables []repositories.CryptoVariable
 
 	tokenPatterns := []struct {
 		Type    string
@@ -89,7 +90,7 @@ func tokenize(expression string) ([]Token, []db.CryptoVariable, error) {
 						return nil, nil, fmt.Errorf("incorrect variable")
 					}
 
-					isValid, err := db.IsValidCryptoCurrency(parts[0])
+					isValid, err := repositories.IsValidCryptoCurrency(parts[0])
 					if err != nil {
 						fmt.Println(err)
 						return nil, nil, fmt.Errorf("database error")
@@ -103,7 +104,7 @@ func tokenize(expression string) ([]Token, []db.CryptoVariable, error) {
 						return nil, nil, fmt.Errorf("variable %v is outdated", VARIABLE)
 					}
 
-					isValid, err = db.IsValidVariable(parts[1])
+					isValid, err = repositories.IsValidVariable(parts[1])
 					if err != nil {
 						fmt.Println(err)
 						return nil, nil, fmt.Errorf("database error")
@@ -116,7 +117,7 @@ func tokenize(expression string) ([]Token, []db.CryptoVariable, error) {
 						*/
 						return nil, nil, fmt.Errorf("variable %v is outdated", VARIABLE)
 					}
-					variables = append(variables, db.CryptoVariable{Currency: parts[0], Variable: parts[1]})
+					variables = append(variables, repositories.CryptoVariable{Currency: parts[0], Variable: parts[1]})
 				}
 
 				tokens = append(tokens, Token{Type: pattern.Type, Value: match})

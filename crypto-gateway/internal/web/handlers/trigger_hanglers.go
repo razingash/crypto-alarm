@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto-gateway/internal/web/db"
 	"crypto-gateway/internal/web/middlewares/field_validators"
+	"crypto-gateway/internal/web/repositories"
 	"fmt"
 	"strconv"
 
@@ -82,9 +83,9 @@ func FormulaPost(c fiber.Ctx) error {
 	expression := c.Locals("formula").(string)
 	raw_expression := c.Locals("formula_raw").(string)
 	name := c.Locals("name").(string)
-	variables := c.Locals("variables").([]db.CryptoVariable)
+	variables := c.Locals("variables").([]repositories.CryptoVariable)
 
-	id, err := db.SaveFormula(expression, raw_expression, name)
+	id, err := repositories.SaveFormula(expression, raw_expression, name)
 	if err != nil {
 		fmt.Println(err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -92,7 +93,7 @@ func FormulaPost(c fiber.Ctx) error {
 		})
 	}
 
-	err2 := db.SaveCryptoVariables(id, variables)
+	err2 := repositories.SaveCryptoVariables(id, variables)
 	if err2 != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "error during saving formula variables",
@@ -108,7 +109,7 @@ func FormulaPatch(c fiber.Ctx) error {
 	formulaId := c.Locals("formulaId").(string)
 	data := c.Locals("updateData").(map[string]interface{})
 
-	err := db.UpdateUserFormula(formulaId, data)
+	err := repositories.UpdateUserFormula(formulaId, data)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -146,7 +147,7 @@ func FormulaDelete(c fiber.Ctx) error {
 		})
 	}
 
-	err2 := db.DeleteUserFormula(formulaId)
+	err2 := repositories.DeleteUserFormula(formulaId)
 	if err2 != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err2.Error(),
@@ -182,7 +183,7 @@ func FormulaHistoryGet(c fiber.Ctx) error {
 		page = 1
 	}
 
-	hasNext, rawRows, err := db.GetFormulaHistory(formulaID, limit, page, prevCursor)
+	hasNext, rawRows, err := repositories.GetFormulaHistory(formulaID, limit, page, prevCursor)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -234,7 +235,7 @@ func FormulaGet(c fiber.Ctx) error {
 
 	formulaID := c.Query("id")
 
-	formulas, hasNext, err := db.GetFormulas(limit, page, formulaID)
+	formulas, hasNext, err := repositories.GetFormulas(limit, page, formulaID)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "something went wrong",
@@ -243,7 +244,7 @@ func FormulaGet(c fiber.Ctx) error {
 
 	if formulaID == "" {
 		if formulas == nil {
-			formulas = []db.UserFormula{}
+			formulas = []repositories.UserFormula{}
 		}
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"data":     formulas,

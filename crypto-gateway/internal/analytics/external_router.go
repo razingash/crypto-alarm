@@ -12,25 +12,36 @@ import (
 
 // структура для получения данных из бинанса путем запуска разных апи
 type BinanceAPI struct {
-	baseURL    string
-	httpClient *http.Client // no need for httpx
-	controller *BinanceAPIController
+	baseURL     string
+	RecordedAPI []string
+	httpClient  *http.Client // no need for httpx
+	Controller  *BinanceAPIController
 }
 
 func NewBinanceAPI(controller *BinanceAPIController) *BinanceAPI {
+	ctx := context.Background()
+	endpoints, err := GetRecordedEndpoints(ctx)
+	if err != nil {
+		log.Printf("failed to load recorded endpoints: %v", err)
+		endpoints = []string{}
+	}
+	fmt.Printf("Recorded endpoints: %v\n", endpoints)
+
 	return &BinanceAPI{
-		baseURL:    "https://api.binance.com/api",
-		httpClient: &http.Client{Timeout: 10 * time.Second},
-		controller: controller,
+		baseURL:     "https://api.binance.com/api",
+		RecordedAPI: endpoints,
+		httpClient:  &http.Client{Timeout: 10 * time.Second},
+		Controller:  controller,
 	}
 }
 
 // Method for adjusting the weights of endpoints. It isn't periodic task since the Binance weights are updated too
 // often, it makes no sense to make a periodic renewal once every few minutes, given the low cost of the operation
 func (api *BinanceAPI) checkAndUpdateEndpointWeights(resp *http.Response, endpoint string) (int, error) {
-	// 1) ВАЖНО! потом добавить сбор метрик чтобы можно было также получить график нагрузки на эндпоинты
-	// 2) здесь можно сравнить с ожидаемой нагрузкой и залогировать если нужно, чтобы была инфа о нагрузках по разным дням/неделям.
-	// - - но зачем это надо? можно сделать дополнительной фичей которая будет по желанию активироватся
+	// позже улучшить механизм обновления весов - сейчас в глобальном endpoints есть словарь из апи: весов
+	// его можно использовать чтобы на старте получать самые последние значения из бд и заполнять его ими,
+	// и вместо выполнения 3х запросов в бд сравнивать в начале с тем что имеется в endpoints
+
 	usedWeightStr := resp.Header.Get("x-mbx-used-weight-1m")
 	if usedWeightStr == "" {
 		usedWeightStr = "0"
@@ -42,9 +53,32 @@ func (api *BinanceAPI) checkAndUpdateEndpointWeights(resp *http.Response, endpoi
 		return 0, err
 	}
 
-	api.controller.mu.Lock()
-	api.controller.CurrentWeight = usedWeight
-	api.controller.mu.Unlock()
+	if api.RecordedAPI != nil {
+		var deltaWeight int
+		prevWeight := api.Controller.CurrentWeight
+		if usedWeight < prevWeight { // вес сбросился со стороны binance
+			deltaWeight = usedWeight
+		} else {
+			deltaWeight = usedWeight - prevWeight
+		}
+
+		if deltaWeight > 0 {
+			recorded := make(map[string]struct{}, len(api.RecordedAPI))
+			for _, e := range api.RecordedAPI {
+				recorded[e] = struct{}{}
+			}
+			if _, ok := recorded[endpoint]; ok {
+				ctx := context.Background()
+				if err := SaveEndpointWeightIfChanged(ctx, endpoint, deltaWeight); err != nil {
+					log.Printf("failed to save weight: %v", err)
+				}
+			}
+		}
+	}
+
+	api.Controller.Mu.Lock()
+	api.Controller.CurrentWeight = usedWeight
+	api.Controller.Mu.Unlock()
 
 	return usedWeight, nil
 }
@@ -93,6 +127,6 @@ func (api *BinanceAPI) Get(ctx context.Context, endpoint string, endpointExpecte
 		return nil
 	}
 
-	err := api.controller.RequestWithLimit(endpointExpectedWeight, requestFunc)
+	err := api.Controller.RequestWithLimit(endpointExpectedWeight, requestFunc)
 	return responseBody, err
 }

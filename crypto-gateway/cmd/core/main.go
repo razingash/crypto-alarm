@@ -22,10 +22,6 @@ func main() {
 	config.LoadConfig()
 	app := fiber.New()
 
-	analytics.StController = analytics.NewBinanceAPIController(5700)
-	analytics.StBinanceApi = analytics.NewBinanceAPI(analytics.StController)
-	analytics.StOrchestrator = analytics.NewBinanceAPIOrchestrator(analytics.StBinanceApi)
-
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001", "http://localhost:80", "https://localhost:443"},
 		AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
@@ -45,6 +41,10 @@ func main() {
 	})
 
 	db.InitDB()
+
+	analytics.StController = analytics.NewBinanceAPIController(5700)
+	analytics.StBinanceApi = analytics.NewBinanceAPI(analytics.StController)
+	analytics.StOrchestrator = analytics.NewBinanceAPIOrchestrator(analytics.StBinanceApi)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

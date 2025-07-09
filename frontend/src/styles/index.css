@@ -155,7 +155,40 @@ body {
     color: #00ff37;
 }
 .param__status_unsaved {
-    color: #ffe900;
+    color: #ffe900 !important;
+}
+
+/*buttons*/
+.button__remove, .button__save, .button__cancle, .button__change {
+    display: flex;
+    justify-content: center;
+    width: 60px;
+    border: 1px solid;
+    padding: 3px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    user-select: none;
+}
+.button__remove {
+    color: #ff3a75;
+}
+.button__remove:hover {
+    box-shadow: 0 0 0 2px rgb(255, 58, 117), 0 2px 4px rgba(255, 58, 117, 0.3), 0 4px 8px rgba(255, 58, 117, 0.3), 0 0 16px rgb(255, 58, 117);
+}
+.button__change {
+    color: #008cff;
+}
+.button__change:hover {
+    box-shadow: 0 0 0 2px rgb(0, 140, 255), 0 2px 4px rgba(0, 140, 255, 0.3), 0 4px 8px rgba(0, 140, 255, 0.3), 0 0 16px rgb(0, 140, 255);
+}
+.button__save {
+    color: var(--lines);
+}
+.button__save:hover {
+    box-shadow: 0 0 0 2px rgb(0, 255, 55), 0 2px 4px rgba(0, 255, 55, 0.3), 0 4px 8px rgba(0, 255, 55, 0.3), 0 0 16px rgb(0, 255, 55);
+}
+.button__cancle:hover {
+   box-shadow: 0 0 0 2px rgb(228, 228, 228), 0 2px 4px rgba(228, 228, 228, 0.3), 0 4px 8px rgba(228, 228, 228, 0.3), 0 0 16px rgb(228, 228, 228);
 }
 
 /*loading effect*/

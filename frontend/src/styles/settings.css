@@ -1,40 +1,51 @@
 
 
 .field__settings__api {
-
-}
-
-.api__list {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
     background: var(--container-background);
     color: #ffffff;
     padding: 20px;
 }
 
+.api__list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
 .api__item {
     display: flex;
-    align-items: center;
     column-gap: 20px;
 }
-
-.api__status {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
+.api__item > div {
+    display: flex;
+    justify-content: center;
 }
+.api__availability {
+    width: 62px;
+}
+.api__history {
+    width: 50px;
+}
+.api__endpoint {
+    width: 100px;
+}
+.api__cooldown {
+    width: 150px;
+}
+.api__last_update {
+    width: 120px;
+}
+
 .api-actual {
-    background: var(--lines);
+    color: var(--hovered-element);
 }
 .api-unactual {
-    background: #ff0000;
+    color: #d63030;
 }
 
-.api__endpoint {
-
-}
 .input__api__cooldown, .api__cooldown {
     width: 145px;
 }
@@ -44,13 +55,33 @@
     border: 1px solid #ffffff75;
     border-radius: 2px;
 }
-.api__cooldown {
 
+.api__settings {
+    display: flex;
+    justify-content: space-between;
+    direction: rtl;
 }
-.api__lastUpdate {
-
+#api__checkbox, #api__save, #api__cancle {
+    display: none;
+}
+#api__checkbox:checked ~ #api__change {
+  display: none;
+}
+#api__checkbox:checked ~ #api__cancle, #api__checkbox:checked ~ #api__save {
+  display: flex;
 }
 
-.api__change {
-    cursor: pointer;
+@media (max-width: 630px) {
+    .api__item {
+        column-gap: 0;
+    }
+    .api__availability {
+        display: none !important;
+    }
+    .endpoint-actual {
+        color: var(--hovered-element);
+    }
+    .endpoint-unactual {
+        color: #d63030;
+    }
 }

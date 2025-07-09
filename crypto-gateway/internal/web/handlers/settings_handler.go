@@ -1,13 +1,14 @@
 package handlers
 
 import (
-	"crypto-gateway/internal/web/db"
+	"crypto-gateway/internal/analytics"
+	"crypto-gateway/internal/web/repositories"
 
 	"github.com/gofiber/fiber/v3"
 )
 
 func GetSettings(c fiber.Ctx) error {
-	settings, err := db.FetchSettings()
+	settings, err := repositories.FetchSettings()
 
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -21,17 +22,20 @@ func GetSettings(c fiber.Ctx) error {
 }
 
 func PatchUpdateSettings(c fiber.Ctx) error {
-	id := c.Locals("id").(int)
-	cooldown := c.Locals("cooldown").(int)
+	updates := c.Locals("updates").([]analytics.ApiUpdate)
 
-	err := db.UpdateCooldown(id, cooldown)
+	updatedIds, err := analytics.UpdateEndpointsSettings(updates)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "something went wrong",
+			"error": "Failed to update endpoints",
 		})
 	}
 
-	go updateApiCooldown(id)
+	go func() {
+		for _, id := range updatedIds {
+			updateApiCooldown(id)
+		}
+	}()
 
 	return c.SendStatus(fiber.StatusOK)
 }

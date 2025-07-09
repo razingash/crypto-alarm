@@ -48,10 +48,6 @@ const Strategy = () => {
     }
 
     useEffect(() => {
-        console.log(hasNext)
-    }, [hasNext])
-
-    useEffect(() => {
         const loadData = async () => {
             if (!isFormulaLoading && formula === null && !FormulaError){
                 const data = await fetchFormula();
@@ -245,10 +241,10 @@ const Strategy = () => {
                 </div>
                 <div className={"strategy__manipulations"}>
                     <input type="checkbox" id="strategy__checkbox" onChange={() => setChangeMod((prev) => !prev)}/>
-                    <div className={"strategy__remove"} onClick={handleRemoveFormula}>remove</div>
-                    <div className={"strategy__change__save"} onClick={handleSaveChanges}>save</div>
-                    <label className={"strategy__change"} htmlFor="strategy__checkbox">change</label>
-                    <label className={"strategy__change__cancle"} htmlFor="strategy__checkbox">cancle</label>
+                    <div className={"button__remove"} onClick={handleRemoveFormula}>remove</div>
+                    <div className={"button__save"} onClick={handleSaveChanges}>save</div>
+                    <label className={"button__change"} htmlFor="strategy__checkbox">change</label>
+                    <label className={"button__cancle"} htmlFor="strategy__checkbox">cancle</label>
                 </div>
                 <span className={"line-1"}></span>
                 <FormulaInput formula={formula.formula_raw}/>

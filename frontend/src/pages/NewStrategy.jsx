@@ -39,7 +39,7 @@ const NewStrategy = () => {
                 <div className={"new_formula__core"}>
                     <input className={"strategy__name__input"} placeholder={"input formula name..."}
                        type="text" maxLength={150} onChange={(e) => setFormulaName(e.target.value)}/>
-                    <div className="strategy__change__save strategy__create" onClick={sendNewFormula}>apply</div>
+                    <div className="button__save strategy__create" onClick={sendNewFormula}>apply</div>
                     <div className={"field__new_formula_errors"}>
                         {localError && <div className={"cell__error"}>Notification: {localError}</div>}
                         {newFormulaError && <div className={"cell__error"}>Error: {newFormulaError?.error}</div>}

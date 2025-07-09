@@ -2,8 +2,11 @@ package handlers
 
 import (
 	"bufio"
+	"context"
 	"crypto-gateway/internal/analytics"
+	"crypto-gateway/internal/web/db"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"runtime"
@@ -186,4 +189,80 @@ func SendRuntimeMetricsWS(conn *websocket.Conn) {
 			return
 		}
 	}
+}
+
+func GetBinanceApiWeightMetrics(c fiber.Ctx) error {
+	type HistoryEntry struct {
+		Timestamp time.Time `json:"created_at"`
+		Weight    int       `json:"weight"`
+	}
+
+	type ApiMetrics struct {
+		Endpoint string         `json:"endpoint"`
+		Weights  []HistoryEntry `json:"weights"`
+	}
+
+	apisRows, err := db.DB.Query(context.Background(), `
+		SELECT id, api FROM crypto_api
+		WHERE is_actual = true AND is_history_on = true
+	`)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("failed to query crypto_api: %v", err))
+	}
+	defer apisRows.Close()
+
+	apiMap := make(map[int]string)
+	for apisRows.Next() {
+		var id int
+		var api string
+		if err := apisRows.Scan(&id, &api); err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("failed to scan api row: %v", err))
+		}
+		apiMap[id] = api
+	}
+
+	historyRows, err := db.DB.Query(context.Background(), `
+		SELECT crypto_api_id, weight, created_at
+		FROM crypto_api_history
+		WHERE crypto_api_id = ANY($1)
+		ORDER BY created_at
+	`, keys(apiMap))
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("failed to query history: %v", err))
+	}
+	defer historyRows.Close()
+
+	historyMap := make(map[int][]HistoryEntry)
+	for historyRows.Next() {
+		var apiID, weight int
+		var createdAt time.Time
+		if err := historyRows.Scan(&apiID, &weight, &createdAt); err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("failed to scan history row: %v", err))
+		}
+		historyMap[apiID] = append(historyMap[apiID], HistoryEntry{
+			Timestamp: createdAt,
+			Weight:    weight,
+		})
+	}
+
+	var result []ApiMetrics
+	for id, endpoint := range apiMap {
+		weights := historyMap[id]
+		if weights == nil {
+			weights = []HistoryEntry{}
+		}
+		result = append(result, ApiMetrics{
+			Endpoint: endpoint,
+			Weights:  weights,
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(result)
+}
+
+func keys(m map[int]string) []int {
+	ids := make([]int, 0, len(m))
+	for id := range m {
+		ids = append(ids, id)
+	}
+	return ids
 }

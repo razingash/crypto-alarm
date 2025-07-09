@@ -14,7 +14,7 @@ type BinanceAPIController struct {
 	MaxWeight       int
 	CurrentWeight   int
 	lastResetTime   time.Time
-	mu              sync.Mutex
+	Mu              sync.Mutex
 	queue           chan queuedRequest
 	queueEvent      chan struct{}
 	pendingRequests map[string]struct{}
@@ -47,10 +47,10 @@ func (c *BinanceAPIController) resetLoop() {
 	defer ticker.Stop()
 	for {
 		<-ticker.C
-		c.mu.Lock()
+		c.Mu.Lock()
 		c.CurrentWeight = 0
 		c.lastResetTime = time.Now()
-		c.mu.Unlock()
+		c.Mu.Unlock()
 	}
 }
 
@@ -58,29 +58,29 @@ func (c *BinanceAPIController) resetLoop() {
 func (c *BinanceAPIController) processQueue() {
 	for range c.queueEvent {
 		for {
-			c.mu.Lock()
+			c.Mu.Lock()
 			if len(c.queue) == 0 {
-				c.mu.Unlock()
+				c.Mu.Unlock()
 				break
 			}
 			req := <-c.queue
 			delete(c.pendingRequests, req.id)
-			c.mu.Unlock()
+			c.Mu.Unlock()
 
 			if err := req.fn(); err != nil {
 				log.Printf("Error executing queued request: %v", err)
 			}
 
-			c.mu.Lock()
+			c.Mu.Lock()
 			c.CurrentWeight += req.weight
-			c.mu.Unlock()
+			c.Mu.Unlock()
 		}
 	}
 }
 
 // Управляет лимитом и выполняет запрос. Если лимит превышен, запрос ставится в очередь.
 func (c *BinanceAPIController) RequestWithLimit(weight int, fn RequestFunc) error {
-	c.mu.Lock()
+	c.Mu.Lock()
 	if c.CurrentWeight+weight > c.MaxWeight {
 		log.Printf("[WARN] API limit reached. Current weight: %d", c.CurrentWeight)
 
@@ -93,11 +93,11 @@ func (c *BinanceAPIController) RequestWithLimit(weight int, fn RequestFunc) erro
 			// Already triggered
 		}
 
-		c.mu.Unlock()
+		c.Mu.Unlock()
 		return nil
 	}
 	c.CurrentWeight += weight
-	c.mu.Unlock()
+	c.Mu.Unlock()
 
 	return fn()
 }
