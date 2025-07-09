@@ -291,10 +291,13 @@ func (dg *DependencyGraph) UpdateVariablesTopologicalKahn(updates map[string]flo
 		}
 	}
 
-	for fid, v := range queue {
-		fmt.Println(fid, v)
-		if _, err := dg.EvaluateFormula(fid); err != nil {
-			log.Printf("Ошибка вычисления формулы %d: %v\n", fid, err)
+	for _, formulaID := range queue {
+		if _, err := dg.EvaluateFormula(formulaID); err != nil {
+			if strings.Contains(err.Error(), "No parameter") { // еще не все переменные доступны
+				continue // формула использует данные из разных апи, и не все из них установлены на момент EvaluateFormula()
+			} else {
+				log.Printf("Ошибка вычисления формулы %d: %v\n", formulaID, err)
+			}
 		}
 	}
 

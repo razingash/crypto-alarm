@@ -7,9 +7,36 @@ import (
 )
 
 // перенести в репозиторий после того как блок будет готов
-type ActualComponentInfo struct { // попробовать без этого позора сделать
+type ActualComponentInfo struct {
 	Cooldown int
 	Count    int
+}
+
+type FormulaRecord struct {
+	ID      int
+	Formula string
+}
+
+func GetActiveFormulas(ctx context.Context) ([]FormulaRecord, error) {
+	rows, err := db.DB.Query(ctx, `
+        SELECT id, formula FROM trigger_formula WHERE is_active=true
+    `)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var formulas []FormulaRecord
+
+	for rows.Next() {
+		var rec FormulaRecord
+		if err := rows.Scan(&rec.ID, &rec.Formula); err != nil {
+			return nil, err
+		}
+		formulas = append(formulas, rec)
+	}
+
+	return formulas, nil
 }
 
 // получает необходимые апи, к которым нужно делать запрос в зависимости от актальности формул и компонентов
@@ -88,7 +115,6 @@ func AddTriggerHistory(ctx context.Context, data map[int][]string, formulasValue
 	defer tx.Rollback(ctx)
 
 	now := time.Now().UTC()
-
 	for formulaID, variables := range data {
 		var triggerHistoryID int
 		err := tx.QueryRow(ctx, `

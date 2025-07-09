@@ -6,6 +6,7 @@ import (
 	"crypto-gateway/internal/web/db"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"sync"
 	"time"
@@ -70,11 +71,30 @@ func (o *BinanceAPIOrchestrator) Start(ctx context.Context) error {
 		o.checkBinanceResponse(nil)
 	}
 
+	o.LoadActiveFormulas(ctx)
 	if o.isBinanceOnline {
-		o.LaunchNeededAPI(context.Background())
+		o.LaunchNeededAPI(ctx)
 	}
 
 	return nil
+}
+
+// выбирает формулы из trigger_formula у которых is_active=true и добавляет их в граф
+func (o *BinanceAPIOrchestrator) LoadActiveFormulas(ctx context.Context) {
+	fmt.Println("Loading active formulas in Graph...")
+
+	formulas, err := GetActiveFormulas(ctx)
+	if err != nil {
+		log.Printf("ошибка загрузки активных формул: %v\n", err)
+		return
+	}
+
+	for _, f := range formulas {
+		if err := o.DependencyGraph.AddFormula(f.Formula, f.ID); err != nil {
+			appmetrics.ApplicationCriticalErrorsLogging(fmt.Sprintf("Failed to add formula %v with id %v to graph in LoadActiveFormulas", f.Formula, f.ID), err)
+		}
+	}
+	fmt.Println("Graph построен для активных формул.")
 }
 
 // выбирает апи, которые нужны для получения актуальных данных в граф, и убирает ненужные

@@ -11,7 +11,6 @@ import (
 	"crypto-gateway/internal/web/webpush"
 )
 
-// адаптировать под новую систему без пользователей
 func SendPushNotifications(formulasID []int, message string) error {
 	placeholders := make([]string, len(formulasID))
 	args := make([]interface{}, len(formulasID))
@@ -21,10 +20,10 @@ func SendPushNotifications(formulasID []int, message string) error {
 	}
 
 	query := fmt.Sprintf(`
-	    SELECT id, name, last_triggered, cooldown
-	    FROM trigger_formula
-	    WHERE id IN (%s)
-	`, strings.Join(placeholders, ","))
+        SELECT id, name, last_triggered, cooldown
+        FROM trigger_formula
+        WHERE id IN (%s)
+    `, strings.Join(placeholders, ","))
 
 	rows, err := DB.Query(context.Background(), query, args...)
 	if err != nil {
@@ -40,7 +39,7 @@ func SendPushNotifications(formulasID []int, message string) error {
 	}
 
 	now := time.Now().UTC().Truncate(time.Second)
-	grouped := make(map[int][]Formula)
+	var validFormulas []Formula
 
 	for rows.Next() {
 		var f Formula
@@ -55,57 +54,58 @@ func SendPushNotifications(formulasID []int, message string) error {
 				continue // cooldown не прошёл
 			}
 		}
-		grouped[f.ID] = append(grouped[f.ID], f)
+
+		validFormulas = append(validFormulas, f)
 	}
+
+	if len(validFormulas) == 0 {
+		return nil
+	}
+
+	var data map[string]string
+	if len(validFormulas) == 1 {
+		data = map[string]string{
+			"title": "Triggered",
+			"body":  fmt.Sprintf("Strategy: %s", validFormulas[0].Name),
+		}
+	} else {
+		data = map[string]string{
+			"title": "Triggered",
+			"body":  fmt.Sprintf("You have %d triggered strategies", len(validFormulas)),
+		}
+	}
+
+	jsonPayload, _ := json.Marshal(data)
+
+	subRows, err := DB.Query(context.Background(), `
+        SELECT endpoint, p256dh, auth, id
+        FROM trigger_push_subscription
+    `)
+	if err != nil {
+		return fmt.Errorf("ошибка получения push-подписок: %w", err)
+	}
+	defer subRows.Close()
 
 	var outdatedSubIDs []int
 
-	for ownerID, formulas := range grouped {
-		var data map[string]string
-		if len(formulas) == 1 {
-			data = map[string]string{
-				"title": "Triggered",
-				"body":  fmt.Sprintf("Strategy: %s", formulas[0].Name),
-			}
-		} else {
-			data = map[string]string{
-				"title": "Triggered",
-				"body":  fmt.Sprintf("You have %d triggered strategies", len(formulas)),
-			}
-		}
-		jsonPayload, _ := json.Marshal(data)
-
-		rows, err := DB.Query(context.Background(), `
-            SELECT endpoint, p256dh, auth, id
-            FROM trigger_push_subscription
-            WHERE user_id = $1
-        `, ownerID)
-		if err != nil {
-			log.Printf("ошибка получения push-подписок для user %d: %v", ownerID, err)
+	for subRows.Next() {
+		var subID int
+		var endpoint, p256dh, auth string
+		if err := subRows.Scan(&endpoint, &p256dh, &auth, &subID); err != nil {
+			log.Printf("ошибка сканирования подписки: %v", err)
 			continue
 		}
 
-		for rows.Next() {
-			var subID int
-			var endpoint, p256dh, auth string
-			if err := rows.Scan(&endpoint, &p256dh, &auth, &subID); err != nil {
-				log.Printf("ошибка сканирования подписки user %d: %v", ownerID, err)
-				continue
-			}
-
-			err := webpush.SendWebPush(endpoint, p256dh, auth, jsonPayload)
-			if err != nil {
-				log.Printf("ошибка отправки пуша user %d: %v", ownerID, err)
-				outdatedSubIDs = append(outdatedSubIDs, subID)
-			}
+		err := webpush.SendWebPush(endpoint, p256dh, auth, jsonPayload)
+		if err != nil {
+			log.Printf("ошибка отправки пуша: %v", err)
+			outdatedSubIDs = append(outdatedSubIDs, subID)
 		}
-
-		rows.Close()
 	}
 
 	err = updateLastTriggered(formulasID)
 	if err != nil {
-		log.Printf("Несовсем критическая ошибка при сохранении ласт апдейта формулы, будет критичной когда добавится история триггеров")
+		log.Printf("Несовсем критическая ошибка при сохранении времени последнего срабатывания формул")
 	}
 
 	if len(outdatedSubIDs) > 0 {
