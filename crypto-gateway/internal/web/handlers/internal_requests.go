@@ -24,9 +24,3 @@ func updateFormulaInGraph(formulaID string) {
 	analytics.StOrchestrator.DependencyGraph.AddFormula(repositories.GetFormulaById(id), id)
 	analytics.StOrchestrator.LaunchNeededAPI(context.Background())
 }
-
-func updateApiCooldown(apiId int) {
-	api, cooldown := repositories.GetApiAndCooldownByID(apiId)
-	analytics.StOrchestrator.AdjustAPITaskCooldown(context.Background(), api, cooldown)
-	analytics.StOrchestrator.LaunchNeededAPI(context.Background())
-}

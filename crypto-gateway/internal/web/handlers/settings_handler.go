@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto-gateway/internal/analytics"
 	"crypto-gateway/internal/web/repositories"
 
@@ -33,7 +34,9 @@ func PatchUpdateSettings(c fiber.Ctx) error {
 
 	go func() {
 		for _, id := range updatedIds {
-			updateApiCooldown(id)
+			api, cooldown := repositories.GetApiAndCooldownByID(id)
+			analytics.StOrchestrator.AdjustAPITaskCooldown(context.Background(), api, cooldown)
+			analytics.StOrchestrator.LaunchNeededAPI(context.Background())
 		}
 	}()
 

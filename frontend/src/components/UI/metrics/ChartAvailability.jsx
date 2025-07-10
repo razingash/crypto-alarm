@@ -92,14 +92,8 @@ const ChartAvailability = ({ data }) => {
                     <Tooltip />
 
                     {binanceIntervals.map(({ start, end, available }, index) => (
-                        <ReferenceArea
-                            key={index}
-                            x1={start}
-                            x2={end}
-                            y1={-1}
-                            y2={0}
-                            fill={available ? "rgba(0,255,0,0.1)" : "rgba(255,0,0,0.1)"}
-                            stroke="none"
+                        <ReferenceArea key={index} x1={start} x2={end} y1={-1} y2={0}
+                            fill={available ? "rgba(0,255,0,0.1)" : "rgba(255,0,0,0.1)"} stroke="none"
                         />
                     ))}
 

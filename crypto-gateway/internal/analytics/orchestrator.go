@@ -150,22 +150,27 @@ func (o *BinanceAPIOrchestrator) LaunchNeededAPI(ctx context.Context) {
 
 // Updates the frequency of proxification for a particular API, if necessary
 func (o *BinanceAPIOrchestrator) AdjustAPITaskCooldown(ctx context.Context, api string, newCooldown int) {
-	o.mu.Lock()
-	defer o.mu.Unlock()
+	var shouldLaunch bool
 
+	o.mu.Lock()
 	oldCooldown, exists := o.taskCooldowns[api]
 	if !exists || oldCooldown == newCooldown {
+		o.mu.Unlock()
 		return
 	}
 
-	cancelFunc, exists := o.tasks[api]
-	if exists {
+	if cancelFunc, exists := o.tasks[api]; exists {
 		cancelFunc()
 		delete(o.tasks, api)
 		delete(o.taskCooldowns, api)
 	}
 
-	o.launchAPI(ctx, api, newCooldown)
+	shouldLaunch = true
+	o.mu.Unlock()
+
+	if shouldLaunch {
+		o.launchAPI(ctx, api, newCooldown)
+	}
 }
 
 func (o *BinanceAPIOrchestrator) launchAPI(ctx context.Context, api string, cooldown int) {
