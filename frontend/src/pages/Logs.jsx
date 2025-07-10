@@ -9,6 +9,7 @@ import DefaultMetric from "../components/UI/metrics/DefaultMetric";
 import {formatUptime} from "../utils/utils";
 import "../styles/metrics.css"
 import useWebSocket from "../hooks/useWebSocket";
+import ChartApiWeightChanges from "../components/UI/metrics/ChartApiWeightChanges";
 
 const Logs = () => {
     const [dynamicMetrics, setDynamicMetrics] = useState(null)
@@ -40,9 +41,9 @@ const Logs = () => {
         void loadData();
     }, [isLogsLoading])
 
-     useEffect(() => {
+    useEffect(() => {
         const loadData = async () => {
-            if (!isLogsLoading && !LogsError){
+            if (!isLogsLoading && !LogsError) {
                 const data = await fetchStaticMetrics();
                 if (data) {
                     setStaticMetrics(data.data);
@@ -77,6 +78,7 @@ const Logs = () => {
                     <Speedometer header={"Mem Usage"} percentage={dynamicMetrics?.memory_usage_percent}/>
                     <Speedometer header={"CPU Allocation"} percentage={dynamicMetrics?.cpu_allocation.toFixed(3)}/>
                     <Speedometer header={"Mem Allocation"} percentage={dynamicMetrics?.mem_alloc_mb}/>
+                    <ChartApiWeightChanges/>
                     <ChartAvailability data={logs}/>
                 </div>
             ) : (isLogsLoading === false && logs.length === 0) && (

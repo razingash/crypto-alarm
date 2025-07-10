@@ -3,7 +3,6 @@ package analytics
 import (
 	"context"
 	"crypto-gateway/internal/web/db"
-	"database/sql"
 	"fmt"
 	"time"
 )
@@ -174,7 +173,7 @@ func AddTriggerHistory(ctx context.Context, data map[int][]string, formulasValue
 			}
 
 			_, err := tx.Exec(ctx, `
-                INSERT INTO trigger_components_history (trigger_history_id, component_id, value)
+                INSERT INTO trigger_component_history (trigger_history_id, component_id, value)
                 VALUES ($1, $2, $3)
             `, triggerHistoryID, comp.ComponentID, value)
 			if err != nil {
@@ -207,34 +206,72 @@ func GetRecordedEndpoints(ctx context.Context) ([]string, error) {
 	return endpoints, nil
 }
 
-// добавляет в бд новые весы эндпоинта Binance, если он был изменен
-func SaveEndpointWeightIfChanged(ctx context.Context, endpoint string, weight int) error {
-	// 3 запроса на одну проверку, как-то слишком
+// возвращает словарь эндпоинтов к их актуальной стоимости
+func GetActualEndpointsWeight(ctx context.Context) (map[string]int, error) {
+	endpoints := make(map[string]int)
+
+	rows, err := db.DB.Query(ctx, `
+		SELECT ca.api,
+		       COALESCE((
+		           SELECT cah.weight
+		           FROM crypto_api_history cah
+		           WHERE cah.crypto_api_id = ca.id
+		           ORDER BY cah.created_at DESC
+		           LIMIT 1
+		       ), ca.base_weight) AS final_weight
+		FROM crypto_api ca
+		WHERE ca.is_actual = true
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query actual endpoints with weights: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var api string
+		var weight int
+		if err := rows.Scan(&api, &weight); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		endpoints[api] = weight
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration error: %w", err)
+	}
+
+	return endpoints, nil
+}
+
+// добавляет в бд новые весы эндпоинта Binance. Нужно использовать только если апи на самом деле изменен
+func SaveEndpointWeight(ctx context.Context, endpoint string, weight int) error {
+	// неприятно что нужно знать id Api - это добавляет лишний запрос.
+	// Как вариант можно использовать позицию endpoint'а + 1 относительно endpoints
 	var apiID int
 	err := db.DB.QueryRow(ctx, `
-		SELECT id FROM crypto_api WHERE api = $1 AND is_actual = true AND is_history_on = true
+		SELECT id FROM crypto_api WHERE api = $1
 	`, endpoint).Scan(&apiID)
 	if err != nil {
 		return err
 	}
 
-	var lastWeight int
-	err = db.DB.QueryRow(ctx, `
-		SELECT weight FROM crypto_api_history 
-		WHERE crypto_api_id = $1 
-		ORDER BY created_at DESC 
-		LIMIT 1
-	`, apiID).Scan(&lastWeight)
+	// вернуть этот участок если все будет плохо или понадобится строгий режим
+	/*
+		var lastWeight int
+		err = db.DB.QueryRow(ctx, `
+			SELECT weight FROM crypto_api_history
+			WHERE crypto_api_id = $1
+			ORDER BY created_at DESC
+			LIMIT 1
+		`, apiID).Scan(&lastWeight)
+		if err == sql.ErrNoRows { || lastWeight != weight {
+	*/
 
-	if err == sql.ErrNoRows || lastWeight != weight {
-		_, err = db.DB.Exec(ctx, `
+	_, err = db.DB.Exec(ctx, `
 			INSERT INTO crypto_api_history (crypto_api_id, weight) 
 			VALUES ($1, $2)
 		`, apiID, weight)
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func UpdateEndpointsSettings(updates []ApiUpdate) ([]int, error) { // если меняется история то добавлять в Recorded новый эндпоинт

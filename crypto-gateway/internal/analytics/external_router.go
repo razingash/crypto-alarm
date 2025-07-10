@@ -20,16 +20,30 @@ type BinanceAPI struct {
 
 func NewBinanceAPI(controller *BinanceAPIController) *BinanceAPI {
 	ctx := context.Background()
-	endpoints, err := GetRecordedEndpoints(ctx)
+	recordedEndpoints, err := GetRecordedEndpoints(ctx)
 	if err != nil {
 		log.Printf("failed to load recorded endpoints: %v", err)
-		endpoints = []string{}
+		recordedEndpoints = []string{}
 	}
+
+	actualEndpointsWeight, err2 := GetActualEndpointsWeight(ctx)
+
+	if err2 != nil {
+		log.Printf("failed to load actual endpoint weights: %v", err)
+		endpoints = map[string]int{
+			"/v3/ping":         1,
+			"/v3/ticker/price": 2,
+			"/v3/ticker/24hr":  80,
+		}
+	} else {
+		endpoints = actualEndpointsWeight
+	}
+
 	fmt.Printf("Recorded endpoints: %v\n", endpoints)
 
 	return &BinanceAPI{
 		baseURL:     "https://api.binance.com/api",
-		RecordedAPI: endpoints,
+		RecordedAPI: recordedEndpoints,
 		httpClient:  &http.Client{Timeout: 10 * time.Second},
 		Controller:  controller,
 	}
@@ -38,10 +52,6 @@ func NewBinanceAPI(controller *BinanceAPIController) *BinanceAPI {
 // Method for adjusting the weights of endpoints. It isn't periodic task since the Binance weights are updated too
 // often, it makes no sense to make a periodic renewal once every few minutes, given the low cost of the operation
 func (api *BinanceAPI) checkAndUpdateEndpointWeights(resp *http.Response, endpoint string) (int, error) {
-	// позже улучшить механизм обновления весов - сейчас в глобальном endpoints есть словарь из апи: весов
-	// его можно использовать чтобы на старте получать самые последние значения из бд и заполнять его ими,
-	// и вместо выполнения 3х запросов в бд сравнивать в начале с тем что имеется в endpoints
-
 	usedWeightStr := resp.Header.Get("x-mbx-used-weight-1m")
 	if usedWeightStr == "" {
 		usedWeightStr = "0"
@@ -62,14 +72,10 @@ func (api *BinanceAPI) checkAndUpdateEndpointWeights(resp *http.Response, endpoi
 			deltaWeight = usedWeight - prevWeight
 		}
 
-		if deltaWeight > 0 {
-			recorded := make(map[string]struct{}, len(api.RecordedAPI))
-			for _, e := range api.RecordedAPI {
-				recorded[e] = struct{}{}
-			}
-			if _, ok := recorded[endpoint]; ok {
+		if deltaWeight > 0 { // костыль для багов с моей стороны
+			if deltaWeight != endpoints[endpoint] {
 				ctx := context.Background()
-				if err := SaveEndpointWeightIfChanged(ctx, endpoint, deltaWeight); err != nil {
+				if err := SaveEndpointWeight(ctx, endpoint, deltaWeight); err != nil {
 					log.Printf("failed to save weight: %v", err)
 				}
 			}

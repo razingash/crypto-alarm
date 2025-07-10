@@ -19,6 +19,7 @@ CREATE TABLE crypto_api (
     cooldown integer NOT NULL DEFAULT 20,
     is_actual boolean NOT NULL DEFAULT TRUE,
     is_history_on boolean NOT NULL DEFAULT FALSE,
+    is_accessible boolean NOT NULL DEFAULT TRUE,
     last_updated timestamp without time zone NOT NULL DEFAULT now()
 );
 

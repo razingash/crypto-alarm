@@ -230,7 +230,6 @@ func (o *BinanceAPIOrchestrator) updateTickerCurrentPrice(ctx context.Context, c
 				appmetrics.ApplicationCriticalErrorsLogging("in updateTickerCurrentPrice - GetNeededFieldsFromEndpoint returned Error", err)
 			}
 			dataForGraph := extractDataFromTickerCurrentPrice(response, currencies)
-
 			triggeredFormulas := o.DependencyGraph.UpdateVariablesTopologicalKahn(dataForGraph)
 			if len(triggeredFormulas) > 0 {
 				result, variableValues := o.DependencyGraph.GetFormulasVariables(triggeredFormulas)

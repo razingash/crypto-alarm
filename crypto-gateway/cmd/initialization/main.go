@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto-gateway/config"
 	"crypto-gateway/internal/analytics"
+	"crypto-gateway/internal/web/db"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -14,6 +16,15 @@ type apiParam struct {
 	apiID     int
 	paramID   int
 	paramName string
+}
+
+// contain endpoints with standard weight
+var baseEndpointsWeights = map[string]int{
+	"/v3/ping":         1,
+	"/v3/ticker/price": 2,
+	"/v3/ticker/24hr":  80,
+	// позже добавить и его, это важный эндпоинт, просто ему нужны атрибуты, и нужно будет шаманить с клавиатурой
+	//"/v3/exchangeInfo": 20,
 }
 
 func main() {
@@ -29,11 +40,7 @@ func main() {
 // заполняет CryptoApi и CryptoParams модели полученными данными относительно лучших апи
 func fillCryptoModels() error {
 	ctx := context.Background()
-	pool, err := pgxpool.New(ctx, config.Database_Url)
-	if err != nil {
-		return fmt.Errorf("failed to connect to target DB: %w", err)
-	}
-	defer pool.Close()
+	db.InitDB()
 
 	controller := analytics.NewBinanceAPIController(5700)
 	binAPI := analytics.NewBinanceAPI(controller)
@@ -42,15 +49,15 @@ func fillCryptoModels() error {
 	if err != nil {
 		return fmt.Errorf("getInitialDataParams: %w", err)
 	}
-	if err := initializeCryptoModels(ctx, pool, data); err != nil {
+	if err := initializeCryptoModels(ctx, db.DB, data); err != nil {
 		return fmt.Errorf("initializeCryptoModels: %w", err)
 	}
 
-	if err := getValidCurrencies(ctx, pool, binAPI); err != nil {
+	if err := getValidCurrencies(ctx, db.DB, binAPI); err != nil {
 		return fmt.Errorf("getValidCurrencies: %w", err)
 	}
 
-	if err := createTriggerComponents(ctx, pool); err != nil {
+	if err := createTriggerComponents(ctx, db.DB); err != nil {
 		return fmt.Errorf("createTriggerComponents: %w", err)
 	}
 	return nil
@@ -60,12 +67,12 @@ func fillCryptoModels() error {
 // and use in the keyboard on the client side
 func getInitialDataParams(ctx context.Context, binAPI *analytics.BinanceAPI) (map[string]map[string]interface{}, error) {
 	data := make(map[string]map[string]interface{})
-	var endpoints = map[string]int{
-		"/v3/ticker/price": 2,
-		"/v3/ticker/24hr":  80,
-	}
 
-	for ep, weight := range endpoints {
+	for ep, weight := range baseEndpointsWeights {
+		if ep == "/v3/ping" {
+			continue
+		}
+
 		res, err := binAPI.Get(ctx, ep, weight, map[string]string{"symbol": "ETHBTC"})
 		if err != nil {
 			return nil, fmt.Errorf("binAPI.Get %s: %w", ep, err)
@@ -83,26 +90,47 @@ func getInitialDataParams(ctx context.Context, binAPI *analytics.BinanceAPI) (ma
 
 // Initialization of variables for user strategies
 func initializeCryptoModels(ctx context.Context, pool *pgxpool.Pool, dataset map[string]map[string]interface{}) error {
-	for ep, kv := range dataset {
+	now := time.Now().UTC()
+	for ep, weight := range baseEndpointsWeights {
 		var cryptoApiID int
-		err := pool.QueryRow(ctx, `
-			INSERT INTO crypto_api(api) VALUES($1) RETURNING id
-		`, ep).Scan(&cryptoApiID)
-		if err != nil {
-			return fmt.Errorf("failed to insert crypto_api %s: %w", ep, err)
+		isAccessible := true
+		if ep == "/v3/ping" {
+			isAccessible = false
 		}
 
-		for param := range kv {
-			if param == "symbol" {
-				continue
-			}
-			if _, err := pool.Exec(ctx,
-				`INSERT INTO crypto_params(parameter, crypto_api_id) VALUES($1, $2)`,
-				param, cryptoApiID); err != nil {
-				return fmt.Errorf("failed to insert param %s: %w", param, err)
+		err := pool.QueryRow(ctx, `
+			INSERT INTO crypto_api (api, is_accessible)
+			VALUES ($1, $2)
+			RETURNING id
+		`, ep, isAccessible).Scan(&cryptoApiID)
+		if err != nil {
+			return fmt.Errorf("failed to insert into crypto_api for %s: %w", ep, err)
+		}
+
+		_, err = pool.Exec(ctx, `
+			INSERT INTO crypto_api_history (crypto_api_id, weight, created_at)
+			VALUES ($1, $2, $3)
+		`, cryptoApiID, weight, now)
+		if err != nil {
+			return fmt.Errorf("failed to insert into crypto_api_history for %s: %w", ep, err)
+		}
+
+		if params, ok := dataset[ep]; ok {
+			for param := range params {
+				if param == "symbol" {
+					continue
+				}
+				_, err := pool.Exec(ctx,
+					`INSERT INTO crypto_params (parameter, crypto_api_id)
+					 VALUES ($1, $2)`,
+					param, cryptoApiID)
+				if err != nil {
+					return fmt.Errorf("failed to insert param %s for %s: %w", param, ep, err)
+				}
 			}
 		}
 	}
+
 	return nil
 }
 

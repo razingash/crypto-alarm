@@ -24,6 +24,13 @@
     align-items: center;
 }
 
+.field__chart__api_weight {
+    width: auto;
+    height: auto;
+    min-width: 500px;
+    height: 190px;
+}
+
 .metric__2x2 {
     position: relative;
     width: 200px;

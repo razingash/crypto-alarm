@@ -83,7 +83,7 @@ const ChartAvailability = ({ data }) => {
     return (
         <div className={"field__metric__default metric__chart__full"}>
             <div className={"metric__header__default"}>Webserver and Binance availability</div>
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer width="100%" height={180}>
                 <AreaChart data={reducedData} margin={{ top: 10, right: 30, left: -30, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="timestamp" tickFormatter={(tick) => new Date(tick).toLocaleTimeString()}/>
