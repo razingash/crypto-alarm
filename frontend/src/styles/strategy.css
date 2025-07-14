@@ -34,7 +34,7 @@
 }
 
 
-.strategy__item, .formula__field {
+.strategy__item, .strategy__field {
     display: flex;
     flex-direction: column;
     row-gap: 12px;
@@ -47,7 +47,7 @@
 }
 .strategy__item {
     max-width: 450px;
-    height: 280px;
+    height: 340px;
 }
 
 .strategy__item__header {
@@ -222,7 +222,7 @@
 }
 
 @media (max-width: 500px) {
-    .formula__field, .field__new_formula, .strategy__item {
+    .strategy__field, .field__new_formula, .strategy__item {
         border-radius: initial;
     }
     .strategy__item {

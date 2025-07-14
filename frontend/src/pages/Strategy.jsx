@@ -3,7 +3,7 @@ import {useParams} from "react-router-dom";
 import FormulaInput from "../components/FormulasEditor/FormulaInput";
 import { useNavigate } from "react-router-dom";
 import {useFetching} from "../hooks/useFetching";
-import TriggersService from "../API/TriggersService";
+import StrategyService from "../API/StrategyService";
 import '../styles/strategy.css'
 import Chart from "../components/UI/Chart";
 import {transformData} from "../utils/utils";
@@ -13,28 +13,28 @@ import AdaptiveLoading from "../components/UI/AdaptiveLoading";
 const Strategy = () => {
     const navigate = useNavigate();
     const {id} = useParams();
-    const [formula, setFormula] = useState(null);
+    const [strategy, setStrategy] = useState(null);
     const [changeMod, setChangeMod] = useState(false);
-    const [formulaNewData, setFormulaNewData] = useState(null); // changed data
+    const [strategyNewData, setStrategyNewData] = useState(null); // changed data
     const [hasNext, setHasNext] = useState(null)
     const [historyData, setHistoryData] = useState([]);
     const [prevCursor, setPrevCursor] = useState(0); // by timestamp
 
-    const [fetchFormula, isFormulaLoading, FormulaError] = useFetching(async () => {
-        return await TriggersService.getUserFormulas({id: id})
+    const [fetchStrategy, isStrategyLoading, strategyError] = useFetching(async () => {
+        return await StrategyService.getStrategies({id: id})
     }, 0, 1000)
-    const [updateFormulaData, , ] = useFetching(async (newData) => {
-        return await TriggersService.updateUserFormula(newData)
+    const [updateStrategyData, , ] = useFetching(async (newData) => {
+        return await StrategyService.updateUserFormula(newData)
     }, 0, 1000)
-    const [removeFormula, , ] = useFetching(async () => {
-        return await TriggersService.deleteUserFormula(id)
+    const [removeStrategy, , ] = useFetching(async () => {
+        return await StrategyService.deleteUserFormula(id)
     }, 0, 1000)
-    const [fetchFormulaHistory, isFormulaHistoryLoading, ] = useFetching(async () => {
-        return await TriggersService.getFormulaHistory(id, 1, prevCursor)
+    const [fetchStrategyHistory, isFormulaHistoryLoading, ] = useFetching(async () => {
+        return await StrategyService.getFormulaHistory(id, 1, prevCursor)
     }, 1000, 1000)
 
     const loadPrevHistory = async () => {
-        const data = await fetchFormulaHistory()
+        const data = await fetchStrategyHistory()
         if (data?.data) {
             let newItems = transformData(data.data).reverse();
             if (prevCursor === 0) {
@@ -49,25 +49,25 @@ const Strategy = () => {
 
     useEffect(() => {
         const loadData = async () => {
-            if (!isFormulaLoading && formula === null && !FormulaError){
-                const data = await fetchFormula();
+            if (!isStrategyLoading && strategy === null && !strategyError){
+                const data = await fetchStrategy();
                 if (data) {
-                    setFormula(data.data);
-                    setFormulaNewData(data.data);
+                    setStrategy(data.data);
+                    setStrategyNewData(data.data);
                 }
             }
         }
         void loadData();
-    }, [isFormulaLoading])
+    }, [isStrategyLoading])
 
     useEffect(() => {
         const loadData = async () => {
-            if (formula?.is_history_on === true && historyData.length === 0) {
+            if (strategy?.is_history_on === true && historyData.length === 0) {
                 await loadPrevHistory()
             }
         }
         void loadData();
-    }, [formula?.is_history_on, historyData])
+    }, [strategy?.is_history_on, historyData])
 
     const getModifiedFields = (original, modified) => {
         const changes = {};
@@ -80,19 +80,19 @@ const Strategy = () => {
     };
 
     const handleSaveChanges = async () => {
-        const changedFields = getModifiedFields(formula, formulaNewData);
+        const changedFields = getModifiedFields(strategy, strategyNewData);
         if (Object.keys(changedFields).length === 0) {
             alert("No changes to save.");
             return;
         }
 
-        const response = await updateFormulaData({
-            formula_id: formula.id,
+        const response = await updateStrategyData({
+            formula_id: strategy.id,
             ...changedFields,
         });
 
         if (response && response.status === 200) {
-            setFormula(formulaNewData);
+            setStrategy(strategyNewData);
             setChangeMod(false);
             document.getElementById("strategy__checkbox").checked = false;
         } else {
@@ -104,7 +104,7 @@ const Strategy = () => {
         const isConfirmed = window.confirm("Are you sure you want to remove this formula?");
         if (!isConfirmed) return;
 
-        const response = await removeFormula();
+        const response = await removeStrategy();
         if (response && response.status === 200) {
             navigate("/strategies");
         } else {
@@ -114,47 +114,47 @@ const Strategy = () => {
 
     return (
         <div className={"section__main"}>
-            {FormulaError === "Network Error" && formula === null ? (
+            {strategyError === "Network Error" && strategy === null ? (
                 <ErrorField/>
-            ) : isFormulaLoading ? (
+            ) : isStrategyLoading ? (
                 <div className={"loading__center"}>
                     <AdaptiveLoading/>
                 </div>
-            ) : formula ? (
-            <div className={"formula__field"}>
+            ) : strategy ? (
+            <div className={"strategy__field"}>
                 <div className={"strategy__item__header"}>
                     <div className={"strategy__weight"}>Weight: 80</div>
-                    <div className={`strategy__name__blocked ${formulaNewData.name !== formula.name ? "param__status_unsaved": ""}`}>
+                    <div className={`strategy__name__blocked ${strategyNewData.name !== strategy.name ? "param__status_unsaved": ""}`}>
                         {changeMod ? (
-                            <input className={"strategy__name__input"} type="text" maxLength={150} value={formulaNewData.name}
-                                onChange={(e) => setFormulaNewData((prev) => ({...prev, name: e.target.value,}))}
+                            <input className={"strategy__name__input"} type="text" maxLength={150} value={strategyNewData.name}
+                                onChange={(e) => setStrategyNewData((prev) => ({...prev, name: e.target.value,}))}
                                 placeholder={"input formula name..."}
                             />
                         ) : (
-                            formulaNewData.name || `Nameless formula with id ${formula.id}`
+                            strategyNewData.name || `Nameless formula with id ${strategy.id}`
                         )}
                     </div>
                 </div>
-                <div className={`strategy__description ${formulaNewData.description !== formula.description && "param__status_unsaved"}`}>
+                <div className={`strategy__description ${strategyNewData.description !== strategy.description && "param__status_unsaved"}`}>
                     {changeMod ? (
-                        <textarea className={"strategy__description__textarea"} maxLength={1500} value={formulaNewData.description}
-                            onChange={(e) => setFormulaNewData((prev) => ({...prev, description: e.target.value,}))}
+                        <textarea className={"strategy__description__textarea"} maxLength={1500} value={strategyNewData.description}
+                            onChange={(e) => setStrategyNewData((prev) => ({...prev, description: e.target.value,}))}
                             placeholder={"input formula description..."}
                         />
                     ) : (
-                        formulaNewData.description
+                        strategyNewData.description
                     )}
                 </div>
                 <div className={"strategy__info"}>
                     <div className={"strategy__info__item"}>
                         <div>History</div>
                         {changeMod ? (
-                            <label htmlFor={`history_slider${formula.id}`} className={"checkbox_zipline"}>
+                            <label htmlFor={`history_slider${strategy.id}`} className={"checkbox_zipline"}>
                                 <span className={"zipline"}></span>
-                                <input id={`history_slider${formula.id}`} type="checkbox" className={"switch"}
-                                    checked={formulaNewData.is_history_on}
+                                <input id={`history_slider${strategy.id}`} type="checkbox" className={"switch"}
+                                    checked={strategyNewData.is_history_on}
                                     onChange={(e) =>
-                                        setFormulaNewData((prev) => ({
+                                        setStrategyNewData((prev) => ({
                                             ...prev,
                                             is_history_on: e.target.checked,
                                         }))
@@ -163,22 +163,22 @@ const Strategy = () => {
                                 <span className="slider"></span>
                             </label>
                         ) : (
-                             <div className={`${formulaNewData.is_history_on !== formula.is_history_on
-                                ? "param__status_unsaved" : formulaNewData.is_history_on === true
+                             <div className={`${strategyNewData.is_history_on !== strategy.is_history_on
+                                ? "param__status_unsaved" : strategyNewData.is_history_on === true
                                 ? "param__status_on" : "param__status_off"
-                             }`}> {formulaNewData.is_history_on === true ? "On" : "Off"}
+                             }`}> {strategyNewData.is_history_on === true ? "On" : "Off"}
                             </div>
                         )}
                     </div>
                     <div className={"strategy__info__item"}>
                         <div>Notifications</div>
                         {changeMod ? (
-                        <label htmlFor={`notifications_slider_${formula.id}`} className={"checkbox_zipline"}>
+                        <label htmlFor={`notifications_slider_${strategy.id}`} className={"checkbox_zipline"}>
                             <span className={"zipline"}></span>
-                            <input id={`notifications_slider_${formula.id}`} type="checkbox" className={"switch"}
-                                checked={formulaNewData.is_notified}
+                            <input id={`notifications_slider_${strategy.id}`} type="checkbox" className={"switch"}
+                                checked={strategyNewData.is_notified}
                                 onChange={(e) =>
-                                    setFormulaNewData((prev) => ({
+                                    setStrategyNewData((prev) => ({
                                         ...prev,
                                         is_notified: e.target.checked,
                                     }))
@@ -187,21 +187,21 @@ const Strategy = () => {
                             <span className="slider"></span>
                         </label>
                         ) : (
-                            <div className={`${formulaNewData.is_notified !== formula.is_notified
-                                ? "param__status_unsaved" : formulaNewData.is_notified === true
+                            <div className={`${strategyNewData.is_notified !== strategy.is_notified
+                                ? "param__status_unsaved" : strategyNewData.is_notified === true
                                 ? "param__status_on" : "param__status_off"
-                             }`}> {formulaNewData.is_notified === true ? "On" : "Off"}
+                             }`}> {strategyNewData.is_notified === true ? "On" : "Off"}
                             </div>
                         )}
                     </div>
                     <div className={"strategy__info__item"}>
                         <div>Active</div>
                         {changeMod ? (
-                            <label htmlFor={`relevance_slider${formula.id}`} className={"checkbox_zipline"}>
+                            <label htmlFor={`relevance_slider${strategy.id}`} className={"checkbox_zipline"}>
                                 <span className={"zipline"}></span>
-                                <input id={`relevance_slider${formula.id}`} type="checkbox" className={"switch"}
-                                    checked={formulaNewData.is_active}
-                                    onChange={(e) => setFormulaNewData((prev) => ({
+                                <input id={`relevance_slider${strategy.id}`} type="checkbox" className={"switch"}
+                                    checked={strategyNewData.is_active}
+                                    onChange={(e) => setStrategyNewData((prev) => ({
                                         ...prev,
                                         is_active: e.target.checked,
                                         }))
@@ -210,10 +210,10 @@ const Strategy = () => {
                                 <span className="slider"></span>
                             </label>
                         ) : (
-                            <div className={`${formulaNewData.is_active !== formula.is_active
-                                ? "param__status_unsaved" : formulaNewData.is_active === true
+                            <div className={`${strategyNewData.is_active !== strategy.is_active
+                                ? "param__status_unsaved" : strategyNewData.is_active === true
                                 ? "param__status_on" : "param__status_off"
-                             }`}> {formulaNewData.is_active === true ? "On" : "Off"}
+                             }`}> {strategyNewData.is_active === true ? "On" : "Off"}
                             </div>
                         )}
                     </div>
@@ -221,22 +221,22 @@ const Strategy = () => {
                         <div>Cooldown</div>
                         {changeMod ? (
                             <input type="number" min={1} max={604800} className={"input__strategy__cooldown"}
-                                value={formulaNewData.cooldown}
-                                onChange={(e) => setFormulaNewData((prev) => ({
+                                value={strategyNewData.cooldown}
+                                onChange={(e) => setStrategyNewData((prev) => ({
                                     ...prev,
                                     cooldown: +e.target.value,
                                     }))
                                 }
                             />
                         ) : (
-                            <div className={`${formulaNewData.cooldown !== formula.cooldown &&"param__status_unsaved"}`}>
-                                {formulaNewData.cooldown}
+                            <div className={`${strategyNewData.cooldown !== strategy.cooldown &&"param__status_unsaved"}`}>
+                                {strategyNewData.cooldown}
                             </div>
                         )}
                     </div>
                     <div className={"strategy__info__item"}>
                         <div>Last Triggered</div>
-                        <div>{formula.last_triggered || "Never"}</div>
+                        <div>{strategy.last_triggered || "Never"}</div>
                     </div>
                 </div>
                 <div className={"strategy__manipulations"}>
@@ -247,7 +247,9 @@ const Strategy = () => {
                     <label className={"button__cancle"} htmlFor="strategy__checkbox">cancle</label>
                 </div>
                 <span className={"line-1"}></span>
-                <FormulaInput formula={formula.formula_raw}/>
+                {strategy.conditions.map((condition) => (
+                    <FormulaInput formula={condition.formula_raw}/>
+                ))}
                 {historyData.length > 0 && (
                     <div className={"area__chart"}>
                         <div className="field__chart chart__strategy_history">
@@ -261,7 +263,7 @@ const Strategy = () => {
                     </div>
                 )}
             </div>
-            ) : (isFormulaLoading === false && FormulaError) && (
+            ) : (isStrategyLoading === false && strategyError) && (
                 <ErrorField message={`The formula with ID ${id} does not exist`}/>
             )}
         </div>

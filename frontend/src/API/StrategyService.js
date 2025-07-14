@@ -1,29 +1,29 @@
 import apiClient from "../hooks/useApiInterceptor";
 
-export default class TriggersService {
+export default class StrategyService {
     static async getKeyboard() {
         // получает данные для клавиатуры
         const response = await apiClient.get(`/triggers/keyboard`)
         return response.data
     }
-    static async getUserFormulas(params) {
-        const response = await apiClient.get('/triggers/formula', {params: params})
+    static async getStrategies(params) {
+        const response = await apiClient.get('/triggers/strategy', {params: params})
         return response.data
     }
     static async getFormulaHistory(formula_id, page, prevCursor) {
-        const response = await apiClient.get(`/triggers/formula/history/${formula_id}`, {params: {page, prevCursor}})
+        const response = await apiClient.get(`/triggers/strategy/history/${formula_id}`, {params: {page, prevCursor}})
         return response.data
     }
     static async createFormula(rawFormula, name) {
         const formula = rawFormulaToFormula(rawFormula);
         rawFormula = rawFormula.filter(item => item !== "\\textunderscore").map(cleanKatexExpression).join('');
-        return await apiClient.post('/triggers/formula', {formula, name, 'formula_raw': rawFormula});
+        return await apiClient.post('/triggers/strategy', {formula, name, 'formula_raw': rawFormula});
     }
     static async updateUserFormula(data) { // data - словарь с formula_id и полями которые нужно изменить
-        return await apiClient.patch('/triggers/formula', data)
+        return await apiClient.patch('/triggers/strategy', data)
     }
-    static async deleteUserFormula(formula_id) {
-        return await apiClient.delete(`/triggers/formula?formula_id=${formula_id}`)
+    static async deleteUserFormula(strategy_id, formula_id=null) {
+        return await apiClient.delete(`/triggers/strategy/${strategy_id}/?formula_id=${formula_id}`)
     }
 }
 

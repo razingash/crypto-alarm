@@ -11,9 +11,9 @@ func SetupTriggersRoutes(app *fiber.App) {
 	group := app.Group("/api/v1/triggers")
 
 	group.Get("/keyboard", handlers.Keyboard)
-	group.Get("/formula", handlers.FormulaGet)
-	group.Get("/formula/history/:id", handlers.FormulaHistoryGet)
-	group.Post("/formula", handlers.FormulaPost, api_validators.ValidateFormulaPost)
-	group.Patch("/formula", handlers.FormulaPatch, api_validators.ValidateFormulaPatch)
-	group.Delete("/formula", handlers.FormulaDelete)
+	group.Get("/strategy", handlers.StrategyGet)
+	group.Get("/strategy/history/:id", handlers.StrategyHistoryGet)
+	group.Post("/strategy", handlers.StrategyPost, api_validators.ValidateStrategyPost)
+	group.Patch("/strategy", handlers.StrategyPatch, api_validators.ValidateStrategyPatch)
+	group.Delete("/strategy/:id/", handlers.StrategyDelete)
 }

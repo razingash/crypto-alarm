@@ -75,7 +75,6 @@ func main() {
 		}
 
 		cancel()
-		log.Println("Server gracefully stopped")
 		os.Exit(0)
 	}()
 

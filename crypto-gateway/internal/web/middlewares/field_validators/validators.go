@@ -4,15 +4,14 @@ import "fmt"
 
 // универсальные валидаторы
 
-type FormulaValidator struct {
-	Formula     func(interface{}) string
-	FormulaRaw  func(interface{}) string
+type StrategyValidator struct {
 	Name        func(interface{}) string
 	Description func(interface{}) string
 	IsNotified  func(interface{}) string
 	IsActive    func(interface{}) string
 	IsHistoryOn func(interface{}) string
 	Cooldown    func(interface{}) string
+	Conditions  func(value interface{}) string
 }
 
 func ValidateBool(value interface{}) string {

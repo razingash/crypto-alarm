@@ -8,6 +8,11 @@ import (
 )
 
 // всю эту фигню после тестов убрать, это лишний слой, + запросы в бд можно не делать
+func deleteStrategyFromGraph(strategyID int) {
+	analytics.StOrchestrator.DependencyGraph.RemoveStrategy(strategyID)
+	analytics.StOrchestrator.LaunchNeededAPI(context.Background())
+}
+
 func deleteFormulaFromGraph(formulaID int) {
 	analytics.StOrchestrator.DependencyGraph.RemoveFormula(formulaID)
 	analytics.StOrchestrator.LaunchNeededAPI(context.Background())

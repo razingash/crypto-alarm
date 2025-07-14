@@ -1,8 +1,6 @@
 package field_validators
 
 import (
-	"context"
-	"crypto-gateway/internal/web/db"
 	"crypto-gateway/internal/web/repositories"
 	"fmt"
 	"regexp"
@@ -28,7 +26,7 @@ type Token struct {
 }
 
 // проверяет формулу на валидность
-func ValidateTriggerFormulaFormula(formula string) ([]repositories.CryptoVariable, error) {
+func ValidateStrategyExpression(formula string) ([]repositories.CryptoVariable, error) {
 	tokens, variables, err := tokenize(formula)
 
 	if err != nil {
@@ -38,25 +36,6 @@ func ValidateTriggerFormulaFormula(formula string) ([]repositories.CryptoVariabl
 	err2 := validateTokens(tokens)
 
 	return variables, err2
-}
-
-// проверяет существует ли формула с таким id, и является ли пользователь её автором
-func ValidateTriggerFormulaId(formulaId string) error {
-	var count int
-	err := db.DB.QueryRow(context.Background(), `
-		SELECT COUNT(*) 
-		FROM trigger_formula
-		WHERE id = $1
-	`, formulaId).Scan(&count)
-	if err != nil {
-		return fmt.Errorf("database error")
-	}
-
-	if count == 0 {
-		return fmt.Errorf("formula does not exists")
-	}
-
-	return nil
 }
 
 // проверка на синтаксис

@@ -2,16 +2,17 @@ package api_validators
 
 import (
 	"crypto-gateway/internal/web/middlewares/field_validators"
+	"crypto-gateway/internal/web/repositories"
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v3"
 )
 
-func ValidateFormulaPost(c fiber.Ctx) error {
+func ValidateStrategyPost(c fiber.Ctx) error {
 	var body struct {
-		Formula    string `json:"formula"`
-		FormulaRaw string `json:"formula_raw"` // нет нормального валидатора!
-		Name       string `json:"name"`        // идентично
+		Name        string                            `json:"name"`
+		Description string                            `json:"description"`
+		Expressions []repositories.StrategyExpression `json:"conditions"`
 	}
 
 	if err := json.Unmarshal(c.Body(), &body); err != nil {
@@ -20,22 +21,53 @@ func ValidateFormulaPost(c fiber.Ctx) error {
 		})
 	}
 
-	variables, err := field_validators.ValidateTriggerFormulaFormula(body.Formula)
-	if err != nil {
+	if body.Name == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
+			"error": "Missing name",
 		})
 	}
 
-	c.Locals("formula", body.Formula)
-	c.Locals("formula_raw", body.FormulaRaw)
+	if len(body.Expressions) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Conditions cannot be empty",
+		})
+	}
+
+	var allVariables []repositories.CryptoVariable
+	unique := make(map[string]struct{})
+
+	for _, condition := range body.Expressions {
+		if condition.Formula == "" || condition.FormulaRaw == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Each condition must have formula and formula_raw",
+			})
+		}
+
+		variables, err := field_validators.ValidateStrategyExpression(condition.Formula)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		for _, v := range variables {
+			key := v.Currency + ":" + v.Variable
+			if _, exists := unique[key]; !exists {
+				unique[key] = struct{}{}
+				allVariables = append(allVariables, v)
+			}
+		}
+	}
+
 	c.Locals("name", body.Name)
-	c.Locals("variables", variables)
+	c.Locals("description", body.Description)
+	c.Locals("expressions", body.Expressions)
+	c.Locals("variables", allVariables)
 
 	return c.Next()
 }
 
-func ValidateFormulaPatch(c fiber.Ctx) error {
+func ValidateStrategyPatch(c fiber.Ctx) error {
 	var payload map[string]interface{}
 
 	if err := json.Unmarshal(c.Body(), &payload); err != nil {
@@ -44,41 +76,52 @@ func ValidateFormulaPatch(c fiber.Ctx) error {
 		})
 	}
 
-	formulaId, ok := payload["formula_id"].(string)
-	if !ok || formulaId == "" {
+	strategyID, ok := payload["strategy_id"].(string)
+	if !ok || strategyID == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "formula_id is required",
+			"error": "strategy_id is required",
 		})
 	}
-	delete(payload, "formula_id")
+	delete(payload, "strategy_id")
 
-	err2 := field_validators.ValidateTriggerFormulaId(formulaId)
-	if err2 != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err2.Error(),
-		})
-	}
-
-	validator := field_validators.FormulaValidator{
-		Formula:     field_validators.ValidateText(3, 50000),
-		FormulaRaw:  field_validators.ValidateText(3, 50000),
+	validator := field_validators.StrategyValidator{
 		Name:        field_validators.ValidateText(0, 150),
 		Description: field_validators.ValidateText(0, 1500),
 		IsNotified:  field_validators.ValidateBool,
 		IsActive:    field_validators.ValidateBool,
 		IsHistoryOn: field_validators.ValidateBool,
 		Cooldown:    field_validators.ValidateCooldown,
+		Conditions: func(value interface{}) string {
+			arr, ok := value.([]interface{})
+			if !ok {
+				return "Invalid conditions format"
+			}
+
+			for _, item := range arr {
+				cond, ok := item.(map[string]interface{})
+				if !ok {
+					return "Invalid condition entry format"
+				}
+
+				if err := field_validators.ValidateText(3, 50000)(cond["formula"]); err != "" {
+					return "Invalid formula"
+				}
+				if err := field_validators.ValidateText(3, 50000)(cond["formula_raw"]); err != "" {
+					return "Invalid formula_raw"
+				}
+			}
+			return ""
+		},
 	}
 
 	fieldValidators := map[string]func(interface{}) string{
-		"formula":       validator.Formula,
-		"formula_raw":   validator.FormulaRaw,
 		"name":          validator.Name,
 		"description":   validator.Description,
 		"is_notified":   validator.IsNotified,
 		"is_active":     validator.IsActive,
 		"is_history_on": validator.IsHistoryOn,
 		"cooldown":      validator.Cooldown,
+		"conditions":    validator.Conditions,
 	}
 
 	validData := make(map[string]interface{})
@@ -105,7 +148,7 @@ func ValidateFormulaPatch(c fiber.Ctx) error {
 		})
 	}
 
-	c.Locals("formulaId", formulaId)
+	c.Locals("strategyID", strategyID)
 	c.Locals("updateData", validData)
 	return c.Next()
 }

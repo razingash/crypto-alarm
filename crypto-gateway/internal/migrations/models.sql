@@ -14,7 +14,7 @@ SET default_table_access_method = heap;
 SET search_path TO public;
 
 CREATE TABLE crypto_api (
-    id BIGSERIAL,
+    id BIGSERIAL PRIMARY KEY,
     api character varying(500) NOT NULL,
     cooldown integer NOT NULL DEFAULT 20,
     is_actual boolean NOT NULL DEFAULT TRUE,
@@ -24,22 +24,35 @@ CREATE TABLE crypto_api (
 );
 
 CREATE TABLE crypto_api_history (
-    id BIGSERIAL,
-    crypto_api_id integer NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    crypto_api_id integer NOT NULL REFERENCES crypto_api(id) ON DELETE CASCADE,
     weight smallint NOT NULL,
     created_at timestamp without time zone NOT NULL DEFAULT now()
 );
 
 CREATE TABLE crypto_currencies (
-    id BIGSERIAL,
+    id BIGSERIAL PRIMARY KEY,
     currency character varying(100) NOT NULL,
     is_available boolean NOT NULL DEFAULT TRUE,
     last_updated timestamp without time zone NOT NULL DEFAULT now()
 );
 
+CREATE TABLE trigger_formula (
+    id BIGSERIAL PRIMARY KEY,
+    formula character varying NOT NULL,
+    formula_raw character varying NOT NULL
+);
+
+CREATE TABLE strategy_history (
+    id BIGSERIAL PRIMARY KEY,
+    formula_id integer NOT NULL REFERENCES trigger_formula(id) ON DELETE CASCADE,
+    "timestamp" timestamp without time zone NOT NULL DEFAULT now(),
+    status boolean NOT NULL
+);
+
 CREATE TABLE crypto_params (
-    id BIGSERIAL,
-    crypto_api_id integer NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    crypto_api_id integer NOT NULL REFERENCES crypto_api(id) ON DELETE CASCADE,
     parameter character varying(500) NOT NULL,
     is_active boolean NOT NULL DEFAULT TRUE,
     last_updated timestamp without time zone NOT NULL DEFAULT now(),
@@ -47,24 +60,22 @@ CREATE TABLE crypto_params (
 );
 
 CREATE TABLE trigger_component (
-    id BIGSERIAL,
-    api_id integer NOT NULL,
-    currency_id integer NOT NULL,
-    parameter_id integer NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    api_id integer NOT NULL REFERENCES crypto_api(id) ON DELETE CASCADE,
+    currency_id integer NOT NULL REFERENCES crypto_currencies(id) ON DELETE CASCADE,
+    parameter_id integer NOT NULL REFERENCES crypto_params(id) ON DELETE CASCADE,
     name character varying(600) NOT NULL
 );
 
 CREATE TABLE trigger_component_history (
-    id BIGSERIAL,
-    trigger_history_id integer NOT NULL,
-    component_id integer NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    expression_id integer NOT NULL REFERENCES trigger_formula(id) ON DELETE CASCADE,
+    component_id integer NOT NULL REFERENCES trigger_component(id) ON DELETE CASCADE,
     value double precision NOT NULL
 );
 
-CREATE TABLE trigger_formula (
-    id BIGSERIAL,
-    formula character varying NOT NULL,
-    formula_raw character varying NOT NULL,
+CREATE TABLE crypto_strategy (
+    id BIGSERIAL PRIMARY KEY,
     name character varying(150) NOT NULL,
     description character varying(1500),
     is_notified boolean NOT NULL DEFAULT FALSE,
@@ -75,21 +86,20 @@ CREATE TABLE trigger_formula (
     cooldown integer NOT NULL DEFAULT 3600
 );
 
-CREATE TABLE trigger_formula_component (
-    id BIGSERIAL,
-    component_id integer NOT NULL,
-    formula_id integer NOT NULL
+CREATE TABLE crypto_strategy_formula (
+    id BIGSERIAL PRIMARY KEY,
+    strategy_id integer NOT NULL REFERENCES crypto_strategy(id) ON DELETE CASCADE,
+    formula_id integer NOT NULL REFERENCES trigger_formula(id) ON DELETE CASCADE
 );
 
-CREATE TABLE trigger_history (
-    id BIGSERIAL,
-    formula_id integer NOT NULL,
-    "timestamp" timestamp without time zone NOT NULL DEFAULT now(),
-    status boolean NOT NULL
+CREATE TABLE trigger_formula_component (
+    id BIGSERIAL PRIMARY KEY,
+    component_id integer NOT NULL REFERENCES trigger_component(id) ON DELETE CASCADE,
+    formula_id integer NOT NULL REFERENCES trigger_formula(id) ON DELETE CASCADE
 );
 
 CREATE TABLE trigger_push_subscription (
-    id BIGSERIAL,
+    id BIGSERIAL PRIMARY KEY,
     endpoint character varying NOT NULL,
     p256dh character varying NOT NULL,
     auth character varying NOT NULL,

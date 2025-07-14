@@ -2,7 +2,7 @@ import "../styles/strategy.css"
 import FormulaEditor from "../components/FormulasEditor/FormulaEditor";
 import {useEffect, useState} from "react";
 import {useFetching} from "../hooks/useFetching";
-import TriggersService from "../API/TriggersService";
+import StrategyService from "../API/StrategyService";
 import {useNavigate} from "react-router-dom";
 
 const NewStrategy = () => {
@@ -12,7 +12,7 @@ const NewStrategy = () => {
     const [localError, setLocalError] = useState(null);
 
     const [fetchNewFormula, , newFormulaError] = useFetching(async (rawFormula, name) => {
-        return await TriggersService.createFormula(rawFormula, name)
+        return await StrategyService.createFormula(rawFormula, name)
     }, 0, 1000)
 
     useEffect(() => {

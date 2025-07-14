@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"crypto-gateway/internal/web/db"
-	"crypto-gateway/internal/web/middlewares/field_validators"
 	"crypto-gateway/internal/web/repositories"
 	"fmt"
 	"strconv"
@@ -79,24 +78,16 @@ func Keyboard(c fiber.Ctx) error {
 	return c.JSON(keyboard)
 }
 
-func FormulaPost(c fiber.Ctx) error {
-	expression := c.Locals("formula").(string)
-	raw_expression := c.Locals("formula_raw").(string)
+func StrategyPost(c fiber.Ctx) error {
 	name := c.Locals("name").(string)
+	description := c.Locals("description").(string)
+	expressions := c.Locals("expressions").([]repositories.StrategyExpression)
 	variables := c.Locals("variables").([]repositories.CryptoVariable)
 
-	id, err := repositories.SaveFormula(expression, raw_expression, name)
+	id, err := repositories.SaveStrategy(name, description, expressions, variables)
 	if err != nil {
-		fmt.Println(err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "error during saving formula",
-		})
-	}
-
-	err2 := repositories.SaveCryptoVariables(id, variables)
-	if err2 != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error during saving formula variables",
 		})
 	}
 
@@ -105,63 +96,100 @@ func FormulaPost(c fiber.Ctx) error {
 	})
 }
 
-func FormulaPatch(c fiber.Ctx) error {
-	formulaId := c.Locals("formulaId").(string)
+func StrategyPatch(c fiber.Ctx) error {
+	strategyID := c.Locals("strategyID").(string)
 	data := c.Locals("updateData").(map[string]interface{})
 
-	err := repositories.UpdateUserFormula(formulaId, data)
+	err := repositories.UpdateStrategy(strategyID, data)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
-	if _, hasFormula := data["formula"]; hasFormula {
-		go updateFormulaInGraph(formulaId)
-	}
-
-	if isActiveRaw, hasIsActive := data["is_active"]; hasIsActive {
-		if isActive, ok := isActiveRaw.(bool); ok {
-			id, _ := strconv.Atoi(formulaId)
-			if isActive {
-				go addFormulaToGraph(id)
-			} else {
-				go deleteFormulaFromGraph(id)
+	if rawConditions, ok := data["conditions"]; ok {
+		if conditionsSlice, ok := rawConditions.([]interface{}); ok {
+			var conditions []map[string]interface{}
+			for _, item := range conditionsSlice {
+				if condMap, ok := item.(map[string]interface{}); ok {
+					conditions = append(conditions, condMap)
+				} else {
+					return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+						"error": "Invalid condition format",
+					})
+				}
 			}
+
+			err = repositories.UpdateStrategyConditions(strategyID, conditions)
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": err.Error(),
+				})
+			}
+		} else {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "conditions should be an array",
+			})
 		}
 	}
+
+	/*
+		if _, hasFormula := data["formula"]; hasFormula {
+			go updateFormulaInGraph(strategyID)
+		}
+
+		if isActiveRaw, hasIsActive := data["is_active"]; hasIsActive {
+			if isActive, ok := isActiveRaw.(bool); ok {
+				id, _ := strconv.Atoi(strategyID)
+				if isActive {
+					go addFormulaToGraph(id)
+				} else {
+					go deleteFormulaFromGraph(id)
+				}
+			}
+		}*/
 	return c.SendStatus(fiber.StatusOK)
 }
 
-func FormulaDelete(c fiber.Ctx) error {
-	formulaId := c.Query("formula_id")
-	if formulaId == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "formula_id is required",
-		})
-	}
-
-	err := field_validators.ValidateTriggerFormulaId(formulaId)
+func StrategyDelete(c fiber.Ctx) error {
+	strategyIDStr := c.Params("id")
+	strategyID, err := strconv.Atoi(strategyIDStr)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
+			"error": "Invalid strategy ID",
 		})
 	}
 
-	err2 := repositories.DeleteUserFormula(formulaId)
-	if err2 != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err2.Error(),
-		})
+	formulaIDstr := c.Query("formula_id")
+	if formulaIDstr == "" {
+		err2 := repositories.DeleteStrategyById(strategyID)
+		if err2 != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err2.Error(),
+			})
+		}
+	} else {
+		formulaID, err2 := strconv.Atoi(formulaIDstr)
+		if err2 != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid formula ID",
+			})
+		}
+		err3 := repositories.DeleteFormulaById(formulaID)
+		if err3 != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid formula ID",
+			})
+		}
 	}
 
-	id, _ := strconv.Atoi(formulaId)
-	go deleteFormulaFromGraph(id)
+	//id, _ := strconv.Atoi(StrategyID)
+	//go deleteFormulaFromGraph(id)
 	return c.SendStatus(fiber.StatusOK)
 }
 
-func FormulaHistoryGet(c fiber.Ctx) error {
-	formulaIDStr := c.Params("id")
-	formulaID, err := strconv.Atoi(formulaIDStr)
+func StrategyHistoryGet(c fiber.Ctx) error {
+	strategyIDStr := c.Params("id")
+	strategyID, err := strconv.Atoi(strategyIDStr)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid formula ID",
@@ -183,7 +211,7 @@ func FormulaHistoryGet(c fiber.Ctx) error {
 		page = 1
 	}
 
-	hasNext, rawRows, err := repositories.GetFormulaHistory(formulaID, limit, page, prevCursor)
+	hasNext, rawRows, err := repositories.GetStrategyHistory(strategyID, limit, page, prevCursor)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -219,7 +247,7 @@ func FormulaHistoryGet(c fiber.Ctx) error {
 	})
 }
 
-func FormulaGet(c fiber.Ctx) error {
+func StrategyGet(c fiber.Ctx) error {
 	defaultLimit := 10
 	defaultPage := 1
 
@@ -233,26 +261,27 @@ func FormulaGet(c fiber.Ctx) error {
 		page = defaultPage
 	}
 
-	formulaID := c.Query("id")
+	strategyID := c.Query("id")
 
-	formulas, hasNext, err := repositories.GetFormulas(limit, page, formulaID)
+	strategies, hasNext, err := repositories.GetStrategiesWithFormulas(limit, page, strategyID)
 	if err != nil {
+		fmt.Println(err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "something went wrong",
 		})
 	}
 
-	if formulaID == "" {
-		if formulas == nil {
-			formulas = []repositories.UserFormula{}
+	if strategyID == "" {
+		if strategies == nil {
+			strategies = []repositories.Strategy{}
 		}
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"data":     formulas,
+			"data":     strategies,
 			"has_next": hasNext,
 		})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"data": formulas[0],
+		"data": strategies[0],
 	})
 }

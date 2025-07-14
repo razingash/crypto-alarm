@@ -17,6 +17,7 @@ import (
 
 type DependencyGraph struct {
 	Graph           map[string][]int                          // переменная -> формулы
+	Strategies      map[int][]int                             // ID стратегии -> список формул
 	Formulas        map[int]string                            // ID -> формула
 	Compiled        map[int]*govaluate.EvaluableExpression    // ID -> функция
 	Variables       map[string]float64                        // переменная -> значение
@@ -29,6 +30,7 @@ type DependencyGraph struct {
 func NewDependencyGraph() *DependencyGraph {
 	return &DependencyGraph{
 		Graph:           make(map[string][]int),
+		Strategies:      make(map[int][]int),
 		Formulas:        make(map[int]string),
 		Compiled:        make(map[int]*govaluate.EvaluableExpression),
 		Variables:       make(map[string]float64),
@@ -37,6 +39,30 @@ func NewDependencyGraph() *DependencyGraph {
 		SubexprCompiled: make(map[string]*govaluate.EvaluableExpression),
 		SubexprWeights:  make(map[string]int),
 	}
+}
+
+// Добавляет стратегию с её формулами в граф зависимостей
+func (dg *DependencyGraph) AddStrategy(strategyID int, formulas map[int]string) error {
+	if strategyID <= 0 {
+		return fmt.Errorf("strategyID should be greater than 0")
+	}
+	if _, exists := dg.Strategies[strategyID]; exists {
+		return fmt.Errorf("strategy with id %d already exists", strategyID)
+	}
+
+	formulaIDs := make([]int, 0, len(formulas))
+
+	for formulaID, formula := range formulas {
+		if err := dg.AddFormula(formula, formulaID); err != nil {
+			return fmt.Errorf("failed to add formula %d for strategy %d: %w", formulaID, strategyID, err)
+		}
+		formulaIDs = append(formulaIDs, formulaID)
+	}
+
+	dg.Strategies[strategyID] = formulaIDs
+	fmt.Printf("Added strategy %d with formulas: %v\n", strategyID, formulaIDs)
+
+	return nil
 }
 
 // Добавляет формулу в граф зависимостей
@@ -113,6 +139,44 @@ func isFormulaContainsComparisonOperator(s string) bool {
 		}
 	}
 	return false
+}
+
+// удаляет стратегию вместе с связанными формулами и подвыражениями
+func (dg *DependencyGraph) RemoveStrategy(strategyID int) error {
+	formulaIDs, ok := dg.Strategies[strategyID]
+	if !ok {
+		return fmt.Errorf("strategy with id '%d' doesn't found", strategyID)
+	}
+
+	for _, formulaID := range formulaIDs {
+		usedElsewhere := false // на всякий случай проверка на использование формулы в других стратегиях
+		for sID, formulas := range dg.Strategies {
+			if sID == strategyID {
+				continue
+			}
+			for _, fID := range formulas {
+				if fID == formulaID {
+					usedElsewhere = true
+					break
+				}
+			}
+			if usedElsewhere {
+				break
+			}
+		}
+
+		if !usedElsewhere {
+			err := dg.RemoveFormula(formulaID)
+			if err != nil {
+				return fmt.Errorf("failed to remove formula %d for strategy %d: %w", formulaID, strategyID, err)
+			}
+		}
+	}
+
+	delete(dg.Strategies, strategyID)
+
+	fmt.Printf("Strategy with id %v deleted\n", strategyID)
+	return nil
 }
 
 // Удаляет формулу из графа и все связанные подвыражения
