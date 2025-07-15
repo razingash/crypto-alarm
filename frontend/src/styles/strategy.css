@@ -8,14 +8,24 @@
     padding: 20px;
     border-radius: 4px;
     max-height: calc(100vh - 255px - 90px);
+    overflow-y: auto;
 }
 
-.new_formula__core {
+.container__new_formula {
+    max-width: 200px;
+    width: 100%;
+}
+.condition__container {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
     align-items: center;
-    gap: 20px 50px;
+    width: 100%;
+    border-bottom: 1px solid var(--container-border-1);
+}
+
+.formula__changes {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .field__new_formula_errors {
@@ -23,8 +33,7 @@
     min-height: 2em;
 }
 
-/* UserStrategies */
-
+/* Strategies */
 .strategies__list {
     display: flex;
     align-items: center;
@@ -33,8 +42,28 @@
     justify-content: center;
 }
 
+.strategy__blank {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: -45%;
+}
+.strategy__not_established {
+    font-size: 35px;
+    border: 2px solid;
+    padding: 6px 12px;
+    border-radius: 9px;
+    opacity: 0.15;
+    -webkit-user-select: none;
+    user-select: none;
+}
 
 .strategy__item, .strategy__field {
+    position: relative;
     display: flex;
     flex-direction: column;
     row-gap: 12px;
@@ -65,6 +94,7 @@
     color: #fff;
 }
 .strategy__name {
+    z-index: 1;
     text-decoration: none;
     color: #fff;
 }
@@ -137,10 +167,6 @@
     cursor: pointer;
 }
 
-.button__show_more {
-
-}
-
 .strategy__manipulations {
     display: flex;
     justify-content: space-between;
@@ -158,6 +184,8 @@
 
 .strategy__create {
     display: flex;
+    align-items: center;
+    width: auto;
 }
 
 /* zipline */

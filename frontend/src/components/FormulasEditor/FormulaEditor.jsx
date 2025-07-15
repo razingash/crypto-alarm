@@ -1,36 +1,37 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import Keyboard from "./Keyboard";
 import FormulaInput from "./FormulaInput";
 /*
 - оптимизировать эту фигню - сделать чтобы базовый вариант спавнился тут а динамические кэшировались, чтобы клавиатура не лагала
 - сделать чтобы клава вылазила когда надо будет
 */
-const FormulaEditor = ({rawFormula, setRawFormula}) => {
+const FormulaEditor = ({rawFormulas, setRawFormula, deleteCondition, activeFormulaIndex, setActiveFormulaIndex}) => {
     const moveCursor = (direction) => {
-        const currentIndex = rawFormula.indexOf("\\textunderscore");
+        const currentFormula = [...rawFormulas[activeFormulaIndex]];
+        const currentIndex = currentFormula.indexOf("\\textunderscore");
         if (currentIndex === -1) return;
 
         let moveBy = 1;
 
         if (direction === 1) {
-            const nextToken = rawFormula[currentIndex + 1];
+            const nextToken = currentFormula[currentIndex + 1];
             if (["abs", "sqrt", "matrix", "frac", "^", '^2'].includes(nextToken)) {
                 moveBy = 2;
             }
         } else if (direction === -1) {
-            const tokenTwoLeft = rawFormula[currentIndex - 2];
+            const tokenTwoLeft = currentFormula[currentIndex - 2];
             if (["abs", "sqrt", "matrix", "frac", "^", '^2'].includes(tokenTwoLeft)) {
                 moveBy = 2;
             }
         }
 
         const newIndex = currentIndex + (direction * moveBy);
-        if (newIndex < 0 || newIndex >= rawFormula.length) return;
+        if (newIndex < 0 || newIndex >= currentFormula.length) return;
 
-        let newFormula = [...rawFormula];
+        const newFormula = [...currentFormula];
         newFormula.splice(currentIndex, 1);
         newFormula.splice(newIndex, 0, "\\textunderscore");
-        setRawFormula(newFormula);
+        setRawFormula(activeFormulaIndex, newFormula);
     };
 
     const moveCursorLeft = () => moveCursor(-1);
@@ -57,7 +58,7 @@ const FormulaEditor = ({rawFormula, setRawFormula}) => {
     };
 
     const insertToken = (token) => {
-        let newFormula = [...rawFormula];
+        let newFormula = [...rawFormulas[activeFormulaIndex]];
         const cursorIndex = newFormula.indexOf("\\textunderscore");
 
         if (token === "sqrt" || token === "abs") {
@@ -88,11 +89,11 @@ const FormulaEditor = ({rawFormula, setRawFormula}) => {
             newFormula.splice(cursorIndex, 0, token);
         }
 
-        setRawFormula(newFormula);
+        setRawFormula(activeFormulaIndex, newFormula);
     };
 
     const deleteToken = () => {
-        let newFormula = [...rawFormula];
+        let newFormula = [...rawFormulas[activeFormulaIndex]];
         const cursorIndex = newFormula.indexOf("\\textunderscore");
 
         if (cursorIndex === -1) return;
@@ -103,7 +104,7 @@ const FormulaEditor = ({rawFormula, setRawFormula}) => {
         if (tokenBefore === ',') {
             let matrixStart = -1;
             for (let i = cursorIndex - 2; i >= 0; i--) {
-                if (rawFormula[i] === 'matrix' && rawFormula[i + 1] === '(') {
+                if (rawFormulas[i] === 'matrix' && rawFormulas[i + 1] === '(') {
                     matrixStart = i;
                     break;
                 }
@@ -111,9 +112,9 @@ const FormulaEditor = ({rawFormula, setRawFormula}) => {
 
             if (matrixStart !== -1) {
                 const openIndex = matrixStart + 1;
-                const closeIndex = rawFormula.indexOf(')', cursorIndex);
+                const closeIndex = rawFormulas.indexOf(')', cursorIndex);
                 const outOfBounds = closeIndex === -1;
-                const isEmpty = !outOfBounds && isEmptyExpression(openIndex, closeIndex, rawFormula);
+                const isEmpty = !outOfBounds && isEmptyExpression(openIndex, closeIndex, rawFormulas);
 
                 if (isEmpty) { // удалить всю дробь
                     newFormula.splice(matrixStart, closeIndex - matrixStart + 1);
@@ -123,7 +124,7 @@ const FormulaEditor = ({rawFormula, setRawFormula}) => {
                     newFormula.splice(cursorIndex - 1, 0, '\\textunderscore');
                 }
 
-                setRawFormula(newFormula);
+                setRawFormula(activeFormulaIndex, newFormula);
                 return;
             }
         } else if (tokenBefore === ")") {
@@ -176,17 +177,18 @@ const FormulaEditor = ({rawFormula, setRawFormula}) => {
             newFormula.splice(cursorIndex - 1, 1);
         }
 
-        setRawFormula(newFormula);
+        setRawFormula(activeFormulaIndex, newFormula);
     };
 
     const isEmptyExpression = (openIndex, closeIndex, formula) => {
         if (closeIndex - openIndex <= 1) return true;
-
         const innerTokens = formula.slice(openIndex + 1, closeIndex);
         return innerTokens.every(token => token === ',');
     };
 
     const handleKeyPress = (key) => {
+        // защищает от ошибок при нажатии на кнопки, когда нет выражений
+        if (activeFormulaIndex == null || !rawFormulas[activeFormulaIndex]) return;
         if (key.token === "backspace") {
             deleteToken();
         } else if (key.token === "left") {
@@ -198,9 +200,24 @@ const FormulaEditor = ({rawFormula, setRawFormula}) => {
         }
     };
 
+    useEffect(() => { // костыль, помогает не ловить ошибки связаные с индексом при удаление выражений
+        if (rawFormulas.length === 0) {
+            setActiveFormulaIndex(null);
+        } else if (activeFormulaIndex >= rawFormulas.length) {
+            setActiveFormulaIndex(rawFormulas.length - 1);
+        }
+    }, [rawFormulas.length, activeFormulaIndex, setActiveFormulaIndex]);
+
     return (
         <>
-            <FormulaInput formula={rawFormula}/>
+            {rawFormulas.map((rawFormula, index) => (
+                <div className={"condition__container"} key={index} onClick={() => setActiveFormulaIndex(index)}>
+                    <svg className={"svg__trash_can"} onClick={() => deleteCondition(index)}>
+                        <use xlinkHref={"#icon_trash_can"}></use>
+                    </svg>
+                    <FormulaInput formula={rawFormula}/>
+                </div>
+            ))}
             <Keyboard onKeyPress={handleKeyPress}/>
         </>
     );

@@ -114,12 +114,22 @@ body {
     margin-left: 20px;
 }
 
-.svg__translator {
+.svg__pwa {
     width: 30px;
     height: 20px;
     fill: #fff;
     margin: 0 15px 0 10px;
     z-index: 1;
+}
+.svg__trash_can {
+    width: 50px;
+    height: 25px;
+    fill: var(--container-border-1);
+    margin: 0 10px;
+    cursor: pointer;
+}
+.svg__trash_can:hover {
+    fill: #ff3737;
 }
 
 .area__chart {

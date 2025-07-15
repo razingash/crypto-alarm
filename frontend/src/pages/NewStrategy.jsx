@@ -7,12 +7,13 @@ import {useNavigate} from "react-router-dom";
 
 const NewStrategy = () => {
     const navigate = useNavigate();
-    const [rawFormula, setRawFormula] = useState(["\\textunderscore"]);
+    const [rawFormula, setRawFormula] = useState([["\\textunderscore"]]);
+    const [activeFormulaIndex, setActiveFormulaIndex] = useState(0);
     const [formulaName, setFormulaName] = useState('');
     const [localError, setLocalError] = useState(null);
 
     const [fetchNewFormula, , newFormulaError] = useFetching(async (rawFormula, name) => {
-        return await StrategyService.createFormula(rawFormula, name)
+        return await StrategyService.createStrategy(rawFormula, name)
     }, 0, 1000)
 
     useEffect(() => {
@@ -32,14 +33,32 @@ const NewStrategy = () => {
         }
     };
 
+    const addNewCondition = () => {
+        setRawFormula(prev => [...prev, ["\\textunderscore"]]);
+        setActiveFormulaIndex(rawFormula.length);
+    };
+
     return (
         <div className={"section__main"}>
             <div className={"field__new_formula"}>
-                {<FormulaEditor rawFormula={rawFormula} setRawFormula={setRawFormula}/>}
-                <div className={"new_formula__core"}>
+                <div className={"container__new_formula"}>
                     <input className={"strategy__name__input"} placeholder={"input formula name..."}
                        type="text" maxLength={150} onChange={(e) => setFormulaName(e.target.value)}/>
-                    <div className="button__save strategy__create" onClick={sendNewFormula}>apply</div>
+                </div>
+                <FormulaEditor rawFormulas={rawFormula} activeFormulaIndex={activeFormulaIndex}
+                    setActiveFormulaIndex={setActiveFormulaIndex}
+                    setRawFormula={(index, newFormula) => {
+                        setRawFormula(prev => prev.map((f, i) => i === index ? newFormula : f));
+                    }}
+                    deleteCondition={(index) => {
+                        setRawFormula(prev => prev.filter((_, i) => i !== index));
+                    }}
+                />
+                <div className={"container__new_formula"}>
+                    <div className={"formula__changes"}>
+                        <div className="button__save strategy__create" onClick={addNewCondition}>add condition</div>
+                        <div className="button__save strategy__create" onClick={sendNewFormula}>apply</div>
+                    </div>
                     <div className={"field__new_formula_errors"}>
                         {localError && <div className={"cell__error"}>Notification: {localError}</div>}
                         {newFormulaError && <div className={"cell__error"}>Error: {newFormulaError?.error}</div>}

@@ -39,7 +39,7 @@ const Header = () => {
             </div>
             {!isPwaMode &&
                 <div className={"header__button__app"} onClick={handleInstall}>
-                    <svg className={"svg__translator"}>
+                    <svg className={"svg__pwa"}>
                         <use xlinkHref={"#download_app"}></use>
                     </svg>
                 </div>

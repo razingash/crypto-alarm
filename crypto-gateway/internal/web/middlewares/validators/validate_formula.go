@@ -218,7 +218,6 @@ func tokenize(expression string) ([]Token, []repositories.CryptoVariable, error)
 			match := re.FindString(expression)
 			if match != "" {
 				if pattern.Type == VARIABLE {
-					// Проверяем, является ли переменная допустимой
 					parts := strings.Split(match, "_")
 					if len(parts) != 2 { // неправильная переменная
 						return nil, nil, fmt.Errorf("incorrect variable")

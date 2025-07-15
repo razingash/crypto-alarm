@@ -24,13 +24,13 @@ const Strategy = () => {
         return await StrategyService.getStrategies({id: id})
     }, 0, 1000)
     const [updateStrategyData, , ] = useFetching(async (newData) => {
-        return await StrategyService.updateUserFormula(newData)
+        return await StrategyService.updateStrategy(newData)
     }, 0, 1000)
-    const [removeStrategy, , ] = useFetching(async () => {
-        return await StrategyService.deleteUserFormula(id)
+    const [removeStrategy, , ] = useFetching(async (conditionID=null) => {
+        return await StrategyService.deleteStrategyOrCondition(id, conditionID)
     }, 0, 1000)
     const [fetchStrategyHistory, isFormulaHistoryLoading, ] = useFetching(async () => {
-        return await StrategyService.getFormulaHistory(id, 1, prevCursor)
+        return await StrategyService.getStrategyHistory(id, 1, prevCursor)
     }, 1000, 1000)
 
     const loadPrevHistory = async () => {
@@ -109,6 +109,19 @@ const Strategy = () => {
             navigate("/strategies");
         } else {
             alert(`Error: Failed to remove formula ${response}`);
+        }
+    };
+
+    const handleRemoveCondition = async (formulaId) => {
+        const isConfirmed = window.confirm('Are you sure you want to delete this condition?');
+        if (!isConfirmed) return;
+
+        const response = await removeStrategy(formulaId);
+        if (response && response.status === 200) {
+            setStrategy(prev => ({
+                ...prev,
+                conditions: prev.conditions.filter(cond => cond.formula_id !== formulaId)
+            }));
         }
     };
 
@@ -247,8 +260,13 @@ const Strategy = () => {
                     <label className={"button__cancle"} htmlFor="strategy__checkbox">cancle</label>
                 </div>
                 <span className={"line-1"}></span>
-                {strategy.conditions.map((condition) => (
-                    <FormulaInput formula={condition.formula_raw}/>
+                {strategy.conditions.map((condition, index) => (
+                    <div className={"condition__container"} key={index}>
+                        {changeMod && <svg className={"svg__trash_can"} onClick={() => handleRemoveCondition(condition.formula_id)}>>
+                            <use xlinkHref={"#icon_trash_can"}></use>
+                        </svg>}
+                        <FormulaInput formula={condition.formula_raw}/>
+                    </div>
                 ))}
                 {historyData.length > 0 && (
                     <div className={"area__chart"}>

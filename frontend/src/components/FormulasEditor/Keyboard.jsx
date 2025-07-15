@@ -139,7 +139,7 @@ const Keyboard = ({onKeyPress}) => {
                     <div className={`label__item ${selectedIndex === -1 ? "choosed_label" : ""}`}
                          onClick={() => setSelectedIndex(-1)}>Currency
                     </div>
-                    {availableApi.length > 0 ? (
+                    {availableApi.length !== 0 ? (
                         Object.keys(availableApi).map((key, index) => (
                             <div key={key} className={`label__item ${selectedIndex === index+1 ? "choosed_label" : ""}`}
                                 onClick={() => setSelectedIndex(index+1)}> {key}

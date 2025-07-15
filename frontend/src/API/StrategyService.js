@@ -1,8 +1,7 @@
 import apiClient from "../hooks/useApiInterceptor";
 
 export default class StrategyService {
-    static async getKeyboard() {
-        // получает данные для клавиатуры
+    static async getKeyboard() { // получает данные для клавиатуры
         const response = await apiClient.get(`/triggers/keyboard`)
         return response.data
     }
@@ -10,20 +9,24 @@ export default class StrategyService {
         const response = await apiClient.get('/triggers/strategy', {params: params})
         return response.data
     }
-    static async getFormulaHistory(formula_id, page, prevCursor) {
+    static async getStrategyHistory(formula_id, page, prevCursor) {
         const response = await apiClient.get(`/triggers/strategy/history/${formula_id}`, {params: {page, prevCursor}})
         return response.data
     }
-    static async createFormula(rawFormula, name) {
-        const formula = rawFormulaToFormula(rawFormula);
-        rawFormula = rawFormula.filter(item => item !== "\\textunderscore").map(cleanKatexExpression).join('');
-        return await apiClient.post('/triggers/strategy', {formula, name, 'formula_raw': rawFormula});
+    static async createStrategy(rawFormulas, name) {
+        const conditions = rawFormulas.map(rawFormula => {
+            const formula = rawFormulaToFormula(rawFormula);
+            const formula_raw = rawFormula.filter(item => item !== "\\textunderscore").map(cleanKatexExpression).join('');
+            return {formula, formula_raw};
+        });
+        return await apiClient.post('/triggers/strategy', {name, conditions});
     }
-    static async updateUserFormula(data) { // data - словарь с formula_id и полями которые нужно изменить
+    static async updateStrategy(data) { // data - словарь с formula_id и полями которые нужно изменить
         return await apiClient.patch('/triggers/strategy', data)
     }
-    static async deleteUserFormula(strategy_id, formula_id=null) {
-        return await apiClient.delete(`/triggers/strategy/${strategy_id}/?formula_id=${formula_id}`)
+    static async deleteStrategyOrCondition(strategy_id, conditionID=null) {
+        // если указан formula_id то будет удалено только выражение, а не вся стратегия
+        return await apiClient.delete(`/triggers/strategy/${strategy_id}/?formula_id=${conditionID}`)
     }
 }
 

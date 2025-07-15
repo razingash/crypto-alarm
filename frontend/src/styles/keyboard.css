@@ -8,6 +8,10 @@
     color: #fff;
     align-content: center;
     height: 100%;
+    margin: 8px 0;
+}
+.formula__input > span {
+    margin: 0;
 }
 #cursor {
     display: inline-block;

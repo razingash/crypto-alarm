@@ -84,10 +84,13 @@ const Strategies = () => {
                                 <div>{strategy.last_triggered || "Never"}</div>
                             </div>
                         </div>
-                        {strategy.conditions.map((condition) => (
+                        {strategy.conditions.length > 0 ? strategy.conditions.map((condition) => (
                              <FormulaInput formula={condition.formula_raw}/>
-                        ))}
-                        <div className={"button__show_more"}></div>
+                        )) : (
+                            <div className={"strategy__blank"}>
+                                <div className={"strategy__not_established"}>Not Established</div>
+                            </div>
+                        )}
                     </div>
                     ))}
                 </div>

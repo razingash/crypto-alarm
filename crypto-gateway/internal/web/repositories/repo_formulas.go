@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"crypto-gateway/internal/web/db"
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -200,11 +201,11 @@ func GetStrategiesWithFormulas(limit int, page int, strategyID string) ([]Strate
 }
 
 func scanStrategies(rows pgx.Rows) ([]Strategy, bool, error) {
-	strategyMap := make(map[string]*Strategy)
+	strategiesMap := make(map[string]*Strategy)
 
 	for rows.Next() {
 		var s Strategy
-		var formula, formulaRaw, formulaID string
+		var formulaID, formula, formulaRaw sql.NullString
 
 		err := rows.Scan(
 			&s.Id, &s.Name, &s.Description, &s.IsNotified, &s.IsActive, &s.IsShuttedOff, &s.IsHistoryOn, &s.Cooldown,
@@ -214,23 +215,34 @@ func scanStrategies(rows pgx.Rows) ([]Strategy, bool, error) {
 			return nil, false, err
 		}
 
-		_, exists := strategyMap[s.Id]
-		if !exists {
-			s.Conditions = []StrategyExpression{}
-			strategyMap[s.Id] = &s
+		existing, ok := strategiesMap[s.Id]
+		if !ok {
+			existing = &Strategy{
+				Id:            s.Id,
+				Name:          s.Name,
+				Description:   s.Description,
+				IsNotified:    s.IsNotified,
+				IsActive:      s.IsActive,
+				IsShuttedOff:  s.IsShuttedOff,
+				IsHistoryOn:   s.IsHistoryOn,
+				Cooldown:      s.Cooldown,
+				LastTriggered: s.LastTriggered,
+				Conditions:    []StrategyExpression{},
+			}
+			strategiesMap[s.Id] = existing
 		}
 
-		if formula != "" && formulaRaw != "" {
-			strategyMap[s.Id].Conditions = append(strategyMap[s.Id].Conditions, StrategyExpression{
-				FormulaID:  formulaID,
-				Formula:    formula,
-				FormulaRaw: formulaRaw,
+		if formulaID.Valid {
+			existing.Conditions = append(existing.Conditions, StrategyExpression{
+				FormulaID:  formulaID.String,
+				Formula:    formula.String,
+				FormulaRaw: formulaRaw.String,
 			})
 		}
 	}
 
 	var strategies []Strategy
-	for _, s := range strategyMap {
+	for _, s := range strategiesMap {
 		strategies = append(strategies, *s)
 	}
 
