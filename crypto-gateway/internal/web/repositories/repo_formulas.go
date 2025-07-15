@@ -114,6 +114,38 @@ func GetFormulaById(formulaID int) string {
 	return formula
 }
 
+// заглушка, удалить позже
+func GetStrategyFormulasById(strategyID int) map[int]string {
+	rows, err := db.DB.Query(context.Background(), `
+		SELECT tf.id, tf.formula
+		FROM crypto_strategy_formula csf
+		JOIN trigger_formula tf ON csf.formula_id = tf.id
+		WHERE csf.strategy_id = $1;
+	`, strategyID)
+	if err != nil {
+		fmt.Printf("failed to query formulas for strategy %v: %v", strategyID, err.Error())
+		return nil
+	}
+	defer rows.Close()
+
+	result := make(map[int]string)
+	for rows.Next() {
+		var id int
+		var formula string
+		if err := rows.Scan(&id, &formula); err != nil {
+			fmt.Println("failed to scan row: %w", err)
+		}
+		result[id] = formula
+	}
+
+	if err := rows.Err(); err != nil {
+		fmt.Println(err.Error())
+		return nil
+	}
+
+	return result
+}
+
 func GetStrategiesWithFormulas(limit int, page int, strategyID string) ([]Strategy, bool, error) {
 	var strategies []Strategy
 	var hasNext bool
@@ -344,7 +376,7 @@ func SaveStrategy(name, description string, expressions []StrategyExpression, va
 	return strategyId, nil
 }
 
-func UpdateStrategyConditions(strategyID string, conditions []map[string]interface{}) (err error) {
+func UpdateStrategyConditions(strategyID int, conditions []map[string]interface{}) (err error) {
 	tx, err := db.DB.Begin(context.Background())
 	if err != nil {
 		return err
@@ -377,14 +409,14 @@ func UpdateStrategyConditions(strategyID string, conditions []map[string]interfa
 			return errExec
 		}
 		if cmdTag.RowsAffected() == 0 {
-			return fmt.Errorf("formula_id %s does not belong to strategy_id %s", formulaID, strategyID)
+			return fmt.Errorf("formula_id %v does not belong to strategy_id %v", formulaID, strategyID)
 		}
 	}
 
 	return nil
 }
 
-func UpdateStrategy(strategyID string, data map[string]interface{}) error {
+func UpdateStrategy(strategyID int, data map[string]interface{}) error {
 	var setClauses []string
 	var args []interface{}
 	argIndex := 1

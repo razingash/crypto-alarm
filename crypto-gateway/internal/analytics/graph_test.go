@@ -197,6 +197,63 @@ func TestAddFormula(t *testing.T) {
 	}
 }
 
+func TestAddStrategy(t *testing.T) {
+	tests := []struct {
+		name        string
+		setup       func(dg *DependencyGraph)
+		expectation func(t *testing.T, dg *DependencyGraph)
+	}{
+		{
+			name: "Main case", // нет смысла делать больше тестов, они в addFormula
+			setup: func(dg *DependencyGraph) {
+				dg.AddStrategy(1, map[int]string{1: "a+b*c-d/(k+c)>=100", 2: "a+b*c-d/c>=100"})
+			},
+			expectation: func(t *testing.T, dg *DependencyGraph) {
+				assert.ElementsMatch(t, []int{1, 2}, dg.Strategies[1])
+				assert.Equal(t, map[int]string{
+					1: "a+b*c-d/(k+c)>=100",
+					2: "a+b*c-d/c>=100",
+				}, dg.Formulas)
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dg := NewDependencyGraph()
+			tt.setup(dg)
+			tt.expectation(t, dg)
+			fmt.Println(dg.Strategies)
+		})
+	}
+}
+
+func TestRemoveStrategy(t *testing.T) {
+	tests := []struct {
+		name        string
+		setup       func(dg *DependencyGraph)
+		expectation func(t *testing.T, dg *DependencyGraph)
+	}{
+		{
+			name: "Result after removing the strategy",
+			setup: func(dg *DependencyGraph) {
+				dg.AddStrategy(1, map[int]string{1: "a+b*c-d/(k+c)>=100", 2: "a+b*c-d/c>=100"})
+				dg.RemoveStrategy(1)
+			},
+			expectation: func(t *testing.T, dg *DependencyGraph) {
+				assert.Equal(t, NewDependencyGraph(), dg)
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dg := NewDependencyGraph()
+			tt.setup(dg)
+			tt.expectation(t, dg)
+			fmt.Println(dg.Strategies)
+		})
+	}
+}
+
 func TestRemoveFormula(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -286,20 +343,16 @@ func TestUpdateVariablesTopologicalKahn(t *testing.T) {
 		{
 			name: "FullTest",
 			setup: func(dg *DependencyGraph) {
-				dg.AddFormula("a - b == 1000", 1)
-				dg.AddFormula("b + c == 100", 2)
-				dg.AddFormula("a - b + c < 200", 3)
-				dg.AddFormula("ETHBTC_priceChange < 1", 4)
+				dg.AddStrategy(1, map[int]string{1: "a - b == 1000", 2: "b + c == 100"})
+				dg.AddStrategy(2, map[int]string{3: "a - b + c < 200", 4: "ETHBTC_priceChange < 1"})
 			},
 			expectation: func(t *testing.T, dg *DependencyGraph) {
 				result := dg.UpdateVariablesTopologicalKahn(map[string]float64{"a": 1200, "b": 200, "c": -100, "ETHBTC_priceChange": -0.0003})
-
 				assert.Equal(t, float64(1200), dg.Variables["a"])
 				assert.Equal(t, float64(200), dg.Variables["b"])
 				assert.Equal(t, float64(-100), dg.Variables["c"])
 				assert.Equal(t, float64(-0.0003), dg.Variables["ETHBTC_priceChange"])
-				fmt.Println(dg.Variables)
-				assert.ElementsMatch(t, []int{1, 2, 4}, result)
+				assert.ElementsMatch(t, []int{1}, result)
 			},
 		},
 	}

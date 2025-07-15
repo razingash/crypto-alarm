@@ -24,26 +24,35 @@ type ApiUpdate struct {
 	History  *bool  `json:"history,omitempty"`
 }
 
-func GetActiveFormulas(ctx context.Context) ([]FormulaRecord, error) {
+func GetActiveStrategies(ctx context.Context) (map[int]map[int]string, error) {
 	rows, err := db.DB.Query(ctx, `
-        SELECT id, formula FROM trigger_formula WHERE is_active=true
-    `)
+		SELECT cs.id AS strategy_id, tf.id AS formula_id, tf.formula
+		FROM crypto_strategy cs
+		JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		JOIN trigger_formula tf ON csf.formula_id = tf.id
+		WHERE cs.is_active = true;
+	`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var formulas []FormulaRecord
+	result := make(map[int]map[int]string)
 
 	for rows.Next() {
-		var rec FormulaRecord
-		if err := rows.Scan(&rec.ID, &rec.Formula); err != nil {
+		var strategyID int
+		var formulaID int
+		var formula string
+		if err := rows.Scan(&strategyID, &formulaID, &formula); err != nil {
 			return nil, err
 		}
-		formulas = append(formulas, rec)
+		if _, ok := result[strategyID]; !ok {
+			result[strategyID] = make(map[int]string)
+		}
+		result[strategyID][formulaID] = formula
 	}
 
-	return formulas, nil
+	return result, nil
 }
 
 // получает необходимые апи, к которым нужно делать запрос в зависимости от актальности формул и компонентов
@@ -54,10 +63,10 @@ func GetActualComponents(ctx context.Context) (map[string]ActualComponentInfo, e
         JOIN trigger_component tc ON ca.id = tc.api_id
         JOIN crypto_params cp ON tc.parameter_id = cp.id
         JOIN trigger_formula_component tfc ON tfc.component_id = tc.id
-        JOIN trigger_formula tf ON tf.id = tfc.formula_id
+        JOIN crypto_strategy cs ON cs.id = tfc.formula_id
         WHERE ca.is_actual = true
           AND cp.is_active = true
-          AND tf.is_active = true
+          AND cs.is_active = true
         GROUP BY ca.api, ca.cooldown
     `)
 
@@ -88,11 +97,11 @@ func GetNeededFieldsFromEndpoint(ctx context.Context, endpoint string) (map[stri
         JOIN crypto_currencies cc ON tc.currency_id = cc.id
         JOIN crypto_api ca ON ca.id = tc.api_id
         JOIN trigger_formula_component tfc ON tfc.component_id = tc.id
-        JOIN trigger_formula tf ON tf.id = tfc.formula_id
+        JOIN crypto_strategy cs ON cs.id = tfc.formula_id
         WHERE ca.api = $1
           AND ca.is_actual = true
-          AND tf.is_active = true
-          AND tf.is_shutted_off = false
+          AND cs.is_active = true
+          AND cs.is_shutted_off = false
           AND cp.is_active = true
     `, endpoint)
 
@@ -212,13 +221,13 @@ func GetActualEndpointsWeight(ctx context.Context) (map[string]int, error) {
 
 	rows, err := db.DB.Query(ctx, `
 		SELECT ca.api,
-		       COALESCE((
-		           SELECT cah.weight
-		           FROM crypto_api_history cah
-		           WHERE cah.crypto_api_id = ca.id
-		           ORDER BY cah.created_at DESC
-		           LIMIT 1
-		       ), ca.base_weight) AS final_weight
+			COALESCE((
+			    SELECT cah.weight
+			    FROM crypto_api_history cah
+			    WHERE cah.crypto_api_id = ca.id
+			    ORDER BY cah.created_at DESC
+			    LIMIT 1
+			), ca.base_weight) AS final_weight
 		FROM crypto_api ca
 		WHERE ca.is_actual = true
 	`)

@@ -17,7 +17,7 @@ const Keyboard = ({onKeyPress}) => {
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
 
-    const [fetchKeyboard, isKeyboardLoading, ] = useFetching(async () => {
+    const [fetchKeyboard, isKeyboardLoading, KeyboardError] = useFetching(async () => {
         return await StrategyService.getKeyboard()
     }, 0, 1000)
 
@@ -25,7 +25,7 @@ const Keyboard = ({onKeyPress}) => {
 
     useEffect(() => {
         const loadData = async () => {
-            if (!isKeyboardLoading && availableApi.length === 0) {
+            if (!isKeyboardLoading && availableApi.length === 0 && !KeyboardError) {
                 const data = await fetchKeyboard();
                 if (data) {
                     data?.api && setAvailableApi(data.api)
@@ -139,12 +139,15 @@ const Keyboard = ({onKeyPress}) => {
                     <div className={`label__item ${selectedIndex === -1 ? "choosed_label" : ""}`}
                          onClick={() => setSelectedIndex(-1)}>Currency
                     </div>
-                    {availableApi &&
+                    {availableApi.length > 0 ? (
                         Object.keys(availableApi).map((key, index) => (
                             <div key={key} className={`label__item ${selectedIndex === index+1 ? "choosed_label" : ""}`}
                                 onClick={() => setSelectedIndex(index+1)}> {key}
                             </div>
-                        ))}
+                        ))
+                    ) : (
+                        <div className={"label__item__error"}>Connection Error</div>
+                    )}
                 </div>
                 {canScrollRight && (
                     <div className={"labels__right"} onClick={() => scrollToNearestElement("right")}>&#187;</div>
@@ -245,7 +248,11 @@ const Keyboard = ({onKeyPress}) => {
                     {filteredFields.map(item => (
                         <div key={item} className="dynamic_keyboard__item" onClick={() => setSelectedCurrency(item)}>{item}</div>
                     ))}
-                    {filteredFields.length === 0 && <div className="dynamic_keyboard__no_results">Nothing was found</div>}
+                    {KeyboardError ? (
+                        <div className={"dynamic_keyboard__no_results"}>Backend server is most likely offline</div>
+                    ) : (
+                        filteredFields.length === 0 && <div className="dynamic_keyboard__no_results">Nothing was found</div>
+                    )}
                 </div>
             </div>
             )}

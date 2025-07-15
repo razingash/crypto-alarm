@@ -71,7 +71,7 @@ func (o *BinanceAPIOrchestrator) Start(ctx context.Context) error {
 		o.checkBinanceResponse(nil)
 	}
 
-	o.LoadActiveFormulas(ctx)
+	o.LoadActiveStrategies(ctx)
 	if o.isBinanceOnline {
 		o.LaunchNeededAPI(ctx)
 	}
@@ -79,22 +79,21 @@ func (o *BinanceAPIOrchestrator) Start(ctx context.Context) error {
 	return nil
 }
 
-// выбирает формулы из trigger_formula у которых is_active=true и добавляет их в граф
-func (o *BinanceAPIOrchestrator) LoadActiveFormulas(ctx context.Context) {
-	fmt.Println("Loading active formulas in Graph...")
+// выбирает стратегии из crypto_strategy у которых is_active=true и добавляет их в граф
+func (o *BinanceAPIOrchestrator) LoadActiveStrategies(ctx context.Context) {
+	fmt.Println("Loading active strategies into Graph...")
 
-	formulas, err := GetActiveFormulas(ctx)
+	strategies, err := GetActiveStrategies(ctx)
 	if err != nil {
-		log.Printf("ошибка загрузки активных формул: %v\n", err)
+		log.Printf("ошибка загрузки активных стратегий: %v\n", err)
 		return
 	}
 
-	for _, f := range formulas {
-		if err := o.DependencyGraph.AddFormula(f.Formula, f.ID); err != nil {
-			appmetrics.ApplicationCriticalErrorsLogging(fmt.Sprintf("Failed to add formula %v with id %v to graph in LoadActiveFormulas", f.Formula, f.ID), err)
+	for strategyID, formulas := range strategies {
+		if err := o.DependencyGraph.AddStrategy(strategyID, formulas); err != nil {
+			appmetrics.ApplicationCriticalErrorsLogging(fmt.Sprintf("Failed to add strategy %v to graph in LoadActiveStrategies", strategyID), err)
 		}
 	}
-	fmt.Println("Graph построен для активных формул.")
 }
 
 // выбирает апи, которые нужны для получения актуальных данных в граф, и убирает ненужные
@@ -235,6 +234,7 @@ func (o *BinanceAPIOrchestrator) updateTickerCurrentPrice(ctx context.Context, c
 				appmetrics.ApplicationCriticalErrorsLogging("in updateTickerCurrentPrice - GetNeededFieldsFromEndpoint returned Error", err)
 			}
 			dataForGraph := extractDataFromTickerCurrentPrice(response, currencies)
+
 			triggeredFormulas := o.DependencyGraph.UpdateVariablesTopologicalKahn(dataForGraph)
 			if len(triggeredFormulas) > 0 {
 				result, variableValues := o.DependencyGraph.GetFormulasVariables(triggeredFormulas)

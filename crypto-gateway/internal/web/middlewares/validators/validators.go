@@ -1,4 +1,4 @@
-package field_validators
+package validators
 
 import "fmt"
 

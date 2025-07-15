@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto-gateway/internal/analytics"
 	"crypto-gateway/internal/web/repositories"
-	"strconv"
 )
 
 // всю эту фигню после тестов убрать, это лишний слой, + запросы в бд можно не делать
@@ -13,19 +12,13 @@ func deleteStrategyFromGraph(strategyID int) {
 	analytics.StOrchestrator.LaunchNeededAPI(context.Background())
 }
 
-func deleteFormulaFromGraph(formulaID int) {
-	analytics.StOrchestrator.DependencyGraph.RemoveFormula(formulaID)
+func addStrategyToGraph(strategyID int) {
+	analytics.StOrchestrator.DependencyGraph.AddStrategy(strategyID, repositories.GetStrategyFormulasById(strategyID))
 	analytics.StOrchestrator.LaunchNeededAPI(context.Background())
 }
 
-func addFormulaToGraph(formulaID int) {
-	analytics.StOrchestrator.DependencyGraph.AddFormula(repositories.GetFormulaById(formulaID), formulaID)
-	analytics.StOrchestrator.LaunchNeededAPI(context.Background())
-}
-
-func updateFormulaInGraph(formulaID string) {
-	id, _ := strconv.Atoi(formulaID)
-	analytics.StOrchestrator.DependencyGraph.RemoveFormula(id)
-	analytics.StOrchestrator.DependencyGraph.AddFormula(repositories.GetFormulaById(id), id)
+func updateStrategyInGraph(strategyID int) {
+	analytics.StOrchestrator.DependencyGraph.RemoveStrategy(strategyID)
+	analytics.StOrchestrator.DependencyGraph.AddStrategy(strategyID, repositories.GetStrategyFormulasById(strategyID))
 	analytics.StOrchestrator.LaunchNeededAPI(context.Background())
 }

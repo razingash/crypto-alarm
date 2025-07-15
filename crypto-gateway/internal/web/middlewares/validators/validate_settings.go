@@ -1,4 +1,4 @@
-package api_validators
+package validators
 
 import (
 	"crypto-gateway/internal/analytics"

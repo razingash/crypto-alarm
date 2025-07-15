@@ -65,6 +65,13 @@
     padding: 0 4px;
 }
 
+.label__item__error {
+    font-family: sans-serif;
+    user-select: none;
+    text-wrap-mode: nowrap;
+    padding: 0 4px;
+}
+
 .label__item:hover {
     color: var(--lines);
 }
@@ -319,6 +326,12 @@
 
 .dynamic_keyboard__no_results {
     margin-top: 5px;
+}
+
+.dynamic_keyboard__no_results {
+	margin-bottom: 8px;
+    border-bottom: 1px solid var(--blocked-element);
+    padding: 4px 10px;
 }
 
 @keyframes blink {

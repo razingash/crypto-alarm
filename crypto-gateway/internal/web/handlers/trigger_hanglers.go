@@ -97,7 +97,7 @@ func StrategyPost(c fiber.Ctx) error {
 }
 
 func StrategyPatch(c fiber.Ctx) error {
-	strategyID := c.Locals("strategyID").(string)
+	strategyID := c.Locals("strategyID").(int)
 	data := c.Locals("updateData").(map[string]interface{})
 
 	err := repositories.UpdateStrategy(strategyID, data)
@@ -132,21 +132,18 @@ func StrategyPatch(c fiber.Ctx) error {
 		}
 	}
 
-	/*
-		if _, hasFormula := data["formula"]; hasFormula {
-			go updateFormulaInGraph(strategyID)
-		}
-
-		if isActiveRaw, hasIsActive := data["is_active"]; hasIsActive {
-			if isActive, ok := isActiveRaw.(bool); ok {
-				id, _ := strconv.Atoi(strategyID)
-				if isActive {
-					go addFormulaToGraph(id)
-				} else {
-					go deleteFormulaFromGraph(id)
-				}
+	if _, hasFormula := data["formula"]; hasFormula {
+		go updateStrategyInGraph(strategyID)
+	}
+	if isActiveRaw, hasIsActive := data["is_active"]; hasIsActive {
+		if isActive, ok := isActiveRaw.(bool); ok {
+			if isActive {
+				go updateStrategyInGraph(strategyID)
+			} else {
+				go deleteStrategyFromGraph(strategyID)
 			}
-		}*/
+		}
+	}
 	return c.SendStatus(fiber.StatusOK)
 }
 
@@ -161,10 +158,10 @@ func StrategyDelete(c fiber.Ctx) error {
 
 	formulaIDstr := c.Query("formula_id")
 	if formulaIDstr == "" {
-		err2 := repositories.DeleteStrategyById(strategyID)
-		if err2 != nil {
+		err := repositories.DeleteStrategyById(strategyID)
+		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": err2.Error(),
+				"error": err.Error(),
 			})
 		}
 	} else {
@@ -174,16 +171,20 @@ func StrategyDelete(c fiber.Ctx) error {
 				"error": "Invalid formula ID",
 			})
 		}
-		err3 := repositories.DeleteFormulaById(formulaID)
-		if err3 != nil {
+		err := repositories.DeleteFormulaById(formulaID)
+		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "Invalid formula ID",
 			})
 		}
 	}
 
-	//id, _ := strconv.Atoi(StrategyID)
-	//go deleteFormulaFromGraph(id)
+	if formulaIDstr == "" { // удаление одной формулы из стратегии(обновление стратегии)
+		go updateStrategyInGraph(strategyID)
+	} else { // удаление стратегии
+		go deleteStrategyFromGraph(strategyID)
+	}
+
 	return c.SendStatus(fiber.StatusOK)
 }
 

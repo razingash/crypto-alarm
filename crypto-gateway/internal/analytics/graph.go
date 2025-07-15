@@ -17,7 +17,7 @@ import (
 
 type DependencyGraph struct {
 	Graph           map[string][]int                          // переменная -> формулы
-	Strategies      map[int][]int                             // ID стратегии -> список формул
+	Strategies      map[int][]int                             // ID стратегии -> список формул[ID формулы: формула]
 	Formulas        map[int]string                            // ID -> формула
 	Compiled        map[int]*govaluate.EvaluableExpression    // ID -> функция
 	Variables       map[string]float64                        // переменная -> значение
@@ -286,7 +286,7 @@ func (dg *DependencyGraph) RemoveVariablesIfNeeded(formulaID int) []string {
 }
 
 // алгоритм Кана (не учитывает циклические зависимости)
-// Обновляет сразу несколько переменных и пересчитывает только необходимые формулы
+// Обновляет сразу несколько переменных и пересчитывает только необходимые формулы, возвращая ID сработавших стратегий
 func (dg *DependencyGraph) UpdateVariablesTopologicalKahn(updates map[string]float64) []int {
 	fmt.Println("Updating variables with data:", updates)
 	for k, v := range updates {
@@ -346,7 +346,6 @@ func (dg *DependencyGraph) UpdateVariablesTopologicalKahn(updates map[string]flo
 				depExpr := dg.Compiled[depFid]
 				for _, definedSym := range depExpr.Vars() {
 					if definedSym == sym {
-						// fid зависит от depFid
 						inDegree[fid]++
 						dependents[depFid] = append(dependents[depFid], fid)
 					}
@@ -357,8 +356,8 @@ func (dg *DependencyGraph) UpdateVariablesTopologicalKahn(updates map[string]flo
 
 	for _, formulaID := range queue {
 		if _, err := dg.EvaluateFormula(formulaID); err != nil {
-			if strings.Contains(err.Error(), "No parameter") { // еще не все переменные доступны
-				continue // формула использует данные из разных апи, и не все из них установлены на момент EvaluateFormula()
+			if strings.Contains(err.Error(), "No parameter") {
+				continue
 			} else {
 				log.Printf("Ошибка вычисления формулы %d: %v\n", formulaID, err)
 			}
@@ -366,8 +365,28 @@ func (dg *DependencyGraph) UpdateVariablesTopologicalKahn(updates map[string]flo
 	}
 
 	triggered := dg.GetTriggeredFormulas(queue)
-	fmt.Println("Triggered formulas:", triggered)
-	return triggered
+	triggeredMap := make(map[int]struct{}, len(triggered))
+	for _, fid := range triggered {
+		triggeredMap[fid] = struct{}{}
+	}
+
+	// выборка стратегий у которых все формулы сработали
+	strategyTriggered := make([]int, 0)
+	for strategyID, formulaIDs := range dg.Strategies {
+		allTriggered := true
+		for _, fid := range formulaIDs {
+			if _, ok := triggeredMap[fid]; !ok {
+				allTriggered = false
+				break
+			}
+		}
+		if allTriggered {
+			strategyTriggered = append(strategyTriggered, strategyID)
+		}
+	}
+
+	fmt.Println("Triggered strategies:", strategyTriggered)
+	return strategyTriggered
 }
 
 // подставляет значение формулы с учетом кэша
