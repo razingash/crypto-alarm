@@ -234,12 +234,12 @@ func (o *BinanceAPIOrchestrator) updateTickerCurrentPrice(ctx context.Context, c
 				appmetrics.ApplicationCriticalErrorsLogging("in updateTickerCurrentPrice - GetNeededFieldsFromEndpoint returned Error", err)
 			}
 			dataForGraph := extractDataFromTickerCurrentPrice(response, currencies)
-
-			triggeredFormulas := o.DependencyGraph.UpdateVariablesTopologicalKahn(dataForGraph)
-			if len(triggeredFormulas) > 0 {
-				result, variableValues := o.DependencyGraph.GetFormulasVariables(triggeredFormulas)
+			triggeredStrategies := o.DependencyGraph.UpdateVariablesTopologicalKahn(dataForGraph)
+			fmt.Println(0, triggeredStrategies)
+			if len(triggeredStrategies) > 0 {
+				result, variableValues := o.DependencyGraph.GetStrategiesVariables(triggeredStrategies)
 				AddTriggerHistory(ctx, result, variableValues)
-				repositories.SendPushNotifications(triggeredFormulas, "TEST MESSAGE IN ORCHESTRATOR")
+				repositories.SendPushNotifications(triggeredStrategies, "TEST MESSAGE IN ORCHESTRATOR")
 			}
 		}
 	}
@@ -268,11 +268,11 @@ func (o *BinanceAPIOrchestrator) updatePriceChange24h(ctx context.Context, coold
 			}
 			dataForGraph := extractDataFromPriceChange24h(response, fields)
 
-			triggeredFormulas := o.DependencyGraph.UpdateVariablesTopologicalKahn(dataForGraph)
-			if len(triggeredFormulas) > 0 {
-				result, variableValues := o.DependencyGraph.GetFormulasVariables(triggeredFormulas)
+			triggeredStrategies := o.DependencyGraph.UpdateVariablesTopologicalKahn(dataForGraph)
+			if len(triggeredStrategies) > 0 {
+				result, variableValues := o.DependencyGraph.GetStrategiesVariables(triggeredStrategies)
 				AddTriggerHistory(ctx, result, variableValues)
-				repositories.SendPushNotifications(triggeredFormulas, "TEST MESSAGE IN ORCHESTRATOR")
+				repositories.SendPushNotifications(triggeredStrategies, "TEST MESSAGE IN ORCHESTRATOR")
 			}
 		}
 	}

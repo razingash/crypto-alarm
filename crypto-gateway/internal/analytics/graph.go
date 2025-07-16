@@ -22,7 +22,7 @@ type DependencyGraph struct {
 	Compiled        map[int]*govaluate.EvaluableExpression    // ID -> функция
 	Variables       map[string]float64                        // переменная -> значение
 	Cache           map[string]float64                        // кэш для промежуточных результатов - числовой
-	TriggerCache    map[string]bool                           // кэш для промежуточных результатов - булевый
+	TriggerCache    map[int]bool                              // кэш для формул: ID формулы -> булевое значение
 	SubexprCompiled map[string]*govaluate.EvaluableExpression // подвыражение -> компилированные подвыражения (сомнительная херня, можно сделать её списком ведь разницы нет?)
 	SubexprWeights  map[string]int                            // подвыражение -> кол-во повторов
 }
@@ -35,7 +35,7 @@ func NewDependencyGraph() *DependencyGraph {
 		Compiled:        make(map[int]*govaluate.EvaluableExpression),
 		Variables:       make(map[string]float64),
 		Cache:           make(map[string]float64),
-		TriggerCache:    make(map[string]bool),
+		TriggerCache:    make(map[int]bool),
 		SubexprCompiled: make(map[string]*govaluate.EvaluableExpression),
 		SubexprWeights:  make(map[string]int),
 	}
@@ -165,6 +165,7 @@ func (dg *DependencyGraph) RemoveStrategy(strategyID int) error {
 			}
 		}
 
+		delete(dg.TriggerCache, formulaID)
 		if !usedElsewhere {
 			err := dg.RemoveFormula(formulaID)
 			if err != nil {
@@ -186,6 +187,7 @@ func (dg *DependencyGraph) RemoveFormula(formulaID int) error {
 		return fmt.Errorf("formula with id '%d' doesn't found", formulaID)
 	}
 
+	delete(dg.TriggerCache, formulaID)
 	// list of variables that were used in the formula
 	expr, err := govaluate.NewEvaluableExpression(formula)
 	if err == nil {
@@ -234,11 +236,11 @@ func (dg *DependencyGraph) RemoveFormula(formulaID int) error {
 		}
 	}
 
-	fmt.Printf("Formula with id %v deleted\n", formulaID)
 	dg.RemoveVariablesIfNeeded(formulaID)
 	delete(dg.Formulas, formulaID)
 	delete(dg.Compiled, formulaID)
 
+	fmt.Printf("Formula with id %v deleted\n", formulaID)
 	return nil
 }
 
@@ -355,27 +357,28 @@ func (dg *DependencyGraph) UpdateVariablesTopologicalKahn(updates map[string]flo
 	}
 
 	for _, formulaID := range queue {
-		if _, err := dg.EvaluateFormula(formulaID); err != nil {
+		res, err := dg.EvaluateFormula(formulaID)
+		if err != nil {
 			if strings.Contains(err.Error(), "No parameter") {
 				continue
 			} else {
 				log.Printf("Ошибка вычисления формулы %d: %v\n", formulaID, err)
+				continue
 			}
 		}
+		if b, ok := res.(bool); ok {
+			dg.TriggerCache[formulaID] = b
+		} else { // костыль на случай ошибки (хотя её не может быть) | добавить лог для багов
+			dg.TriggerCache[formulaID] = false
+		}
 	}
-
-	triggered := dg.GetTriggeredFormulas(queue)
-	triggeredMap := make(map[int]struct{}, len(triggered))
-	for _, fid := range triggered {
-		triggeredMap[fid] = struct{}{}
-	}
-
+	fmt.Println(queue, dg.Formulas, dg.Variables, dg.TriggerCache)
 	// выборка стратегий у которых все формулы сработали
 	strategyTriggered := make([]int, 0)
 	for strategyID, formulaIDs := range dg.Strategies {
 		allTriggered := true
 		for _, fid := range formulaIDs {
-			if _, ok := triggeredMap[fid]; !ok {
+			if !dg.TriggerCache[fid] {
 				allTriggered = false
 				break
 			}
@@ -508,9 +511,7 @@ func (dg *DependencyGraph) IsFormulaTriggered(formulaID int) (bool, error) {
 		args[v] = val
 	}
 
-	key := getCanonicalCacheKey(args, &formulaID)
-
-	if cached, found := dg.TriggerCache[key]; found {
+	if cached, found := dg.TriggerCache[formulaID]; found {
 		return cached, nil
 	}
 
@@ -523,28 +524,35 @@ func (dg *DependencyGraph) IsFormulaTriggered(formulaID int) (bool, error) {
 		return false, fmt.Errorf("formula %d did not evaluate to bool, got %T", formulaID, raw)
 	}
 
-	dg.TriggerCache[key] = triggered
+	dg.TriggerCache[formulaID] = triggered
 	return triggered, nil
 }
 
-// возвращает подвязанные переменные для каждой формулы из списка ID
-func (dg *DependencyGraph) GetFormulasVariables(formulaIDs []int) (map[int][]string, map[string]float64) {
+// возвращает подвязанные переменные для каждой формулы в стратегии
+func (dg *DependencyGraph) GetStrategiesVariables(strategyIDs []int) (map[int][]string, map[string]float64) {
 	result := make(map[int][]string)
 	variableValues := make(map[string]float64)
 
-	for _, formulaID := range formulaIDs {
-		compiledExpr, ok := dg.Compiled[formulaID]
-		if !ok || compiledExpr == nil {
+	for _, strategyID := range strategyIDs {
+		formulaIDs, ok := dg.Strategies[strategyID]
+		if !ok {
 			continue
 		}
 
-		vars := compiledExpr.Vars()
-		result[formulaID] = vars
+		for _, formulaID := range formulaIDs {
+			compiledExpr, ok := dg.Compiled[formulaID]
+			if !ok || compiledExpr == nil {
+				continue
+			}
 
-		for _, v := range vars {
-			if val, ok := dg.Variables[v]; ok {
-				if _, exists := variableValues[v]; !exists {
-					variableValues[v] = val
+			vars := compiledExpr.Vars()
+			result[formulaID] = vars
+
+			for _, v := range vars {
+				if val, ok := dg.Variables[v]; ok {
+					if _, exists := variableValues[v]; !exists {
+						variableValues[v] = val
+					}
 				}
 			}
 		}

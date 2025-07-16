@@ -43,7 +43,7 @@ CREATE TABLE trigger_formula (
     formula_raw character varying NOT NULL
 );
 
-CREATE TABLE strategy_history (
+CREATE TABLE strategy_history ( -- адаптировать под прогон - чтобы тут были колебания от общего депозита, сейчас от неё нет смысла
     id BIGSERIAL PRIMARY KEY,
     formula_id integer NOT NULL REFERENCES trigger_formula(id) ON DELETE CASCADE,
     "timestamp" timestamp without time zone NOT NULL DEFAULT now(),
@@ -69,7 +69,7 @@ CREATE TABLE trigger_component (
 
 CREATE TABLE trigger_component_history (
     id BIGSERIAL PRIMARY KEY,
-    expression_id integer NOT NULL REFERENCES trigger_formula(id) ON DELETE CASCADE,
+    expression_id integer NOT NULL REFERENCES strategy_history(id) ON DELETE CASCADE,
     component_id integer NOT NULL REFERENCES trigger_component(id) ON DELETE CASCADE,
     value double precision NOT NULL
 );

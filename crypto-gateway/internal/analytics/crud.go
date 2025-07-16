@@ -59,15 +59,17 @@ func GetActiveStrategies(ctx context.Context) (map[int]map[int]string, error) {
 func GetActualComponents(ctx context.Context) (map[string]ActualComponentInfo, error) {
 	rows, err := db.DB.Query(ctx, `
         SELECT ca.api, ca.cooldown, COUNT(*) AS count
-        FROM crypto_api ca
-        JOIN trigger_component tc ON ca.id = tc.api_id
-        JOIN crypto_params cp ON tc.parameter_id = cp.id
-        JOIN trigger_formula_component tfc ON tfc.component_id = tc.id
-        JOIN crypto_strategy cs ON cs.id = tfc.formula_id
-        WHERE ca.is_actual = true
-          AND cp.is_active = true
-          AND cs.is_active = true
-        GROUP BY ca.api, ca.cooldown
+		FROM crypto_api ca
+		JOIN trigger_component tc ON ca.id = tc.api_id
+		JOIN crypto_params cp ON tc.parameter_id = cp.id
+		JOIN trigger_formula_component tfc ON tfc.component_id = tc.id
+		JOIN trigger_formula tf ON tf.id = tfc.formula_id
+		JOIN crypto_strategy_formula csf ON csf.formula_id = tf.id
+		JOIN crypto_strategy cs ON cs.id = csf.strategy_id
+		WHERE ca.is_actual = true
+		  AND cp.is_active = true
+		  AND cs.is_active = true
+		GROUP BY ca.api, ca.cooldown
     `)
 
 	if err != nil {
@@ -84,7 +86,6 @@ func GetActualComponents(ctx context.Context) (map[string]ActualComponentInfo, e
 		}
 		result[api] = ActualComponentInfo{Cooldown: cooldown, Count: count}
 	}
-
 	return result, nil
 }
 
@@ -92,17 +93,19 @@ func GetActualComponents(ctx context.Context) (map[string]ActualComponentInfo, e
 func GetNeededFieldsFromEndpoint(ctx context.Context, endpoint string) (map[string][]string, error) {
 	rows, err := db.DB.Query(ctx, `
         SELECT cc.currency, cp.parameter
-        FROM crypto_params cp
-        JOIN trigger_component tc ON tc.parameter_id = cp.id
-        JOIN crypto_currencies cc ON tc.currency_id = cc.id
-        JOIN crypto_api ca ON ca.id = tc.api_id
-        JOIN trigger_formula_component tfc ON tfc.component_id = tc.id
-        JOIN crypto_strategy cs ON cs.id = tfc.formula_id
-        WHERE ca.api = $1
-          AND ca.is_actual = true
-          AND cs.is_active = true
-          AND cs.is_shutted_off = false
-          AND cp.is_active = true
+		FROM crypto_params cp
+		JOIN trigger_component tc ON tc.parameter_id = cp.id
+		JOIN crypto_currencies cc ON tc.currency_id = cc.id
+		JOIN crypto_api ca ON ca.id = tc.api_id
+		JOIN trigger_formula_component tfc ON tfc.component_id = tc.id
+		JOIN trigger_formula tf ON tf.id = tfc.formula_id
+		JOIN crypto_strategy_formula csf ON csf.formula_id = tf.id
+		JOIN crypto_strategy cs ON cs.id = csf.strategy_id
+		WHERE ca.api = $1
+		  AND ca.is_actual = true
+		  AND cs.is_active = true
+		  AND cs.is_shutted_off = false
+		  AND cp.is_active = true;
     `, endpoint)
 
 	if err != nil {
@@ -124,6 +127,7 @@ func GetNeededFieldsFromEndpoint(ctx context.Context, endpoint string) (map[stri
 
 // записывает в историю сопутствующие данные сработавших триггеров
 func AddTriggerHistory(ctx context.Context, data map[int][]string, formulasValues map[string]float64) error {
+	fmt.Println(1, data, formulasValues)
 	tx, err := db.DB.Begin(ctx)
 	if err != nil {
 		return err
@@ -132,12 +136,12 @@ func AddTriggerHistory(ctx context.Context, data map[int][]string, formulasValue
 
 	now := time.Now().UTC()
 	for formulaID, variables := range data {
-		var triggerHistoryID int
+		var strategyHistoryID int
 		err := tx.QueryRow(ctx, `
-            INSERT INTO trigger_history (formula_id, timestamp, status)
+            INSERT INTO strategy_history (formula_id, timestamp, status)
             VALUES ($1, $2, true)
             RETURNING id
-        `, formulaID, now).Scan(&triggerHistoryID)
+        `, formulaID, now).Scan(&strategyHistoryID)
 		if err != nil {
 			return err
 		}
@@ -182,10 +186,11 @@ func AddTriggerHistory(ctx context.Context, data map[int][]string, formulasValue
 			}
 
 			_, err := tx.Exec(ctx, `
-                INSERT INTO trigger_component_history (trigger_history_id, component_id, value)
+                INSERT INTO trigger_component_history (expression_id, component_id, value)
                 VALUES ($1, $2, $3)
-            `, triggerHistoryID, comp.ComponentID, value)
+            `, strategyHistoryID, comp.ComponentID, value)
 			if err != nil {
+				fmt.Println(err)
 				return err
 			}
 		}

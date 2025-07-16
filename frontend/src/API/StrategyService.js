@@ -24,9 +24,9 @@ export default class StrategyService {
     static async updateStrategy(data) { // data - словарь с formula_id и полями которые нужно изменить
         return await apiClient.patch('/triggers/strategy', data)
     }
-    static async deleteStrategyOrCondition(strategy_id, conditionID=null) {
+    static async deleteStrategyOrCondition(strategy_id, conditionID) {
         // если указан formula_id то будет удалено только выражение, а не вся стратегия
-        return await apiClient.delete(`/triggers/strategy/${strategy_id}/?formula_id=${conditionID}`)
+        return await apiClient.delete(`/triggers/strategy/${strategy_id}/${conditionID ? `?formula_id=${conditionID}` : ''}`)
     }
 }
 

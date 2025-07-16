@@ -2,7 +2,7 @@ import {formatNumber, formatTimestamp} from "../../utils/utils";
 import AdaptiveLoading from "./AdaptiveLoading";
 import {XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Brush} from 'recharts';
 
-export const Chart = ({data}) => {
+export const ChartLinear = ({data}) => {
     if (!data || data.length === 0) {
         return <AdaptiveLoading/>;
     }
@@ -88,4 +88,4 @@ export const Chart = ({data}) => {
     );
 };
 
-export default Chart;
+export default ChartLinear;

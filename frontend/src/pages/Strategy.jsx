@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import {useFetching} from "../hooks/useFetching";
 import StrategyService from "../API/StrategyService";
 import '../styles/strategy.css'
-import Chart from "../components/UI/Chart";
+import ChartLinear from "../components/UI/ChartLinear";
 import {transformData} from "../utils/utils";
 import ErrorField from "../components/UI/ErrorField";
 import AdaptiveLoading from "../components/UI/AdaptiveLoading";
@@ -24,6 +24,7 @@ const Strategy = () => {
         return await StrategyService.getStrategies({id: id})
     }, 0, 1000)
     const [updateStrategyData, , ] = useFetching(async (newData) => {
+        console.log(newData)
         return await StrategyService.updateStrategy(newData)
     }, 0, 1000)
     const [removeStrategy, , ] = useFetching(async (conditionID=null) => {
@@ -87,7 +88,7 @@ const Strategy = () => {
         }
 
         const response = await updateStrategyData({
-            formula_id: strategy.id,
+            strategy_id: strategy.id,
             ...changedFields,
         });
 
@@ -271,7 +272,7 @@ const Strategy = () => {
                 {historyData.length > 0 && (
                     <div className={"area__chart"}>
                         <div className="field__chart chart__strategy_history">
-                            <Chart data={historyData} />
+                            <ChartLinear data={historyData} />
                             {!isFormulaHistoryLoading && hasNext && <svg onClick={loadPrevHistory} className="chart_additional_data" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
                                 <path
                                     d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.2 288 416 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-306.7 0L214.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z">

@@ -179,10 +179,10 @@ func StrategyDelete(c fiber.Ctx) error {
 		}
 	}
 
-	if formulaIDstr == "" { // удаление одной формулы из стратегии(обновление стратегии)
-		go updateStrategyInGraph(strategyID)
-	} else { // удаление стратегии
+	if formulaIDstr == "" { // удаление стратегии
 		go deleteStrategyFromGraph(strategyID)
+	} else { // удаление одной формулы из стратегии(обновление стратегии)
+		go updateStrategyInGraph(strategyID)
 	}
 
 	return c.SendStatus(fiber.StatusOK)

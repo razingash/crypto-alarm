@@ -12,11 +12,6 @@ func deleteStrategyFromGraph(strategyID int) {
 	analytics.StOrchestrator.LaunchNeededAPI(context.Background())
 }
 
-func addStrategyToGraph(strategyID int) {
-	analytics.StOrchestrator.DependencyGraph.AddStrategy(strategyID, repositories.GetStrategyFormulasById(strategyID))
-	analytics.StOrchestrator.LaunchNeededAPI(context.Background())
-}
-
 func updateStrategyInGraph(strategyID int) {
 	analytics.StOrchestrator.DependencyGraph.RemoveStrategy(strategyID)
 	analytics.StOrchestrator.DependencyGraph.AddStrategy(strategyID, repositories.GetStrategyFormulasById(strategyID))
