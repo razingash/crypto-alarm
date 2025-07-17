@@ -36,18 +36,26 @@ type RuntimeMetrics struct {
 	NumGC              uint32  `json:"num_gc"`
 	BinanceOverload    int     `json:"binance_overload"`
 }
+type AvailabilityMetric struct {
+	Timestamp   string `json:"timestamp"`
+	Level       string `json:"level"`
+	Caller      string `json:"caller"`
+	Message     string `json:"message"`
+	Type        int    `json:"type"`
+	Event       string `json:"event"`
+	IsAvailable int    `json:"isAvailable"`
+}
+
+// только message и error
+type DefaultErrors struct {
+	Timestamp string `json:"timestamp"`
+	Level     string `json:"level"`
+	Caller    string `json:"caller"`
+	Message   string `json:"message"`
+	Error     string `json:"error"`
+}
 
 func GetAvailabilityMetrics(c fiber.Ctx) error {
-	type AvailabilityMetric struct {
-		Timestamp   string `json:"timestamp"`
-		Level       string `json:"level"`
-		Caller      string `json:"caller"`
-		Message     string `json:"message"`
-		Type        int    `json:"type"`
-		Event       string `json:"event"`
-		IsAvailable int    `json:"isAvailable"`
-	}
-
 	file, err := os.Open("logs/AvailabilityMetrics.log")
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -83,18 +91,17 @@ func GetAvailabilityMetrics(c fiber.Ctx) error {
 	})
 }
 
-// получает информацию о критических ошибках(эта информация необходима для разработчиков)
-func GetErrorsInfo(c fiber.Ctx) error {
-	type ApplicationCriticalErrors struct {
-		Timestamp string `json:"timestamp"`
-		Level     string `json:"level"`
-		Caller    string `json:"caller"`
-		Message   string `json:"message"`
-		Event     string `json:"event"`
-		Error     string `json:"error"`
+// возвращает детальную информацию о логах
+func GetErrorsDetailedInfo(c fiber.Ctx) error {
+	logType := c.Query("type")
+	var filename string = "logs/AnalyticsServiceErrors.log"
+	switch logType {
+	case "application":
+		filename = "logs/ApplicationErrors.log"
+	case "binance":
+		filename = "logs/BinanceErrors.log"
 	}
-
-	file, err := os.Open("logs/ApplicationCriticalErrors.log")
+	file, err := os.Open(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -107,12 +114,12 @@ func GetErrorsInfo(c fiber.Ctx) error {
 	}
 	defer file.Close()
 
-	var metrics []ApplicationCriticalErrors
+	var metrics []DefaultErrors
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		var entry ApplicationCriticalErrors
+		var entry DefaultErrors
 		if err := json.Unmarshal([]byte(line), &entry); err == nil {
 			metrics = append(metrics, entry)
 		}
@@ -126,6 +133,44 @@ func GetErrorsInfo(c fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": metrics,
+	})
+}
+
+func GetErrorsBasicInfo(c fiber.Ctx) error {
+	files := []struct {
+		Type     string
+		Filename string
+	}{
+		{"analytics", "logs/AnalyticsServiceErrors.log"},
+		{"application", "logs/ApplicationErrors.log"},
+		{"binance", "logs/BinanceErrors.log"},
+	}
+
+	type FileInfo struct {
+		Type  string `json:"type"`
+		Lines int    `json:"lines"`
+	}
+
+	var result []FileInfo
+
+	for _, file := range files {
+		lines := 0
+		f, err := os.Open(file.Filename)
+		if err == nil {
+			scanner := bufio.NewScanner(f)
+			for scanner.Scan() {
+				lines++
+			}
+			f.Close()
+		}
+		result = append(result, FileInfo{
+			Type:  file.Type,
+			Lines: lines,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": result,
 	})
 }
 

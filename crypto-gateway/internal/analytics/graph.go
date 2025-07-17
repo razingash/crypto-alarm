@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"crypto-gateway/internal/appmetrics"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
@@ -54,6 +55,7 @@ func (dg *DependencyGraph) AddStrategy(strategyID int, formulas map[int]string) 
 
 	for formulaID, formula := range formulas {
 		if err := dg.AddFormula(formula, formulaID); err != nil {
+			appmetrics.AnalyticsServiceLogging(3, fmt.Sprintf("failed to add formula %v in AddStrategy()", formula), err)
 			return fmt.Errorf("failed to add formula %d for strategy %d: %w", formulaID, strategyID, err)
 		}
 		formulaIDs = append(formulaIDs, formulaID)
@@ -117,6 +119,7 @@ func (dg *DependencyGraph) AddFormula(formula string, formulaID int) error {
 		if _, ok := dg.SubexprCompiled[sub]; !ok {
 			subExprCompiled, err := govaluate.NewEvaluableExpression(sub)
 			if err != nil {
+				appmetrics.AnalyticsServiceLogging(2, fmt.Sprintf("warning: failed to compile subexpression '%s'", sub), err)
 				fmt.Printf("warning: failed to compile subexpression '%s': %v\n", sub, err)
 				continue
 			}
@@ -145,6 +148,7 @@ func isFormulaContainsComparisonOperator(s string) bool {
 func (dg *DependencyGraph) RemoveStrategy(strategyID int) error {
 	formulaIDs, ok := dg.Strategies[strategyID]
 	if !ok {
+		appmetrics.AnalyticsServiceLogging(2, fmt.Sprintf("Strange Error: strategy with id '%d' doesn't found", strategyID), nil)
 		return fmt.Errorf("strategy with id '%d' doesn't found", strategyID)
 	}
 
@@ -169,6 +173,7 @@ func (dg *DependencyGraph) RemoveStrategy(strategyID int) error {
 		if !usedElsewhere {
 			err := dg.RemoveFormula(formulaID)
 			if err != nil {
+				appmetrics.AnalyticsServiceLogging(3, fmt.Sprintf("failed to remove formula %v for strategy %v", formulaID, strategyID), err)
 				return fmt.Errorf("failed to remove formula %d for strategy %d: %w", formulaID, strategyID, err)
 			}
 		}
@@ -184,6 +189,7 @@ func (dg *DependencyGraph) RemoveStrategy(strategyID int) error {
 func (dg *DependencyGraph) RemoveFormula(formulaID int) error {
 	formula, ok := dg.Formulas[formulaID]
 	if !ok {
+		appmetrics.AnalyticsServiceLogging(2, fmt.Sprintf("formula with id '%d' doesn't found", formulaID), nil)
 		return fmt.Errorf("formula with id '%d' doesn't found", formulaID)
 	}
 
@@ -362,17 +368,19 @@ func (dg *DependencyGraph) UpdateVariablesTopologicalKahn(updates map[string]flo
 			if strings.Contains(err.Error(), "No parameter") {
 				continue
 			} else {
+				appmetrics.AnalyticsServiceLogging(2, fmt.Sprintf("Error while calculating the formula %v", formulaID), err)
 				log.Printf("Ошибка вычисления формулы %d: %v\n", formulaID, err)
 				continue
 			}
 		}
 		if b, ok := res.(bool); ok {
 			dg.TriggerCache[formulaID] = b
-		} else { // костыль на случай ошибки (хотя её не может быть) | добавить лог для багов
+		} else { // костыль на случай ошибки (хотя её не может быть)
+			appmetrics.AnalyticsServiceLogging(1, "Problems with TriggerCache, when cache for formula isn't available, although it should in UpdateVariablesTopologicalKahn", nil)
 			dg.TriggerCache[formulaID] = false
 		}
 	}
-	fmt.Println(queue, dg.Formulas, dg.Variables, dg.TriggerCache)
+
 	// выборка стратегий у которых все формулы сработали
 	strategyTriggered := make([]int, 0)
 	for strategyID, formulaIDs := range dg.Strategies {
@@ -396,6 +404,7 @@ func (dg *DependencyGraph) UpdateVariablesTopologicalKahn(updates map[string]flo
 func (dg *DependencyGraph) EvaluateFormula(formulaID int) (interface{}, error) {
 	expr, ok := dg.Compiled[formulaID]
 	if !ok {
+		appmetrics.AnalyticsServiceLogging(2, fmt.Sprintf("Strange Error: formula %d not compiled", formulaID), nil)
 		return nil, fmt.Errorf("formula %d not compiled", formulaID)
 	}
 
@@ -410,6 +419,7 @@ func (dg *DependencyGraph) EvaluateFormula(formulaID int) (interface{}, error) {
 			if fid == formulaID {
 				val, err := dg.EvaluateSubexpression(subexpr)
 				if err != nil {
+					appmetrics.AnalyticsServiceLogging(3, fmt.Sprintf("error in subexpression %s", subexpr), err)
 					return nil, fmt.Errorf("error in subexpression %s: %v", subexpr, err)
 				}
 				subexprValues[subexpr] = val
@@ -424,6 +434,7 @@ func (dg *DependencyGraph) EvaluateFormula(formulaID int) (interface{}, error) {
 
 	result, err := expr.Evaluate(subexprValues)
 	if err != nil {
+		appmetrics.AnalyticsServiceLogging(2, fmt.Sprintf("evaluation failed for formula %v", formulaID), err)
 		return nil, fmt.Errorf("evaluation failed for formula %d: %v", formulaID, err)
 	}
 
@@ -434,6 +445,7 @@ func (dg *DependencyGraph) EvaluateFormula(formulaID int) (interface{}, error) {
 	case bool:
 		return v, nil
 	default:
+		appmetrics.AnalyticsServiceLogging(2, fmt.Sprintf("formula %d evaluated to unsupported type %T", formulaID, result), nil)
 		return nil, fmt.Errorf("formula %d evaluated to unsupported type %T", formulaID, result)
 	}
 }
@@ -485,6 +497,7 @@ func (dg *DependencyGraph) GetTriggeredFormulas(formulaIDs []int) []int {
 	for _, fid := range formulaIDs {
 		ok, err := dg.IsFormulaTriggered(fid)
 		if err != nil {
+			appmetrics.AnalyticsServiceLogging(2, fmt.Sprintf("failed to check trigger for %d", fid), err)
 			fmt.Printf("warning: failed to check trigger for %d: %v\n", fid, err)
 			continue
 		}

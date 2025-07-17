@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto-gateway/config"
 	"crypto-gateway/internal/analytics"
+	"crypto-gateway/internal/appmetrics"
 	"crypto-gateway/internal/web/db"
 	"encoding/json"
 	"fmt"
@@ -31,6 +32,7 @@ func main() {
 	config.LoadConfig()
 
 	if err := fillCryptoModels(); err != nil {
+		appmetrics.AnalyticsServiceLogging(4, "fillCryptoModels failed", err)
 		fmt.Println("fillCryptoModels failed: %w", err)
 	} else {
 		fmt.Println("Initialization completed")
@@ -47,17 +49,21 @@ func fillCryptoModels() error {
 
 	data, err := getInitialDataParams(ctx, binAPI)
 	if err != nil {
+		appmetrics.AnalyticsServiceLogging(4, "getInitialDataParams error", err)
 		return fmt.Errorf("getInitialDataParams: %w", err)
 	}
 	if err := initializeCryptoModels(ctx, db.DB, data); err != nil {
+		appmetrics.AnalyticsServiceLogging(4, "initializeCryptoModels error", err)
 		return fmt.Errorf("initializeCryptoModels: %w", err)
 	}
 
 	if err := getValidCurrencies(ctx, db.DB, binAPI); err != nil {
+		appmetrics.AnalyticsServiceLogging(4, "getValidCurrencies error", err)
 		return fmt.Errorf("getValidCurrencies: %w", err)
 	}
 
 	if err := createTriggerComponents(ctx, db.DB); err != nil {
+		appmetrics.AnalyticsServiceLogging(4, "createTriggerComponents error", err)
 		return fmt.Errorf("createTriggerComponents: %w", err)
 	}
 	return nil

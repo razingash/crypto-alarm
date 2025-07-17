@@ -1,6 +1,8 @@
 package analytics
 
 import (
+	"crypto-gateway/internal/appmetrics"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -68,6 +70,7 @@ func (c *BinanceAPIController) processQueue() {
 			c.Mu.Unlock()
 
 			if err := req.fn(); err != nil {
+				appmetrics.AnalyticsServiceLogging(2, "Error executing queued request", err)
 				log.Printf("Error executing queued request: %v", err)
 			}
 
@@ -81,8 +84,9 @@ func (c *BinanceAPIController) processQueue() {
 // Управляет лимитом и выполняет запрос. Если лимит превышен, запрос ставится в очередь.
 func (c *BinanceAPIController) RequestWithLimit(weight int, fn RequestFunc) error {
 	c.Mu.Lock()
-	if c.CurrentWeight+weight > c.MaxWeight {
-		log.Printf("[WARN] API limit reached. Current weight: %d", c.CurrentWeight)
+	if c.CurrentWeight+weight > c.MaxWeight { // PUSH уведомление добавить
+		appmetrics.AnalyticsServiceLogging(2, fmt.Sprintf("API limit reached. Current weight: %d", c.CurrentWeight), nil)
+		log.Printf("API limit reached. Current weight: %d", c.CurrentWeight)
 
 		req := queuedRequest{fn: fn, weight: weight}
 		c.queue <- req

@@ -8,13 +8,15 @@
 }
 
 .errors__list {
-
+    display: flex;
+    flex-direction: column;
+    row-gap: 20px;
 }
 
 .errors__item {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 2px;
 }
 
 .errors__item__header {
@@ -125,29 +127,29 @@
 }
 
 
-#errors_reveal, .checkbox_details__info {
+.checkbox__errors_reveal, .checkbox_details__info {
     display: none;
 }
-#errors_reveal:checked ~ .errors__details {
+.checkbox__errors_reveal:checked ~ .errors__details {
     padding: 10px;
     height: auto;
 }
-#errors_reveal ~ .errors__details > div {
+.checkbox__errors_reveal ~ .errors__details > div {
     opacity: 0;
     transform: translateY(-200px);
     transition: 1.5s ease;
 }
-#errors_reveal:checked ~ .errors__details > div {
+.checkbox__errors_reveal:checked ~ .errors__details > div {
     opacity: 1;
     transform: translateY(0);
 }
-#errors_reveal:checked + .errors__item__header .svg_errors__reveal_exit {
+.checkbox__errors_reveal:checked + .errors__item__header .svg_errors__reveal_exit {
     display: flex;
 }
-#errors_reveal:checked + .errors__item__header .svg_errors__reveal {
+.checkbox__errors_reveal:checked + .errors__item__header .svg_errors__reveal {
     display: none;
 }
-#errors_reveal:checked + .errors__item__header .svg_errors__reveal_exit {
+.checkbox__errors_reveal:checked + .errors__item__header .svg_errors__reveal_exit {
     fill: var(--blocked-element);
 }
 .checkbox_details__info:checked + .errors__details__core {

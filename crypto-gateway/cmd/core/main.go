@@ -71,6 +71,7 @@ func main() {
 		defer shutdownCancel()
 
 		if err := app.Shutdown(); err != nil {
+			appmetrics.AnalyticsServiceLogging(4, "Error during server shutdown", err)
 			log.Printf("Error during server shutdown: %v", err)
 		}
 
@@ -80,6 +81,7 @@ func main() {
 
 	log.Println("Server started on port 8001")
 	if err := app.Listen(":8001"); err != nil {
+		appmetrics.AnalyticsServiceLogging(4, "Server encountered an error", err)
 		log.Printf("Server encountered an error: %v", err)
 	}
 }

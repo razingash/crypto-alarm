@@ -85,13 +85,14 @@ func (o *BinanceAPIOrchestrator) LoadActiveStrategies(ctx context.Context) {
 
 	strategies, err := GetActiveStrategies(ctx)
 	if err != nil {
+		appmetrics.AnalyticsServiceLogging(4, "Error while loading active strategies", err)
 		log.Printf("ошибка загрузки активных стратегий: %v\n", err)
 		return
 	}
 
 	for strategyID, formulas := range strategies {
 		if err := o.DependencyGraph.AddStrategy(strategyID, formulas); err != nil {
-			appmetrics.ApplicationCriticalErrorsLogging(fmt.Sprintf("Failed to add strategy %v to graph in LoadActiveStrategies", strategyID), err)
+			appmetrics.AnalyticsServiceLogging(4, fmt.Sprintf("Failed to add strategy %v to graph in LoadActiveStrategies", strategyID), err)
 		}
 	}
 }
@@ -103,7 +104,7 @@ func (o *BinanceAPIOrchestrator) LaunchNeededAPI(ctx context.Context) {
 	data, err := GetActualComponents(ctx)
 	fmt.Println(data)
 	if err != nil {
-		appmetrics.ApplicationCriticalErrorsLogging("GetActualComponents returned error in LaunchNeededAPI function", err)
+		appmetrics.AnalyticsServiceLogging(4, "GetActualComponents returned error in LaunchNeededAPI function", err)
 	}
 
 	o.mu.Lock()
@@ -185,6 +186,7 @@ func (o *BinanceAPIOrchestrator) launchAPI(ctx context.Context, api string, cool
 	case "/v3/ping":
 		go o.checkAPIStatusLoop(cctx, cooldown)
 	default:
+		appmetrics.AnalyticsServiceLogging(2, fmt.Sprintf("Unknown API task: %s\n", api), nil)
 		fmt.Printf("Unknown API task: %s\n", api)
 	}
 }
@@ -231,7 +233,7 @@ func (o *BinanceAPIOrchestrator) updateTickerCurrentPrice(ctx context.Context, c
 
 			currencies, err := GetNeededFieldsFromEndpoint(ctx, "/v3/ticker/price")
 			if err != nil {
-				appmetrics.ApplicationCriticalErrorsLogging("in updateTickerCurrentPrice - GetNeededFieldsFromEndpoint returned Error", err)
+				appmetrics.AnalyticsServiceLogging(4, "in updateTickerCurrentPrice - GetNeededFieldsFromEndpoint returned Error", err)
 			}
 			dataForGraph := extractDataFromTickerCurrentPrice(response, currencies)
 			triggeredStrategies := o.DependencyGraph.UpdateVariablesTopologicalKahn(dataForGraph)
@@ -264,7 +266,7 @@ func (o *BinanceAPIOrchestrator) updatePriceChange24h(ctx context.Context, coold
 
 			fields, err := GetNeededFieldsFromEndpoint(ctx, "/v3/ticker/24hr")
 			if err != nil {
-				appmetrics.ApplicationCriticalErrorsLogging("in updatePriceChange24h - GetNeededFieldsFromEndpoint returned Error", err)
+				appmetrics.AnalyticsServiceLogging(4, "in updatePriceChange24h - GetNeededFieldsFromEndpoint returned Error", err)
 			}
 			dataForGraph := extractDataFromPriceChange24h(response, fields)
 
@@ -325,7 +327,7 @@ func extractDataFromPriceChange24h(rawData []byte, fields map[string][]string) m
 	var dataset []map[string]interface{}
 	err := json.Unmarshal(rawData, &dataset)
 	if err != nil {
-		appmetrics.ApplicationCriticalErrorsLogging("ERROR IN extractDataFromPriceChange24h", err)
+		appmetrics.AnalyticsServiceLogging(4, "Error in extractDataFromPriceChange24h", err)
 	}
 
 	datasetDict := make(map[string]map[string]interface{})
@@ -365,7 +367,7 @@ func extractDataFromTickerCurrentPrice(rawData []byte, currencies map[string][]s
 	var dataset []map[string]interface{}
 	err := json.Unmarshal(rawData, &dataset)
 	if err != nil {
-		appmetrics.ApplicationCriticalErrorsLogging("ERROR IN extractDataFromPriceChange24h", err)
+		appmetrics.AnalyticsServiceLogging(4, "Error in extractDataFromPriceChange24h", err)
 	}
 	datasetDict := make(map[string]map[string]interface{})
 	for _, data := range dataset {

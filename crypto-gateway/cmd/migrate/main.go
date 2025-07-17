@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto-gateway/config"
+	"crypto-gateway/internal/appmetrics"
 	"fmt"
 	"log"
 	"os"
@@ -19,10 +20,12 @@ func main() {
 	ctx := context.Background()
 
 	if err := EnsureDatabaseExists(ctx); err != nil {
+		appmetrics.AnalyticsServiceLogging(4, "Could not ensure DB exists", err)
 		log.Fatalf("Could not ensure DB: %v", err)
 	}
 
 	if err := MakeMigrations(); err != nil {
+		appmetrics.AnalyticsServiceLogging(4, "Migration failed", err)
 		log.Fatalf("Migration failed: %v", err)
 	}
 

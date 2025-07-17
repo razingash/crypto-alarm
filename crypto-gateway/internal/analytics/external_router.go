@@ -120,8 +120,7 @@ func (api *BinanceAPI) Get(ctx context.Context, endpoint string, endpointExpecte
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			appmetrics.DefaultLogging(2, fmt.Sprintf("BINANCE ERROR: status %d, body: %s", resp.StatusCode, string(responseBody)))
-			log.Printf("BINANCE ERROR: status %d, body: %s", resp.StatusCode, string(responseBody))
+			appmetrics.BinanceErrorsLogging(2, fmt.Sprintf("status %d, body: %s", resp.StatusCode, string(responseBody)), err)
 			return fmt.Errorf("bad status code: %d", resp.StatusCode)
 		}
 

@@ -5,8 +5,12 @@ export default class MetricsService {
         const response = await apiClient.get("/metrics/availability/");
         return response.data
     }
-    static async getCriticalErrorLogs() {
-        const response = await apiClient.get("/metrics/errors/");
+    static async getDetailedLogs(logsType) {
+        const response = await apiClient.get(`/metrics/detailed/?type=${logsType}`);
+        return response.data
+    }
+    static async getBasicLogs() {
+        const response = await apiClient.get("/metrics/basic/");
         return response.data
     }
     static async getStaticMetrics() {

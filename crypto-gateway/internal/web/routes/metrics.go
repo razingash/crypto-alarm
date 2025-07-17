@@ -39,7 +39,8 @@ func SetupMetricsRoutes(app *fiber.App) {
 
 	group.Get("/availability", handlers.GetAvailabilityMetrics)
 	group.Get("/info", handlers.GetStaticMetrics)
-	group.Get("/errors", handlers.GetErrorsInfo)
+	group.Get("/detailed", handlers.GetErrorsDetailedInfo)
+	group.Get("/basic", handlers.GetErrorsBasicInfo)
 	group.Get("/binance-api-weight", handlers.GetBinanceApiWeightMetrics)
 
 	group.Get("/ws", func(c fiber.Ctx) error {
