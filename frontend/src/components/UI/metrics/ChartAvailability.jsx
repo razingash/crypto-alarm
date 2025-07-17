@@ -1,5 +1,6 @@
 import React from 'react';
 import {Area, AreaChart, CartesianGrid, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {formatNumber, formatTimestamp} from "../../../utils/utils";
 
 const ChartAvailability = ({ data }) => {
     let chartData = data.map((entry) => ({
@@ -80,6 +81,21 @@ const ChartAvailability = ({ data }) => {
         });
     }
 
+    const CustomTooltip = ({active, payload, label}) => {
+        if (!active || !payload || payload.length === 0) return null;
+
+        return (
+            <div className={"chart__tooltip"}>
+                <p style={{marginBottom: 5}}>{formatTimestamp(label)}</p>
+                {payload.map((entry) => (
+                    <p className={"tooltip__item"} key={entry.name} style={{color: entry.color}}>
+                        {entry.name}: {formatNumber(entry.value)}
+                    </p>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <div className={"field__metric__default metric__chart__full"}>
             <div className={"metric__header__default"}>Webserver and Binance availability</div>
@@ -89,7 +105,10 @@ const ChartAvailability = ({ data }) => {
                     <XAxis dataKey="timestamp" tickFormatter={(tick) => new Date(tick).toLocaleTimeString()}/>
                     <YAxis tick={false} yAxisId="web" domain={[1, 2]} ticks={[1, 2]} />
                     <YAxis tick={false} yAxisId="bin" domain={[-1, 0]} ticks={[-1, 0]} hide />
-                    <Tooltip />
+                    <Tooltip
+                        content={<CustomTooltip/>}
+                        formatter={(value, key) => [formatNumber(value), key]}
+                    />
 
                     {binanceIntervals.map(({ start, end, available }, index) => (
                         <ReferenceArea key={index} x1={start} x2={end} y1={-1} y2={0}

@@ -25,24 +25,10 @@ export const ChartLinear = ({data}) => {
         if (!active || !payload || payload.length === 0) return null;
 
         return (
-            <div style={{
-                backgroundColor: '#333',
-                color: '#fff',
-                padding: 10,
-                borderRadius: 5
-            }}>
+            <div className={"chart__tooltip"}>
                 <p style={{marginBottom: 5}}>{formatTimestamp(label)}</p>
                 {payload.map((entry) => (
-                    <p
-                        key={entry.name}
-                        style={{
-                            color: colors[entry.name] || '#fff',
-                            backgroundColor: '#222',
-                            padding: '2px 4px',
-                            margin: 0,
-                            borderRadius: 3
-                        }}
-                    >
+                    <p className={"tooltip__item"} key={entry.name} style={{color: colors[entry.name]}}>
                         {entry.name}: {formatNumber(entry.value)}
                     </p>
                 ))}

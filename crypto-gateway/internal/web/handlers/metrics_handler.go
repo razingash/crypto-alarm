@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"crypto-gateway/internal/analytics"
+	"crypto-gateway/internal/appmetrics"
 	"crypto-gateway/internal/web/db"
 	"encoding/json"
 	"fmt"
@@ -18,6 +19,11 @@ import (
 	"github.com/shirou/gopsutil/mem"
 	"github.com/shirou/gopsutil/process"
 )
+
+type RuntimePayload struct {
+	Metrics   RuntimeMetrics            `json:"metrics"`
+	LoadAvg60 []appmetrics.LoadAverages `json:"load_avg_60"`
+}
 
 type RuntimeMetrics struct {
 	MemAllocMB         uint64  `json:"mem_alloc_mb"`
@@ -178,7 +184,14 @@ func SendRuntimeMetricsWS(conn *websocket.Conn) {
 			BinanceOverload: analytics.StController.CurrentWeight,
 		}
 
-		data, err := json.Marshal(metrics)
+		analytics.Collector.CollectWindowsCPU(cpuPercent) // отрабатывает только для винды
+		analytics.Collector.Collect()
+		payload := RuntimePayload{
+			Metrics:   metrics,
+			LoadAvg60: analytics.Collector.Values(),
+		}
+
+		data, err := json.Marshal(payload)
 		if err != nil {
 			log.Println("Marshal error:", err)
 			return

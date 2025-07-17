@@ -5,10 +5,12 @@ WORKDIR /app
 RUN apk add --no-cache git
 
 COPY go.mod go.sum ./
-COPY . .
-
 RUN go mod download
 
-RUN go build -o main ./cmd/main.go
+COPY . .
+
+RUN go build -o migrate ./cmd/migrate/main.go
+RUN go build -o initialization ./cmd/initialization/main.go
+RUN go build -o core ./cmd/core/main.go
 
 EXPOSE 3000

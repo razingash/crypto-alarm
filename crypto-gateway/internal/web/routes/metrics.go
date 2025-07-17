@@ -12,10 +12,12 @@ import (
 var upgrader = websocket.FastHTTPUpgrader{
 	CheckOrigin: func(ctx *fasthttp.RequestCtx) bool {
 		allowedOrigins := map[string]bool{
-			"http://localhost:3000": true,
-			"http://localhost:3001": true,
-			"http://localhost:80":   true,
-			"https://localhost:443": true,
+			"http://localhost:3000":  true,
+			"http://localhost:3001":  true,
+			"http://localhost:80":    true,
+			"https://localhost:443":  true,
+			"http://crypto_frontend": true,
+			"http://localhost":       true,
 		}
 		return allowedOrigins[string(ctx.Request.Header.Peek("Origin"))]
 	},

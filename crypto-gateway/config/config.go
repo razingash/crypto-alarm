@@ -16,11 +16,13 @@ var (
 	Database_Name       string
 	Database_Url        string
 	Internal_Server_Api string
+	IsInDocker          bool = false
 )
 
 func LoadConfig() {
 	if err := godotenv.Load(filepath.Join("..", ".env")); err != nil {
 		log.Println("Application startup via docker")
+		IsInDocker = true
 	}
 
 	SecretKey = os.Getenv("SECRET_KEY")

@@ -10,9 +10,11 @@ import {formatUptime} from "../utils/utils";
 import "../styles/metrics.css"
 import useWebSocket from "../hooks/useWebSocket";
 import ChartApiWeightChanges from "../components/UI/metrics/ChartApiWeightChanges";
+import ChartSystemLoad from "../components/UI/metrics/ChartSystemLoad";
 
 const Logs = () => {
     const [dynamicMetrics, setDynamicMetrics] = useState(null)
+    const [averageLoadMetrics, setAverageLoadMetrics] = useState(null)
     const [staticMetrics, setStaticMetrics] = useState(null);
     const [logs, setLogs] = useState(null);
     const [fetchLogs, isLogsLoading, LogsError] = useFetching(async () => {
@@ -24,8 +26,9 @@ const Logs = () => {
     const [metrics] = useWebSocket('/metrics/ws');
 
     useEffect(() => {
-        if (metrics && metrics?.mem_alloc_mb && logs?.length > 0) {
-            setDynamicMetrics(metrics);
+        if (metrics && metrics.metrics?.mem_alloc_mb && logs?.length > 0) {
+            setDynamicMetrics(metrics.metrics);
+            setAverageLoadMetrics(metrics.load_avg_60)
         }
     }, [metrics]);
 
@@ -75,10 +78,11 @@ const Logs = () => {
                         </div>
                     )}
                     <Speedometer header={"CPU Usage"} percentage={dynamicMetrics?.cpu_usage_percent.toFixed(3)}/>
-                    <Speedometer header={"Mem Usage"} percentage={dynamicMetrics?.memory_usage_percent}/>
+                    <Speedometer header={"Mem Usage"} percentage={dynamicMetrics?.memory_usage_percent.toFixed(3)}/>
                     <Speedometer header={"CPU Allocation"} percentage={dynamicMetrics?.cpu_allocation.toFixed(3)}/>
                     <Speedometer header={"Mem Allocation"} percentage={dynamicMetrics?.mem_alloc_mb}/>
                     <ChartApiWeightChanges/>
+                    <ChartSystemLoad data={averageLoadMetrics}/>
                     <ChartAvailability data={logs}/>
                 </div>
             ) : (isLogsLoading === false && logs.length === 0) && (

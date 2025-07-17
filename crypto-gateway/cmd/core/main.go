@@ -41,7 +41,7 @@ func main() {
 	})
 
 	db.InitDB()
-
+	analytics.Collector = appmetrics.NewLoadMetricsCollector(60)
 	analytics.StController = analytics.NewBinanceAPIController(5700)
 	analytics.StBinanceApi = analytics.NewBinanceAPI(analytics.StController)
 	analytics.StOrchestrator = analytics.NewBinanceAPIOrchestrator(analytics.StBinanceApi)

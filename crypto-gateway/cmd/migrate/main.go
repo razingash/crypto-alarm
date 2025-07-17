@@ -121,6 +121,9 @@ func applySQLFile(ctx context.Context, dbpool *pgxpool.Pool, path string) error 
 
 func EnsureDatabaseExists(ctx context.Context) error {
 	adminUrl := "postgresql://postgres:root@localhost:5432/postgres?sslmode=disable"
+	if config.IsInDocker {
+		adminUrl = "postgresql://postgres:root@postgres:5432/postgres?sslmode=disable"
+	}
 
 	pool, err := pgxpool.New(ctx, adminUrl)
 	if err != nil {

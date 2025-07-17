@@ -51,10 +51,10 @@ const ChartApiWeightChanges = () => {
     const CustomTooltip = ({ active, payload, label }) => {
         if (!active || !payload?.length) return null;
         return (
-            <div style={{ backgroundColor: '#333', color: '#fff', padding: 10, borderRadius: 5 }}>
+            <div className={"chart__tooltip"}>
                 <p style={{ marginBottom: 5 }}>{formatTimestamp(label)}</p>
                 {payload.map(entry => (
-                    <p key={entry.name} style={{ color: colorMap[entry.name], backgroundColor: '#222', padding: '2px 4px', margin: 0, borderRadius: 3 }}>
+                    <p key={entry.name} className={"tooltip__item"} style={{color: colorMap[entry.name]}}>
                         {entry.name}: {entry.value}
                     </p>
                 ))}
@@ -76,7 +76,6 @@ const ChartApiWeightChanges = () => {
                         {endpoints.map((endpoint, i) => (
                             <Line key={endpoint} type="monotone" dataKey={endpoint} dot={false} stroke={colorMap[endpoint]} strokeWidth={2} connectNulls activeDot={{ r: 6 }} />
                         ))}
-                        {/*<Brush dataKey="created_at" height={28} stroke="#8884d8" fill="transparent" travellerWidth={6} />*/}
                     </LineChart>
                 </ResponsiveContainer>
             </div>
