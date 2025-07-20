@@ -18,7 +18,7 @@ export default class MetricsService {
         return response.data
     }
     static async getBinanceApiWeight() {
-        const response = await apiClient.get("/metrics/binance-api-weight/");
+        const response = await apiClient.get("/metrics/binance-api-weight-history/");
         return response.data
     }
 }

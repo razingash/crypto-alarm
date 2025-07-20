@@ -1,12 +1,16 @@
 package analytics
 
-import "crypto-gateway/internal/appmetrics"
+import (
+	"crypto-gateway/internal/appmetrics"
+)
 
-var ( // изменить этот позор на адекватную систему
-	StController   *BinanceAPIController
-	StBinanceApi   *BinanceAPI
-	StOrchestrator *BinanceAPIOrchestrator
-	Collector      *appmetrics.LoadMetricsCollector
-	StartTime      int64
-	endpoints      map[string]int
+// позже попробовать перенести инициализацию глобальных переменных в отдельный пакет setup(но возможно со всем не получится из-за зависимостей)
+var (
+	StController       *BinanceAPIController
+	StBinanceApi       *BinanceAPI
+	StOrchestrator     *BinanceAPIOrchestrator
+	Collector          *appmetrics.LoadMetricsCollector
+	AverageLoadMetrics *AverageLoadMetricsManager
+	StartTime          int64
+	endpoints          map[string]int
 )

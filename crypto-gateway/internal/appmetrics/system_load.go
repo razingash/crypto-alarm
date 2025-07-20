@@ -1,14 +1,18 @@
 package appmetrics
 
 import (
+	"context"
 	"math"
+	"os"
 	"runtime"
 	"sync"
+	"time"
 
 	"github.com/shirou/gopsutil/load"
+	"github.com/shirou/gopsutil/process"
 )
 
-// тут получаются метрики Average(system) load для 1m/5m/15m, стоит ли оно того...
+// тут получаются метрики Average(system) load для 1m/5m/15m, стоит ли оно того... учитывая что нужно их насобирать на неделю
 
 // unix
 type LoadAverages struct {
@@ -29,7 +33,7 @@ type LoadMetricsCollector struct {
 	Buffer         *LoadAvgRingBuffer
 	CollectLoadAvg bool
 	windowsLoadAvg *WindowsLoadAvg // windows
-	mu             sync.Mutex
+	Mu             sync.Mutex
 }
 
 // windows
@@ -110,8 +114,8 @@ func (b *LoadAvgRingBuffer) Reset() {
 }
 
 func (c *LoadMetricsCollector) SwitchCollect(collect bool) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.Mu.Lock()
+	defer c.Mu.Unlock()
 
 	if !collect && c.CollectLoadAvg {
 		c.Buffer.Reset()
@@ -120,18 +124,18 @@ func (c *LoadMetricsCollector) SwitchCollect(collect bool) {
 }
 
 func (c *LoadMetricsCollector) Collect() {
-	c.mu.Lock()
+	c.Mu.Lock()
 	if !c.CollectLoadAvg {
-		c.mu.Unlock()
+		c.Mu.Unlock()
 		return
 	}
-	c.mu.Unlock()
+	c.Mu.Unlock()
 
 	var triple LoadAverages
 	if runtime.GOOS == "windows" {
-		c.mu.Lock()
+		c.Mu.Lock()
 		avg := c.windowsLoadAvg.Current()
-		c.mu.Unlock()
+		c.Mu.Unlock()
 		triple = LoadAverages{
 			Load1:  avg.Load1,
 			Load5:  avg.Load5,
@@ -155,7 +159,27 @@ func (c *LoadMetricsCollector) CollectWindowsCPU(cpuPercent float64) {
 	if runtime.GOOS != "windows" {
 		return
 	}
-	c.mu.Lock()
+	c.Mu.Lock()
 	c.windowsLoadAvg.Update(cpuPercent)
-	c.mu.Unlock()
+	c.Mu.Unlock()
+}
+
+func StartLoadMetricsCollector(ctx context.Context, collector *LoadMetricsCollector, interval time.Duration) {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		proc, _ := process.NewProcess(int32(os.Getpid()))
+
+		for {
+			select {
+			case <-ticker.C:
+				cpuPercent, _ := proc.CPUPercent()
+				collector.CollectWindowsCPU(cpuPercent)
+				collector.Collect()
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 }

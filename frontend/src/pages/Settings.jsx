@@ -32,31 +32,39 @@ const Settings = () => {
     }, [isSettingsLoading]);
 
     const handleCooldownChange = (index, value) => {
-        const updated = [...editedSettings];
-        updated[index].Cooldown = +value;
+        const updated = { ...editedSettings, api: [...editedSettings.api] };
+        updated.api[index].cooldown = +value;
         setEditedSettings(updated);
     };
 
     const handleHistoryToggle = (index, checked) => {
-        const updated = [...editedSettings];
-        updated[index].IsHistoryOn = checked;
+        const updated = {...editedSettings, api: [...editedSettings.api]};
+        updated.api[index].is_history_on = checked;
         setEditedSettings(updated);
     };
+
+    const handleConfigToggle  = (index, checked) => {
+        const updated = {...editedSettings, config: [...editedSettings.config]};
+        updated.config[index].is_active = checked;
+        setEditedSettings(updated);
+    }
 
     const handleSaveAll = async () => {
         if (!initialSettings || !editedSettings) return;
 
-        const changed = editedSettings.reduce((acc, item, index) => {
-            const original = initialSettings[index];
-            const update = { endpoint: item.Api };
+        const apiChanged = editedSettings.api.reduce((acc, item) => {
+            const original = initialSettings.api.find(o => o.id === item.id);
+            if (!original) return acc;
 
+            const update = {endpoint: item.api};
             let hasChanges = false;
-            if (item.Cooldown !== original.Cooldown) {
-                update.cooldown = item.Cooldown;
+
+            if (item.cooldown !== original.cooldown) {
+                update.cooldown = item.cooldown;
                 hasChanges = true;
             }
-            if (item.IsHistoryOn !== original.IsHistoryOn) {
-                update.history = item.IsHistoryOn;
+            if (item.is_history_on !== original.is_history_on) {
+                update.history = item.is_history_on;
                 hasChanges = true;
             }
 
@@ -66,8 +74,25 @@ const Settings = () => {
             return acc;
         }, []);
 
-        if (changed.length > 0) {
-            const response = await fetchUpdateData(changed);
+        const configChanged = editedSettings.config.reduce((acc, item) => {
+            const original = initialSettings.config.find(o => o.id === item.id);
+            if (!original) return acc;
+
+            if (item.is_active !== original.is_active) {
+                acc.push({
+                    id: item.id,
+                    is_active: item.is_active
+                });
+            }
+            return acc;
+        }, []);
+
+        const payload = {};
+        if (apiChanged.length > 0) payload.api = apiChanged;
+        if (configChanged.length > 0) payload.config = configChanged;
+
+        if (Object.keys(payload).length > 0) {
+            const response = await fetchUpdateData(payload);
             if (response === "OK") {
                 setInitialSettings(JSON.parse(JSON.stringify(editedSettings)));
                 setChangeMod(false);
@@ -90,8 +115,24 @@ const Settings = () => {
             ) : SettingsError ? (
                 <ErrorField/>
             ) : (
-                <div className={"field__settings__api"}>
-                    <div className={"api__list"}>
+            <div className={"field__settings__api"}>
+                <div className={"area__settings"}>
+                    <div className={"settings__config"}>
+                        {editedSettings?.config && editedSettings.config.map((item, index) => (
+                        <div className={"config__item"} key={item.id}>
+                            {changeMod ? (
+                            <input id={"config__asl"} className={"checkbox__item"} type={"checkbox"}
+                                   checked={item.is_active} onChange={(e) => handleConfigToggle(index, e.target.checked)}/>
+                            ) : (
+                            <div className={`api__history ${item.is_active !== initialSettings.config[index].is_active ? "param__status_unsaved" : ""} ${item.is_active ? "api-actual" : "api-unactual"}`}>
+                                {item.is_active ? "On" : "Off"}
+                            </div>
+                            )}
+                            <div>Average System Load</div>
+                        </div>
+                        ))}
+                    </div>
+                    <div className={"settings__api__list"}>
                         <div className={"api__item"}>
                             <div className={"api__availability"}>Available</div>
                             <div className={"api__history"}>History</div>
@@ -99,29 +140,29 @@ const Settings = () => {
                             <div className={"api__cooldown"}>Cooldown</div>
                             <div className={"api__last_update"}>Last Update</div>
                         </div>
-                        {editedSettings && editedSettings.map((item, index) => (
-                            <div className={"api__item"} key={item.Id}>
-                                {item.IsActual ? (
+                        {editedSettings?.api && editedSettings.api.map((item, index) => (
+                            <div className={"api__item"} key={item.id}>
+                                {item.is_actual ? (
                                     <div className={"api__availability api-actual"}>Yes</div>
                                 ) : (
                                     <div className={"api__availability api-unactual"}>No</div>
                                 )}
                                 {changeMod ? (
-                                    <input className={"api__history"} type="checkbox" checked={item.IsHistoryOn}
+                                    <input className={"api__history"} type="checkbox" checked={item.is_history_on}
                                         onChange={(e) => handleHistoryToggle(index, e.target.checked)}
                                     />
                                 ) : (
-                                    <div className={`api__history ${item.IsHistoryOn !== initialSettings[index].IsHistoryOn ? "param__status_unsaved" : ""} ${item.IsHistoryOn ? "api-actual" : "api-unactual"}`}>
-                                        {item.IsHistoryOn ? "Yes" : "No"}
+                                    <div className={`api__history ${item.is_history_on !== initialSettings.api[index].is_history_on ? "param__status_unsaved" : ""} ${item.is_history_on ? "api-actual" : "api-unactual"}`}>
+                                        {item.is_history_on ? "Yes" : "No"}
                                     </div>
                                 )}
                                 <div className={"api__endpoint endpoint-actual"}>{item.Api}</div>
                                 {changeMod ? (
-                                     <input className={"input__api__cooldown"} value={item.Cooldown} placeholder={"cooldown in seconds..."}
+                                     <input className={"input__api__cooldown"} value={item.cooldown} placeholder={"cooldown in seconds..."}
                                         type={"number"} min={1} max={999999} onChange={(e) => handleCooldownChange(index, e.target.value)}
                                     />
                                 ) : (
-                                    <div className={`api__cooldown ${item.Cooldown !== initialSettings[index].Cooldown ? "param__status_unsaved" : ""}`}>{formatDuration(item.Cooldown)}</div>
+                                    <div className={`api__cooldown ${item.cooldown !== initialSettings.api[index].cooldown ? "param__status_unsaved" : ""}`}>{formatDuration(item.cooldown)}</div>
                                 )}
                                 <div className={"api__last_update"}>{formatTimestamp(Math.floor(Date.parse(item.LastUpdate) / 1000))}</div>
                             </div>
@@ -134,6 +175,7 @@ const Settings = () => {
                         </div>
                     </div>
                 </div>
+            </div>
             )}
         </div>
     );

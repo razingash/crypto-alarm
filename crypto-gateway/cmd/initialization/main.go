@@ -8,6 +8,7 @@ import (
 	"crypto-gateway/internal/web/db"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -56,15 +57,17 @@ func fillCryptoModels() error {
 		appmetrics.AnalyticsServiceLogging(4, "initializeCryptoModels error", err)
 		return fmt.Errorf("initializeCryptoModels: %w", err)
 	}
-
 	if err := getValidCurrencies(ctx, db.DB, binAPI); err != nil {
 		appmetrics.AnalyticsServiceLogging(4, "getValidCurrencies error", err)
 		return fmt.Errorf("getValidCurrencies: %w", err)
 	}
-
 	if err := createTriggerComponents(ctx, db.DB); err != nil {
 		appmetrics.AnalyticsServiceLogging(4, "createTriggerComponents error", err)
 		return fmt.Errorf("createTriggerComponents: %w", err)
+	}
+	if err := createInitialSettings(ctx, db.DB); err != nil {
+		appmetrics.AnalyticsServiceLogging(4, "createInitialSettings error", err)
+		return fmt.Errorf("createInitialSettings: %w", err)
 	}
 	return nil
 }
@@ -272,4 +275,35 @@ func createTriggerComponents(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("tx commit: %w", err)
 	}
 	return nil
+}
+
+// заполняет настройки
+func createInitialSettings(ctx context.Context, pool *pgxpool.Pool) error {
+	settings := []struct {
+		name     string
+		isActive bool
+	}{
+		{"Average System Load", true},
+	}
+
+	if len(settings) == 0 {
+		return nil
+	}
+
+	args := []interface{}{}
+	valueStrings := []string{}
+	argIndex := 1
+	for _, setting := range settings {
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d)", argIndex, argIndex+1))
+		args = append(args, setting.name, setting.isActive)
+		argIndex += 2
+	}
+
+	query := fmt.Sprintf(`
+		INSERT INTO settings (name, is_active)
+		VALUES %s
+	`, strings.Join(valueStrings, ", "))
+
+	_, err := pool.Exec(ctx, query, args...)
+	return err
 }

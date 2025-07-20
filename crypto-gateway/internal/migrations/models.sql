@@ -105,3 +105,9 @@ CREATE TABLE trigger_push_subscription (
     auth character varying NOT NULL,
     created_at timestamp without time zone NOT NULL DEFAULT now()
 );
+
+CREATE TABLE settings (
+    id BIGSERIAL PRIMARY KEY,
+    name character varying(150) NOT NULL,
+    is_active boolean NOT NULL DEFAULT TRUE
+);

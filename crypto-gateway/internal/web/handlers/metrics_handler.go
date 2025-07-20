@@ -181,6 +181,7 @@ func GetStaticMetrics(c fiber.Ctx) error {
 		TotalMemoryMB    uint64 `json:"total_memory_mb"`
 		MaxBinanceWeight int    `json:"max_binance_weight"`
 		StartTime        int64  `json:"start_time"`
+		IsLoadMetricsOn  bool   `json:"is_load_metrics_on"`
 	}
 	vmStat, err := mem.VirtualMemory()
 	if err != nil {
@@ -193,6 +194,7 @@ func GetStaticMetrics(c fiber.Ctx) error {
 		TotalMemoryMB:    vmStat.Total / 1024 / 1024,
 		MaxBinanceWeight: analytics.StController.MaxWeight,
 		StartTime:        analytics.StartTime,
+		IsLoadMetricsOn:  analytics.AverageLoadMetrics.IsOn,
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -202,7 +204,7 @@ func GetStaticMetrics(c fiber.Ctx) error {
 
 // отправляет метрики и нагрузке на OS приложением
 func SendRuntimeMetricsWS(conn *websocket.Conn) {
-	ticker := time.NewTicker(3 * time.Second)
+	ticker := time.NewTicker(4 * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
@@ -229,11 +231,14 @@ func SendRuntimeMetricsWS(conn *websocket.Conn) {
 			BinanceOverload: analytics.StController.CurrentWeight,
 		}
 
-		analytics.Collector.CollectWindowsCPU(cpuPercent) // отрабатывает только для винды
-		analytics.Collector.Collect()
+		loadAvg := []appmetrics.LoadAverages{}
+		if analytics.AverageLoadMetrics.IsOn {
+			loadAvg = analytics.Collector.Values()
+		}
+
 		payload := RuntimePayload{
 			Metrics:   metrics,
-			LoadAvg60: analytics.Collector.Values(),
+			LoadAvg60: loadAvg,
 		}
 
 		data, err := json.Marshal(payload)

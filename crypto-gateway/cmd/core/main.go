@@ -41,16 +41,18 @@ func main() {
 	})
 
 	db.InitDB()
+
 	analytics.Collector = appmetrics.NewLoadMetricsCollector(60)
 	analytics.StController = analytics.NewBinanceAPIController(5700)
 	analytics.StBinanceApi = analytics.NewBinanceAPI(analytics.StController)
 	analytics.StOrchestrator = analytics.NewBinanceAPIOrchestrator(analytics.StBinanceApi)
+	analytics.AverageLoadMetrics = analytics.NewAverageLoadMetricsManager(analytics.Collector)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	analytics.StOrchestrator.Start(ctx)
-
+	analytics.SetupInitialSettings(ctx)
 	appmetrics.AvailabilityMetricEvent(1, 1, "webserwer UP")
 
 	routes.SetupNotificationRoutes(app)

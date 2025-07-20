@@ -9,7 +9,7 @@ import (
 )
 
 func GetSettings(c fiber.Ctx) error {
-	settings, err := repositories.FetchSettings()
+	apiSettings, err := repositories.FetchApiSettings()
 
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -17,15 +17,26 @@ func GetSettings(c fiber.Ctx) error {
 		})
 	}
 
+	config, err2 := repositories.FetchConfigSettings()
+
+	if err2 != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "something went wrong",
+		})
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"data": settings,
+		"data": fiber.Map{
+			"api":    apiSettings,
+			"config": config,
+		},
 	})
 }
 
 func PatchUpdateSettings(c fiber.Ctx) error {
-	updates := c.Locals("updates").([]analytics.ApiUpdate)
+	updates := c.Locals("updates").(analytics.PatchSettingsRequest)
 
-	updatedIds, err := analytics.UpdateEndpointsSettings(updates)
+	updatedIds, err := analytics.UpdateSettings(updates)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Failed to update endpoints",

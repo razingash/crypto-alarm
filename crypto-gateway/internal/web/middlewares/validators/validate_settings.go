@@ -8,7 +8,7 @@ import (
 )
 
 func ValidatePatchSettings(c fiber.Ctx) error {
-	var body []analytics.ApiUpdate
+	var body analytics.PatchSettingsRequest
 
 	if err := json.Unmarshal(c.Body(), &body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -16,11 +16,18 @@ func ValidatePatchSettings(c fiber.Ctx) error {
 		})
 	}
 
-	for i, item := range body {
+	for _, item := range body.Api {
 		if item.Endpoint == "" {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error":   "Each item must have non-empty endpoint",
-				"invalid": i,
+				"error": "Each API item must have 'endpoint'",
+			})
+		}
+	}
+
+	for _, item := range body.Config {
+		if item.ID == 0 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Each Config item must have non-zero id",
 			})
 		}
 	}

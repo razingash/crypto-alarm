@@ -24,6 +24,16 @@ type ApiUpdate struct {
 	History  *bool  `json:"history,omitempty"`
 }
 
+type ConfigUpdate struct {
+	ID       int  `json:"id"`
+	IsActive bool `json:"is_active"`
+}
+
+type PatchSettingsRequest struct {
+	Api    []ApiUpdate    `json:"api,omitempty"`
+	Config []ConfigUpdate `json:"config,omitempty"`
+}
+
 func GetActiveStrategies(ctx context.Context) (map[int]map[int]string, error) {
 	rows, err := db.DB.Query(ctx, `
 		SELECT cs.id AS strategy_id, tf.id AS formula_id, tf.formula
@@ -288,16 +298,17 @@ func SaveEndpointWeight(ctx context.Context, endpoint string, weight int) error 
 	return err
 }
 
-func UpdateEndpointsSettings(updates []ApiUpdate) ([]int, error) { // если меняется история то добавлять в Recorded новый эндпоинт
-	if len(updates) == 0 {
-		return nil, nil
-	}
+func UpdateSettings(updates PatchSettingsRequest) ([]int, error) { // если меняется история то добавлять в Recorded новый эндпоинт
 	updatedIds := make([]int, 0)
 
-	// синхронизация, без неё будет менее безопасно(хотя мб без багов всеравно)
 	stApi := StBinanceApi
+	alm := AverageLoadMetrics
+
 	if stApi == nil {
 		return nil, fmt.Errorf("StBinanceApi is nil")
+	}
+	if alm == nil {
+		return nil, fmt.Errorf("AverageLoadMetrics is nil")
 	}
 
 	stApi.Controller.Mu.Lock()
@@ -308,7 +319,7 @@ func UpdateEndpointsSettings(updates []ApiUpdate) ([]int, error) { // если �
 		recordedSet[e] = struct{}{}
 	}
 
-	for _, item := range updates {
+	for _, item := range updates.Api {
 		var id int
 		err := db.DB.QueryRow(context.Background(), `
 			UPDATE crypto_api
@@ -327,7 +338,7 @@ func UpdateEndpointsSettings(updates []ApiUpdate) ([]int, error) { // если �
 		if item.History != nil {
 			if *item.History {
 				if _, exists := recordedSet[item.Endpoint]; !exists {
-					StBinanceApi.RecordedAPI = append(stApi.RecordedAPI, item.Endpoint)
+					stApi.RecordedAPI = append(stApi.RecordedAPI, item.Endpoint)
 					recordedSet[item.Endpoint] = struct{}{}
 				}
 			} else {
@@ -342,6 +353,21 @@ func UpdateEndpointsSettings(updates []ApiUpdate) ([]int, error) { // если �
 					delete(recordedSet, item.Endpoint)
 				}
 			}
+		}
+	}
+
+	for _, item := range updates.Config {
+		_, err := db.DB.Exec(context.Background(), `
+			UPDATE settings
+			SET is_active = $2
+			WHERE id = $1
+		`, item.ID, item.IsActive)
+		if err != nil {
+			return nil, err
+		}
+		if item.ID == 1 {
+			alm.ToggleAverageLoadMetrics(item.IsActive)
+			Collector.SwitchCollect(item.IsActive)
 		}
 	}
 

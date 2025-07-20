@@ -25,10 +25,22 @@ const Logs = () => {
     }, 1000, 1000)
     const [metrics] = useWebSocket('/metrics/ws');
 
+     useEffect(() => {
+        const loadData = async () => {
+            if (!isLogsLoading && !LogsError) {
+                const data = await fetchStaticMetrics();
+                if (data) {
+                    setStaticMetrics(data.data);
+                }
+            }
+        }
+        void loadData();
+    }, [isStaticMetricsLoading])
+
     useEffect(() => {
         if (metrics && metrics.metrics?.mem_alloc_mb && logs?.length > 0) {
+            metrics?.load_avg_60 && setAverageLoadMetrics(metrics.load_avg_60)
             setDynamicMetrics(metrics.metrics);
-            setAverageLoadMetrics(metrics.load_avg_60)
         }
     }, [metrics]);
 
@@ -43,18 +55,6 @@ const Logs = () => {
         }
         void loadData();
     }, [isLogsLoading])
-
-    useEffect(() => {
-        const loadData = async () => {
-            if (!isLogsLoading && !LogsError) {
-                const data = await fetchStaticMetrics();
-                if (data) {
-                    setStaticMetrics(data.data);
-                }
-            }
-        }
-        void loadData();
-    }, [isStaticMetricsLoading])
 
     return (
         <div className={"section__main"}>
@@ -82,7 +82,9 @@ const Logs = () => {
                     <Speedometer header={"CPU Allocation"} percentage={dynamicMetrics?.cpu_allocation.toFixed(3)}/>
                     <Speedometer header={"Mem Allocation"} percentage={dynamicMetrics?.mem_alloc_mb}/>
                     <ChartApiWeightChanges/>
-                    <ChartSystemLoad data={averageLoadMetrics}/>
+                    {staticMetrics.is_load_metrics_on === true && (
+                        <ChartSystemLoad data={averageLoadMetrics}/>
+                    )}
                     <ChartAvailability data={logs}/>
                 </div>
             ) : (isLogsLoading === false && logs.length === 0) && (
