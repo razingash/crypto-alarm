@@ -1,4 +1,5 @@
 import apiClient from "../hooks/useApiInterceptor";
+import axios from "axios";
 
 export default class StrategyService {
     static async getKeyboard() { // получает данные для клавиатуры
@@ -27,6 +28,10 @@ export default class StrategyService {
     static async deleteStrategyOrCondition(strategy_id, conditionID) {
         // если указан formula_id то будет удалено только выражение, а не вся стратегия
         return await apiClient.delete(`/triggers/strategy/${strategy_id}/${conditionID ? `?formula_id=${conditionID}` : ''}`)
+    }
+    static async getBinanceKlines(symbol, interval) {
+        // Open time | Open | High | Low | Close | Volume | Close time | Quote asset volume | Number of trades | Taker buy base asset volume | Taker buy quote asset volume | Ignore
+        return await axios.get(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}`)
     }
 }
 

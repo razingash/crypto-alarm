@@ -215,6 +215,32 @@ body {
    box-shadow: 0 0 0 2px rgb(228, 228, 228), 0 2px 4px rgba(228, 228, 228, 0.3), 0 4px 8px rgba(228, 228, 228, 0.3), 0 0 16px rgb(228, 228, 228);
 }
 
+/* select-option */
+.select__default {
+    background: #12121bff;
+    border: 1px solid #4a4a4a;
+    color: #fff;
+    border-radius: 2px;
+    padding: 2px 0 2px 2px;
+    width: fit-content;
+}
+.option__default {
+    background: #12121bff;
+    border: 1px solid #4a4a4a;
+    color: #fff;
+}
+
+/* input */
+.input__default {
+    background: none;
+    border: 1px solid var(--container-border-1);
+    font-size: 18px;
+    max-width: 150px;
+    font-family: sans-serif;
+    color: #fff;
+    border-radius: 3px;
+}
+
 /*loading effect*/
 .loading__center {
     display: flex;

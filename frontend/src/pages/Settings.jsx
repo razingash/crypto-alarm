@@ -115,8 +115,8 @@ const Settings = () => {
             ) : SettingsError ? (
                 <ErrorField/>
             ) : (
-            <div className={"field__settings__api"}>
-                <div className={"area__settings"}>
+            <div className={"area__settings"}>
+                <div className={"field__settings__api"}>
                     <div className={"settings__config"}>
                         {editedSettings?.config && editedSettings.config.map((item, index) => (
                         <div className={"config__item"} key={item.id}>

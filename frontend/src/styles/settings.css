@@ -2,16 +2,16 @@
 .field__settings__api {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    background: var(--container-background);
-    color: #ffffff;
-    padding: 20px;
+    row-gap: 40px;
 }
 
 .area__settings {
     display: flex;
     flex-direction: column;
-    row-gap: 40px;
+    align-items: center;
+    background: var(--container-background);
+    color: #ffffff;
+    padding: 20px;
 }
 .settings__config {
 
