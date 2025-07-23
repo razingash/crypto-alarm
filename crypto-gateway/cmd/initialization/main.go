@@ -24,6 +24,7 @@ type apiParam struct {
 var baseEndpointsWeights = map[string]int{
 	"/v3/ping":         1,
 	"/v3/ticker/price": 2,
+	"/v3/klines":       4,
 	"/v3/ticker/24hr":  80,
 	// позже добавить и его, это важный эндпоинт, просто ему нужны атрибуты, и нужно будет шаманить с клавиатурой
 	//"/v3/exchangeInfo": 20,
@@ -79,6 +80,28 @@ func getInitialDataParams(ctx context.Context, binAPI *analytics.BinanceAPI) (ma
 
 	for ep, weight := range baseEndpointsWeights {
 		if ep == "/v3/ping" {
+			continue
+		}
+		if ep == "/v3/klines" {
+			_, err := binAPI.Get(ctx, ep, weight, map[string]string{"symbol": "ETHBTC", "interval": "1h"})
+			if err != nil {
+				return nil, fmt.Errorf("binAPI.Get %s: %w", ep, err)
+			}
+
+			data[ep] = map[string]interface{}{
+				"OpenTime":                 nil,
+				"Open":                     nil,
+				"High":                     nil,
+				"Low":                      nil,
+				"Close":                    nil,
+				"Volume":                   nil,
+				"CloseTime":                nil,
+				"QuoteAssetVolume":         nil,
+				"NumberOfTrades":           nil,
+				"TakerBuyBaseAssetVolume":  nil,
+				"TakerBuyQuoteAssetVolume": nil,
+				"Ignore":                   nil,
+			}
 			continue
 		}
 
@@ -138,6 +161,8 @@ func initializeCryptoModels(ctx context.Context, pool *pgxpool.Pool, dataset map
 				}
 			}
 		}
+		// v3/klines initialization
+
 	}
 
 	return nil

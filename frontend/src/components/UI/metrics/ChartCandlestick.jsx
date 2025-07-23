@@ -59,20 +59,21 @@ const ChartCandlestick = () => {
         let values = [];
         let volumes = [];
         for (let i = 0; i < rawData.length; i++) {
-            categoryData.push(new Date(rawData[i][0]).toISOString());
-            //categoryData.push(new Date(rawData[i][0]).toLocaleTimeString());
-            values.push([parseFloat(rawData[i][1]), parseFloat(rawData[i][4]), parseFloat(rawData[i][3]), parseFloat(rawData[i][2])]);
+            const date = new Date(rawData[i][0]);
+            const localDate = date.toLocaleString('ru-RU', {
+                month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+            }).replace(',', '');
+            categoryData.push(localDate);
+
+            values.push([
+                parseFloat(rawData[i][1]), parseFloat(rawData[i][4]),
+                parseFloat(rawData[i][3]), parseFloat(rawData[i][2])
+            ]);
             volumes.push([
-                i,
-                parseFloat(rawData[i][5]),
-                rawData[i][1] > rawData[i][4] ? 1 : -1
+                i, parseFloat(rawData[i][5]), rawData[i][1] > rawData[i][4] ? 1 : -1
             ]);
         }
-        return {
-            categoryData,
-            values,
-            volumes
-        };
+        return {categoryData, values, volumes};
     }
 
     const option = {
