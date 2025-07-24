@@ -5,7 +5,11 @@ import FormulaInput from "./FormulaInput";
 - оптимизировать эту фигню - сделать чтобы базовый вариант спавнился тут а динамические кэшировались, чтобы клавиатура не лагала
 - сделать чтобы клава вылазила когда надо будет
 */
-const FormulaEditor = ({rawFormulas, setRawFormula, deleteCondition, activeFormulaIndex, setActiveFormulaIndex}) => {
+// возможно после добавления редактирования придется изменить компонент
+const FormulaEditor = ({
+                           rawFormulas, setRawFormula, deleteCondition, activeFormulaIndex, setActiveFormulaIndex,
+    isNewVariable
+}) => {
     const moveCursor = (direction) => {
         const currentFormula = [...rawFormulas[activeFormulaIndex]];
         const currentIndex = currentFormula.indexOf("\\textunderscore");
@@ -212,13 +216,15 @@ const FormulaEditor = ({rawFormulas, setRawFormula, deleteCondition, activeFormu
         <>
             {rawFormulas.map((rawFormula, index) => (
                 <div className={"condition__container"} key={index} onClick={() => setActiveFormulaIndex(index)}>
-                    <svg className={"svg__trash_can"} onClick={() => deleteCondition(index)}>
-                        <use xlinkHref={"#icon_trash_can"}></use>
-                    </svg>
+                    {!isNewVariable && (
+                        <svg className={"svg__trash_can"} onClick={() => deleteCondition(index)}>
+                            <use xlinkHref={"#icon_trash_can"}></use>
+                        </svg>
+                    )}
                     <FormulaInput formula={rawFormula}/>
                 </div>
             ))}
-            <Keyboard onKeyPress={handleKeyPress}/>
+            <Keyboard onKeyPress={handleKeyPress} isNewVariable={isNewVariable}/>
         </>
     );
 };

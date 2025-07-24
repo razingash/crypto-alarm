@@ -13,7 +13,8 @@
     --blocked-element: #ff8800;
     --clickable-element: #397aff;
     --active-element: #326efcff;
-    --active-element-background: #1f2939ff;
+    --internal-link-element: #008CFF;
+    --darkened-text: #b2b2b2;
 }
 
 body {
@@ -44,6 +45,14 @@ body {
     right: 0;
     z-index: 10;
     background: var(--container-background);
+}
+
+.field__default {
+    display: flex;
+    flex-direction: column;
+    background: var(--container-background);
+    color: #ffffff;
+    padding: 20px;
 }
 
 .header__field {
@@ -182,6 +191,11 @@ body {
     color: #ffe900 !important;
 }
 
+.link__default {
+    color: var(--internal-link-element);
+    text-decoration: none;
+}
+
 /*buttons*/
 .button__remove, .button__save, .button__cancle, .button__change {
     display: flex;
@@ -230,13 +244,22 @@ body {
     color: #fff;
 }
 
-/* input */
+/* input, textarea */
 .input__default {
     background: none;
     border: 1px solid var(--container-border-1);
     font-size: 18px;
     max-width: 150px;
     font-family: sans-serif;
+    color: #fff;
+    border-radius: 3px;
+}
+.textarea__default {
+    background: none;
+    border: 1px solid var(--container-border-1);
+    font-size: 16px;
+    font-family: sans-serif;
+    max-width: 100%;
     color: #fff;
     border-radius: 3px;
 }

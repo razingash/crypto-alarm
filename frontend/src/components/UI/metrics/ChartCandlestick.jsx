@@ -272,11 +272,11 @@ const ChartCandlestick = () => {
                     ))}
                 </div>
                 <label htmlFor={"ckeckbox__candlestick__search"} className={"candlestick__search__close"}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="75.591" height="75.591" viewBox="0 0 20 20" className={"svg__switch_csf"}>
-                        <g transform="matrix(1.094 0 0 1.094 -.9402 -.9525)"><path d="M9.363 6.073c-.011.011-.02.023-.03.034l-.04.037-4.95 4.95c-.392.392-.423.991-.071 1.344s.952.321 1.344-.071l3.466-3.465v8.391c0 .794.401 1.432.9 1.432s.9-.639.9-1.432V8.866l3.503 3.502c.392.392.991.423 1.344.071s.321-.952-.071-1.344l-4.95-4.95-.041-.038-.029-.033a.95.95 0 0 0-1.273 0z"/><rect x="4.5" y="1.537" width="5" height="2" rx="1"/><rect x="10.5" y="1.537" width="5" height="2" rx="1"/><rect x="16.14" y="1.537" width="3" height="2" rx=".8"/><rect transform="scale(-1 1)" x="-3.859" y="1.537" width="3" height="2" rx=".8"/></g>
+                    <svg className={"svg__switch_csf"}>
+                        <use xlinkHref={"#icon_switch_on"}></use>
                     </svg>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="75.591" height="75.591" viewBox="0 0 20 20" className={"svg__switch_csf"}>
-                        <g transform="matrix(-1.082 0 0 -1.082 20.82 22.06)"><path d="M9.363 3.206c-.011.011-.02.023-.03.034l-.04.037-4.95 4.95c-.392.392-.423.991-.071 1.344s.952.321 1.344-.071l3.466-3.465v8.391c0 .794.401 1.432.9 1.432s.9-.639.9-1.432V5.999l3.503 3.502c.392.392.991.423 1.344.071s.321-.952-.071-1.344l-4.95-4.95-.041-.038-.029-.033a.95.95 0 0 0-1.273 0z"/><rect x="4.5" y="17.33" width="5" height="2" rx="1"/><rect x="10.5" y="17.33" width="5" height="2" rx="1"/><rect x="16.14" y="17.33" width="3" height="2" rx=".8"/><rect transform="scale(-1 1)" x="-3.859" y="17.33" width="3" height="2" rx=".8"/></g>
+                    <svg className={"svg__switch_csf"}>
+                        <use xlinkHref={"#icon_switch_off"}></use>
                     </svg>
                 </label>
             </div>

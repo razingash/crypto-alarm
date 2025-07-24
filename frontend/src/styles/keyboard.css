@@ -31,8 +31,17 @@
 }
 /* keyboard */
 
-.formula__keyboard {
-    /*background: var(--container-background);*/
+.keyboard__field {
+    color: #fff;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 20px 0 10px 0;
+    max-height: 260px;
+}
+
+.keyboard {
     background: #141414;
     color: #fff;
     position: fixed;
@@ -41,6 +50,57 @@
     bottom: 0;
     padding: 20px 0 10px 0;
     max-height: 260px;
+    transition: transform 0.5s ease;
+}
+
+.keyboard__open {
+    display: flex;
+    align-items: center;
+    column-gap: 10px;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    background: #141414;
+    padding: 4px 10px 4px 14px;
+    cursor: pointer;
+    border-top: 1px solid;
+    border-left: 1px solid;
+    border-radius: 20px 0 0 0;
+    user-select: none;
+    color: var(--blocked-element);
+}
+.keyboard__open:hover .svg__keyboard__open{
+    fill: var(--hovered-element);
+}
+.keyboard__field {
+    color: #fff;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 20px 0 10px 0;
+    max-height: 260px;
+}
+.svg__keyboard__open {
+    height: 18px;
+    width: 18px;
+    fill: var(--blocked-element);
+}
+.keyboard__hide {
+    position: absolute;
+    top: 2px;
+    right: 1px;
+    cursor: pointer;
+}
+
+.keyboard__hide:hover .svg__keyboard__hide {
+    fill: var(--hovered-element);
+}
+.svg__keyboard__hide {
+    height: 18px;
+    width: 18px;
+    fill: var(--blocked-element);
+    rotate: 180deg;
 }
 
 .keyboard__labels {
@@ -336,6 +396,13 @@
 	margin-bottom: 8px;
     border-bottom: 1px solid var(--blocked-element);
     padding: 4px 10px;
+}
+
+#checkbox__keyboard {
+    display: none;
+}
+#checkbox__keyboard:checked ~ .keyboard {
+    transform: translateY(100%);
 }
 
 @keyframes blink {

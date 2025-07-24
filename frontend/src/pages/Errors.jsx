@@ -79,7 +79,7 @@ const Errors = () => {
             ) : basicLogsInfoError ? (
                 <ErrorField/>
             ) : (
-                <div className={"field__errors"}>
+                <div className={"field__default"}>
                     <div className={"errors__list"}>
                         {logsBasicInfo.map((lbi, index) => (
                         <div className={"errors__item"} key={lbi.type}>

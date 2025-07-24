@@ -1,12 +1,4 @@
 
-.field__errors {
-    display: flex;
-    flex-direction: column;
-    background: var(--container-background);
-    color: #ffffff;
-    padding: 20px;
-}
-
 .errors__list {
     display: flex;
     flex-direction: column;

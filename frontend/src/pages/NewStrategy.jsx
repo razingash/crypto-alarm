@@ -1,5 +1,5 @@
 import "../styles/strategy.css"
-import FormulaEditor from "../components/FormulasEditor/FormulaEditor";
+import FormulaEditor from "../components/Keyboard/FormulaEditor";
 import {useEffect, useState} from "react";
 import {useFetching} from "../hooks/useFetching";
 import StrategyService from "../API/StrategyService";

@@ -4,7 +4,7 @@ import {useFetching} from "../hooks/useFetching";
 import StrategyService from "../API/StrategyService";
 import {useObserver} from "../hooks/useObserver";
 import {Link} from "react-router-dom";
-import FormulaInput from "../components/FormulasEditor/FormulaInput";
+import FormulaInput from "../components/Keyboard/FormulaInput";
 import AdaptiveLoading from "../components/UI/AdaptiveLoading";
 import ErrorField from "../components/UI/ErrorField";
 

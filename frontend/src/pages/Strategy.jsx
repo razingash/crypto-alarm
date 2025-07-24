@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useParams} from "react-router-dom";
-import FormulaInput from "../components/FormulasEditor/FormulaInput";
+import FormulaInput from "../components/Keyboard/FormulaInput";
 import { useNavigate } from "react-router-dom";
 import {useFetching} from "../hooks/useFetching";
 import StrategyService from "../API/StrategyService";

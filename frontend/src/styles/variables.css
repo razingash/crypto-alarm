@@ -1,0 +1,111 @@
+
+.field__variables {
+
+}
+
+.variables__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    justify-content: center;
+}
+
+.variables__list {
+    display: flex;
+    flex-direction: column;
+    row-gap: 25px;
+}
+
+.variable__item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    row-gap: 6px;
+}
+
+.variable__header {
+    display: flex;
+    gap: 10px 20px;
+    border-bottom: 2px solid var(--container-border-1);
+    align-items: center;
+    justify-content: space-between;
+}
+
+.variable__symbol {
+    color: var(--blocked-element);
+}
+
+.variable__formula__symbol {
+
+}
+.variable__formula__symbol svg:nth-child(1) {
+    display: none;
+}
+
+.svg__switch_variable {
+    width: 20px;
+    height: 20px;
+    fill: #fff;
+}
+
+.variable__name {
+
+}
+
+.varialbe__description {
+    color: var(--darkened-text);
+    margin-top: 2px;
+}
+
+.variable__formula__container {
+    border-top: 1px solid;
+    border-radius: 3px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease;
+}
+
+.variable__formula {
+    border-right: 1px solid;
+    border-left: 1px solid;
+    border-bottom: 1px solid;
+    border-radius: 3px;
+    padding: 6px;
+    transition: transform 0.5s ease;
+    transform: translateY(-100%);
+}
+
+.checkbox__variable_formula {
+    display: none;
+}
+.checkbox__variable_formula:checked ~ .variable__formula__container {
+    max-height: 500px;
+    opacity: 1;
+}
+.checkbox__variable_formula:checked ~ .variable__formula__container .variable__formula {
+    transform: translateY(0);
+}
+.checkbox__variable_formula:checked ~ .variable__header .variable__formula__symbol svg:nth-child(1) {
+    display: inline;
+}
+.checkbox__variable_formula:checked ~ .variable__header .variable__formula__symbol svg:nth-child(2) {
+    display: none;
+}
+
+/* new-variables */
+
+.new_variable__list {
+
+}
+.new_variable__list:last-child {
+    border-bottom: 1px solid var(--container-border-1);
+}
+
+.new_variable__meaning {
+
+}
+
+.new_varialbe__tip {
+    color: var(--darkened-text);
+}
