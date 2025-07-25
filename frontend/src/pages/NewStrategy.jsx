@@ -1,5 +1,5 @@
 import "../styles/strategy.css"
-import FormulaEditor from "../components/Keyboard/FormulaEditor";
+import EditorFormula from "../components/Keyboard/editors/EditorFormula";
 import {useEffect, useState} from "react";
 import {useFetching} from "../hooks/useFetching";
 import StrategyService from "../API/StrategyService";
@@ -45,12 +45,12 @@ const NewStrategy = () => {
                     <input className={"strategy__name__input"} placeholder={"input formula name..."}
                        type="text" maxLength={150} onChange={(e) => setFormulaName(e.target.value)}/>
                 </div>
-                <FormulaEditor rawFormulas={rawFormula} activeFormulaIndex={activeFormulaIndex}
-                    setActiveFormulaIndex={setActiveFormulaIndex}
-                    setRawFormula={(index, newFormula) => {
+                <EditorFormula rawFormulas={rawFormula} activeFormulaIndex={activeFormulaIndex}
+                               setActiveFormulaIndex={setActiveFormulaIndex}
+                               setRawFormula={(index, newFormula) => {
                         setRawFormula(prev => prev.map((f, i) => i === index ? newFormula : f));
                     }}
-                    deleteCondition={(index) => {
+                               deleteCondition={(index) => {
                         setRawFormula(prev => prev.filter((_, i) => i !== index));
                     }}
                 />

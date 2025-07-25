@@ -59,6 +59,7 @@ func main() {
 	routes.SetupTriggersRoutes(app)
 	routes.SetupSettingsRoutes(app)
 	routes.SetupMetricsRoutes(app)
+	routes.SetupVariableRoutes(app)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

@@ -5,3 +5,4 @@ crypto-analyzer/tests/.pytest_cache
 venv/
 frontend/node_modules
 crypto-gateway/logs/*.log
+/frontend/src/components/Keyboard/keyboards/

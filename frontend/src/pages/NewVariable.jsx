@@ -1,11 +1,10 @@
 import React, {useState} from 'react';
 import "../styles/variables.css"
-import FormulaEditor from "../components/Keyboard/FormulaEditor";
+import EditorVariable from "../components/Keyboard/editors/EditorVariable";
 
 const NewVariable = () => {
     const [rawFormula, setRawFormula] = useState([["\\textunderscore"]]);
     const [activeFormulaIndex, setActiveFormulaIndex] = useState(0);
-
 
     return (
         <div className={"section__main"}>
@@ -14,12 +13,12 @@ const NewVariable = () => {
                     <div className={"variable__item"}>
                         <div className={"new_variable__meaning"}>Symbol</div>
                         <div className={"new_varialbe__tip"}>This symbol will be displayed in the formulas.</div>
-                        <input className={"input__default"} placeholder={"input symbol..."} maxLength={40}/>
+                        <input className={"input__default input__variable"} placeholder={"input symbol..."} maxLength={40}/>
                     </div>
                     <div className={"variable__item"}>
                         <div className={"new_variable__meaning"}>Name</div>
                         <div className={"new_varialbe__tip"}>A brief description of the formula, up to 255 characters.</div>
-                        <input className={"input__default"} placeholder={"input short description..."} maxLength={255}/>
+                        <input className={"input__default input__variable"} placeholder={"input short description..."} maxLength={255}/>
                     </div>
                     <div className={"variable__item"}>
                         <div className={"new_variable__meaning"}>Description</div>
@@ -29,16 +28,16 @@ const NewVariable = () => {
                     <div className={"variable__item"}>
                         <div className={"new_variable__meaning"}>Formula</div>
                         <div className={"new_varialbe__tip"}>The formula that will use data from specific endpoints. The same data can be stored in different Binance endpoints.</div>
-                        <FormulaEditor rawFormulas={rawFormula} activeFormulaIndex={activeFormulaIndex}
-                            setActiveFormulaIndex={setActiveFormulaIndex}
-                            setRawFormula={(index, newFormula) => {
+                        <EditorVariable rawFormulas={rawFormula} activeFormulaIndex={activeFormulaIndex}
+                                       setActiveFormulaIndex={setActiveFormulaIndex}
+                                       setRawFormula={(index, newFormula) => {
                                 setRawFormula(prev => prev.map((f, i) => i === index ? newFormula : f));
                             }}
-                            deleteCondition={(index) => {
+                                       deleteCondition={(index) => {
                                 setRawFormula(prev => prev.filter((_, i) => i !== index));
                             }}
-                            isNewVariable={true}
                         />
+                        <div className={"cell__error"}>Possible error</div>
                     </div>
                 </div>
             </div>

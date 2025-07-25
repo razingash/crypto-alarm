@@ -1,6 +1,6 @@
 
 .field__variables {
-
+    gap: 20px;
 }
 
 .variables__header {
@@ -93,10 +93,11 @@
     display: none;
 }
 
-/* new-variables */
-
+/* new-variables page */
 .new_variable__list {
-
+    display: flex;
+    flex-direction: column;
+    row-gap: 11px;
 }
 .new_variable__list:last-child {
     border-bottom: 1px solid var(--container-border-1);
@@ -108,4 +109,47 @@
 
 .new_varialbe__tip {
     color: var(--darkened-text);
+}
+
+.input__variable {
+    font-size: 16px;
+    width: fit-content;
+    max-width: 100%;
+    padding-left: 3px;
+}
+
+/* variabple page */
+.input__variable_change {
+    font-size: 16px;
+    width: fit-content;
+    max-width: 100%;
+    padding-left: 3px;
+    border-radius: initial;
+}
+
+.variable__container {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+}
+
+.variable__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px 20px;
+}
+
+.variable__column {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+@media (max-width: 350px) {
+    .variable__row {
+        flex-direction: column;
+    }
+    .input__variable_change {
+        width: 100%;
+    }
 }

@@ -178,8 +178,13 @@ const Keyboard = ({onKeyPress, isNewVariable}) => {
                         <div key={rowIndex} className="basic_keyboard__row">
                             {row.map((item) => (
                                 <div key={item.token || item.toString()}
-                                     onClick={() => handleKeyClick(item.token ? item : item.toString())}
-                                     className={`basic_keyboard__item ${typeof item === "object" && item.class ? item.class : ""}`}
+                                     onClick={
+                                         isNewVariable && (["<", "<=", ">=", ">"].includes(item.token) || item === "=")
+                                             ? undefined : () => handleKeyClick(item.token ? item : item.toString())
+                                     }
+                                     className={`basic_keyboard__item ${typeof item === "object" && item.class ? item.class : ""}
+                                     ${isNewVariable && (["<", "<=", ">=", ">"].includes(item.token) || item === "=") && 'keyboard__item_blocked'}
+                                    `}
                                 >
                                     {item.id === "frac" ? (
                                         <div className={"fraction"}>

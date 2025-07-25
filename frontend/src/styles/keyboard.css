@@ -212,6 +212,11 @@
     user-select: none;
 }
 
+.keyboard__item_blocked {
+    background: #5e1616;
+    cursor: default;
+}
+
 .sep-1 {
     all: initial;
     height: 42px;

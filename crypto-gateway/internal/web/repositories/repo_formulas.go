@@ -153,21 +153,478 @@ func GetStrategiesWithFormulas(limit int, page int, strategyID string) ([]Strate
 
 	if strategyID != "" {
 		rows, err := db.DB.Query(context.Background(), `
-			SELECT 
-				cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
-				cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
-				tf.formula, tf.formula_raw, tf.id
-			FROM crypto_strategy cs
-			LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
-			LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
-			WHERE cs.id = $1
-		`, strategyID)
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
 		if err != nil {
 			return nil, false, err
 		}
 		defer rows.Close()
 
-		return scanStrategies(rows)
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
+	}
+
+	if strategyID != "" {
+		rows, err := db.DB.Query(context.Background(), `
+		SELECT 
+			cs.id, cs.name, COALESCE(cs.description, ''), cs.is_notified, cs.is_active, cs.is_shutted_off, 
+			cs.is_history_on, cs.cooldown, COALESCE(TO_CHAR(cs.last_triggered, 'YYYY-MM-DD HH24:MI:SS'), ''),
+			tf.formula, tf.formula_raw, tf.id
+		FROM crypto_strategy cs
+		LEFT JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
+		LEFT JOIN trigger_formula tf ON tf.id = csf.formula_id
+		WHERE cs.id = $1
+	`, strategyID)
+		if err != nil {
+			return nil, false, err
+		}
+		defer rows.Close()
+
+		strategies, _, err := scanStrategies(rows)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if len(strategies) == 0 {
+			return nil, false, fmt.Errorf("strategy with id %s not found", strategyID)
+		}
+
+		return strategies, false, nil
 	}
 
 	offset := (page - 1) * limit

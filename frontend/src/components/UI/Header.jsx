@@ -29,15 +29,45 @@ const Header = () => {
     return (
         <div className={"section__header"}>
             <div className={"header__field"}>
+                <input id="menu__toggle" type="checkbox"/>
+                <label htmlFor="menu__toggle" className="menu__button">
+                    <span className="menu__bar"></span>
+                    <span className="menu__bar"></span>
+                    <span className="menu__bar"></span>
+                </label>
                 <div className={"header__items"}>
-                    <Link to={"/"} className={"header__item"}>Main</Link>
-                    <Link to={"/errors"} className={"header__item"}>Errors</Link>
-                    <Link to={"/logs"} className={"header__item"}>Logs</Link>
-                    <Link to={"/new-strategy"} className={"header__item"}>New strategy</Link>
-                    <Link to={"/strategies"} className={"header__item"}>Strategies</Link>
-                    <Link to={"/variables"} className={"header__item"}>Variables</Link>
-                    <Link to={"/analytics"} className={"header__item"}>Analytics</Link>
-                    <Link to={"/settings"} className={"header__item"}>Settings</Link>
+                    <label htmlFor="menu__toggle" className={"header__dropdown__close"}>
+                        <svg className="svg__cross">
+                            <use xlinkHref="#icon_cross"></use>
+                        </svg>
+                    </label>
+                    <label htmlFor="menu__toggle" className={"header__item"}>
+                        <Link to={"/"} className={"header__link"}>Main</Link>
+                    </label>
+                    <label htmlFor="menu__toggle" className={"header__item"}>
+                        <Link to={"/errors"} className={"header__link"}>Errors</Link>
+                    </label>
+                    <label htmlFor="menu__toggle" className={"header__item"}>
+                        <Link to={"/logs"} className={"header__link"}>Logs</Link>
+                    </label>
+                    <label htmlFor="menu__toggle" className={"header__item"}>
+                        <Link to={"/strategies"} className={"header__link"}>Strategies</Link>
+                    </label>
+                    <label htmlFor="menu__toggle" className={"header__item"}>
+                        <Link to={"/new-strategy"} className={"header__link"}>New strategy</Link>
+                    </label>
+                    <label htmlFor="menu__toggle" className={"header__item"}>
+                        <Link to={"/variables"} className={"header__link"}>Variables</Link>
+                    </label>
+                    <label htmlFor="menu__toggle" className={"header__item"}>
+                        <Link to={"/variables"} className={"header__link"}>New Variable</Link>
+                    </label>
+                    <label htmlFor="menu__toggle" className={"header__item"}>
+                        <Link to={"/analytics"} className={"header__link"}>Analytics</Link>
+                    </label>
+                    <label htmlFor="menu__toggle" className={"header__item"}>
+                        <Link to={"/settings"} className={"header__link"}>Settings</Link>
+                    </label>
                 </div>
             </div>
             {!isPwaMode &&

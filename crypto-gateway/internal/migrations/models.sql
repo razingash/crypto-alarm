@@ -49,13 +49,13 @@ CREATE TABLE crypto_params (
 CREATE TABLE crypto_variables (
     id BIGSERIAL PRIMARY KEY,
     symbol varchar(40) NOT NULL UNIQUE,
-    name varchar(255) NOT NULL UNIQUE,
-    description TEXT,
-    formula TEXT,
+    name varchar(255) NOT NULL,
+    description varchar,
+    formula varchar NOT NULL,
+    formula_raw varchar NOT NULL,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now()
 );
-
 
 CREATE TABLE crypto_variable_params (
     id BIGSERIAL PRIMARY KEY,

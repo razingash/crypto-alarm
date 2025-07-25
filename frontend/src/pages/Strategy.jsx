@@ -24,7 +24,6 @@ const Strategy = () => {
         return await StrategyService.getStrategies({id: id})
     }, 0, 1000)
     const [updateStrategyData, , ] = useFetching(async (newData) => {
-        console.log(newData)
         return await StrategyService.updateStrategy(newData)
     }, 0, 1000)
     const [removeStrategy, , ] = useFetching(async (conditionID=null) => {
