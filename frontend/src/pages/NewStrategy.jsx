@@ -29,7 +29,7 @@ const NewStrategy = () => {
 
         const response = await fetchNewFormula(rawFormula, formulaName);
         if (response && response.status === 200) {
-            navigate(`/strategy/${response.data.id}`);
+            navigate(`/strategies/${response.data.id}`);
         }
     };
 
@@ -39,11 +39,15 @@ const NewStrategy = () => {
     };
 
     return (
-        <div className={"section__main"}>
+        <div className={"section__main field__scrollable section__with_keyboard"}>
             <div className={"field__new_formula"}>
                 <div className={"container__new_formula"}>
                     <input className={"strategy__name__input"} placeholder={"input formula name..."}
                        type="text" maxLength={150} onChange={(e) => setFormulaName(e.target.value)}/>
+                    <div className={"formula__changes"}>
+                        <div className="button__save strategy__create" onClick={addNewCondition}>add condition</div>
+                        <div className="button__save strategy__create" onClick={sendNewFormula}>apply</div>
+                    </div>
                 </div>
                 <EditorFormula rawFormulas={rawFormula} activeFormulaIndex={activeFormulaIndex}
                                setActiveFormulaIndex={setActiveFormulaIndex}
@@ -55,10 +59,6 @@ const NewStrategy = () => {
                     }}
                 />
                 <div className={"container__new_formula"}>
-                    <div className={"formula__changes"}>
-                        <div className="button__save strategy__create" onClick={addNewCondition}>add condition</div>
-                        <div className="button__save strategy__create" onClick={sendNewFormula}>apply</div>
-                    </div>
                     <div className={"field__new_formula_errors"}>
                         {localError && <div className={"cell__error"}>Notification: {localError}</div>}
                         {newFormulaError && <div className={"cell__error"}>Error: {newFormulaError?.error}</div>}

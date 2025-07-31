@@ -4,9 +4,11 @@ import AdaptiveLoading from "../UI/AdaptiveLoading";
 import {useFetching} from "../../hooks/useFetching";
 import StrategyService from "../../API/StrategyService";
 
+// в теории можно также поделить клавиатуру на две версии чтобы не было лишних переменных, но на практике минусов больше
 const Keyboard = ({onKeyPress, isNewVariable}) => {
     const [availableApi, setAvailableApi] = useState([]);
     const [availableCurrencies, setAvailableCurrencies] = useState([]);
+    const [variables, setVariables] = useState([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [searchKey, setSearchKey] = useState("");
     const [selectedCurrency, setSelectedCurrency] = useState(null);
@@ -30,6 +32,7 @@ const Keyboard = ({onKeyPress, isNewVariable}) => {
                 if (data) {
                     data?.api && setAvailableApi(data.api)
                     data?.currencies && setAvailableCurrencies(data.currencies)
+                    data?.variables && setVariables(data.variables)
                 }
             }
         }
@@ -116,9 +119,14 @@ const Keyboard = ({onKeyPress, isNewVariable}) => {
     };
 
     const handleKeyClick = (key) => {
+        console.log(key)
         onKeyPress(key);
     };
 
+    const handleUserVariable = (variable) => {
+        const v = `{\\color{#00afff}\\text{${variable}}}`
+        handleKeyClick(v)
+    }
     const handleVariable = (variable) => {
         if (selectedCurrency) {
             const v = `\\text{\\textcolor{orange}{${selectedCurrency}}\\_${variable}}`
@@ -132,15 +140,14 @@ const Keyboard = ({onKeyPress, isNewVariable}) => {
 
     return (
         <div className={"keyboard__field"}>
-            <input type={"checkbox"} id={"checkbox__keyboard"}/>
-            <label className={"keyboard__open"} htmlFor={"checkbox__keyboard"}>
+            <label className={"keyboard__open"} htmlFor={"editor"}>
                 <div>Keyboard</div>
                 <svg className={"svg__keyboard__open"}>
                     <use xlinkHref={"#icon_arrow"}></use>
                 </svg>
             </label>
             <div className={"keyboard"}>
-                <label className={"keyboard__hide"} htmlFor={"checkbox__keyboard"}>
+                <label className={"keyboard__hide"} htmlFor={"editor"}>
                     <svg className={"svg__keyboard__hide"}>
                         <use xlinkHref={"#icon_arrow"}></use>
                     </svg>
@@ -158,6 +165,9 @@ const Keyboard = ({onKeyPress, isNewVariable}) => {
                              onClick={() => setSelectedIndex(-1)}>Currency
                         </div>
                         }
+                        <div className={`label__item ${selectedIndex === -2 ? "choosed_label" : ""}`}
+                             onClick={() => setSelectedIndex(-2)}>Variables
+                        </div>
                         {availableApi.length !== 0 ? (
                             Object.keys(availableApi).map((key, index) => (
                                 <div key={key} className={`label__item ${selectedIndex === index+1 ? "choosed_label" : ""}`}
@@ -242,8 +252,9 @@ const Keyboard = ({onKeyPress, isNewVariable}) => {
                     </div>
                 </div>
                 )}
-                {!isNewVariable && selectedIndex === -1 && (
                 <div className={"keyboard__choices"}>
+                    {!isNewVariable && selectedIndex === -1 && (
+                    <>
                     <div className={"keaboard__input__area"}>
                         <div className={"keayboard__input__field"}>
                             {searchKey.length > 0 && (
@@ -278,8 +289,21 @@ const Keyboard = ({onKeyPress, isNewVariable}) => {
                             filteredFields.length === 0 && <div className="dynamic_keyboard__no_results">Nothing was found</div>
                         )}
                     </div>
-                </div>
+                    </>
                 )}
+                {selectedIndex === -2 && (
+                    <div className="dynamic_keyboard__list">
+                        {variables.map(item => (
+                            <div key={item.id} className="dynamic_keyboard__item" onClick={() => handleUserVariable(item.symbol)}>{item.symbol}</div>
+                        ))}
+                        {KeyboardError ? (
+                            <div className={"dynamic_keyboard__no_results"}>Backend server is most likely offline</div>
+                        ) : (
+                            variables.length === 0 && <div className="dynamic_keyboard__no_results">Nothing was found</div>
+                        )}
+                    </div>
+                )}
+                </div>
             </div>
         </div>
     );

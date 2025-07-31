@@ -29,11 +29,10 @@ const EditorVariable = ({rawFormulas, setRawFormula, activeFormulaIndex, setActi
 
     return (
         <>
-            {rawFormulas.map((rawFormula, index) => (
-                <div className={"condition__container"} key={index} onClick={() => setActiveFormulaIndex(index)}>
-                    <FormulaInput formula={rawFormula}/>
-                </div>
-            ))}
+            <input type={"checkbox"} id={"editor"} defaultChecked={false}/>
+            <label htmlFor={"editor"} className={"editor"}>
+                <FormulaInput formula={rawFormulas[0]}/>
+            </label>
             <Keyboard onKeyPress={handleKeyPress} isNewVariable={true}/>
         </>
     );

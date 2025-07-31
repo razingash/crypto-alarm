@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import "../styles/variables.css"
+import "../styles/strategy.css"
 import {Link} from "react-router-dom";
 import FormulaInput from "../components/Keyboard/FormulaInput";
 import {useFetching} from "../hooks/useFetching";
@@ -52,7 +52,7 @@ const Variables = () => {
                     <div className={"variable__item"} key={variable.id}>
                         <input type={"checkbox"} id={`variables__checkbox-${variable.id}`} className={"checkbox__variable_formula"}/>
                         <div className={"variable__header"}>
-                            <div className={"variable__symbol"}>{variable.name}</div>
+                            <Link to={`/variables/${variable.id}`} className={"variable__symbol"}>{variable.symbol}</Link>
                             <label className={"variable__formula__symbol"} htmlFor={`variables__checkbox-${variable.id}`}>
                                 <svg className={"svg__switch_variable"}>
                                     <use xlinkHref={"#icon_switch_on"}></use>

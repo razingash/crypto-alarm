@@ -123,3 +123,13 @@ export const calculateMA = (dayCount, data) => {
     }
     return result;
 }
+
+export const getModifiedFields = (original, modified) => {
+    const changes = {};
+    for (const key in original) {
+        if (original[key] !== modified[key]) {
+            changes[key] = modified[key];
+        }
+    }
+    return changes;
+};

@@ -47,7 +47,7 @@ const Strategies = () => {
                     <div className={"strategy__item"} key={strategy.id} ref={index === strategies.length - 1 ? lastElement : null}>
                         <div className={"strategy__item__header"}>
                             <div className={"strategy__weight"}>Cooldown: {strategy.cooldown}</div>
-                            <Link to={`/strategy/${strategy.id}`} className={"strategy__name"}>
+                            <Link to={`/strategies/${strategy.id}`} className={"strategy__name"}>
                                 {strategy.name || `Nameless formula with id ${strategy.id}`}
                             </Link>
                         </div>

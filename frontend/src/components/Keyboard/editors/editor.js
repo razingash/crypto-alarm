@@ -174,3 +174,50 @@ const isEmptyExpression = (openIndex, closeIndex, formula) => {
     const innerTokens = formula.slice(openIndex + 1, closeIndex);
     return innerTokens.every(token => token === ',');
 };
+
+/* used for clearing katex expressions before sending to the backend*/
+export function cleanKatexExpression(expr) { // проверки на правильность тут не будет
+    return expr
+        .replace(/\\textcolor{[^}]+}{([^}]+)}/g, '$1')
+        .replace(/\\text{([^}]+)}/g, '$1')
+        .replace(/\\_/g, '_')
+        .replace(/\\\\/g, '\\');
+}
+
+export function rawFormulaToFormula(tokens) {
+    const result = [];
+    const stack = [];
+    let i = 0;
+
+    while (i < tokens.length) {
+        const tk = tokens[i];
+        if (tk === "\\textunderscore") {
+            i++;
+            continue
+        }
+        if (tk === 'matrix' && tokens[i + 1] === '(') {
+            stack.push('matrix');
+            result.push('(', '(');
+            i += 2;
+            continue;
+        }
+
+        if (stack.length > 0 && tk === ',') {
+            result.push(')', '/', '(');
+            i++;
+            continue;
+        }
+
+        if (stack.length > 0 && tk === ')') {
+            result.push(')', ')');
+            stack.pop();
+            i += 1;
+            continue;
+        }
+
+        result.push(tk);
+        i++;
+    }
+
+    return result.map(cleanKatexExpression).join('');
+}

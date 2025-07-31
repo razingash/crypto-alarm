@@ -6,7 +6,7 @@ import {useFetching} from "../hooks/useFetching";
 import StrategyService from "../API/StrategyService";
 import '../styles/strategy.css'
 import ChartLinear from "../components/UI/ChartLinear";
-import {transformData} from "../utils/utils";
+import {getModifiedFields, transformData} from "../utils/utils";
 import ErrorField from "../components/UI/ErrorField";
 import AdaptiveLoading from "../components/UI/AdaptiveLoading";
 
@@ -68,16 +68,6 @@ const Strategy = () => {
         }
         void loadData();
     }, [strategy?.is_history_on, historyData])
-
-    const getModifiedFields = (original, modified) => {
-        const changes = {};
-        for (const key in original) {
-            if (original[key] !== modified[key]) {
-                changes[key] = modified[key];
-            }
-        }
-        return changes;
-    };
 
     const handleSaveChanges = async () => {
         const changedFields = getModifiedFields(strategy, strategyNewData);
@@ -255,7 +245,7 @@ const Strategy = () => {
                 <div className={"strategy__manipulations"}>
                     <input type="checkbox" id="strategy__checkbox" onChange={() => setChangeMod((prev) => !prev)}/>
                     <div className={"button__remove"} onClick={handleRemoveFormula}>remove</div>
-                    <div className={"button__save"} onClick={handleSaveChanges}>save</div>
+                    <div className={"button__save_1"} onClick={handleSaveChanges}>save</div>
                     <label className={"button__change"} htmlFor="strategy__checkbox">change</label>
                     <label className={"button__cancle"} htmlFor="strategy__checkbox">cancle</label>
                 </div>

@@ -1,4 +1,35 @@
 
+.section__with_keyboard {
+    height: 100vh;
+}
+
+/* editors */
+
+.field__keyboard_input {
+    position: relative;
+}
+.editor {
+    width: 100%;
+    cursor: pointer;
+}
+#editor {
+    display: none;
+}
+#editor:checked ~ .editor {
+    background: #121212;
+    padding: 10px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-bottom: 2px solid var(--blocked-element);
+    overflow: auto;
+}
+#editor:not(:checked) ~ .keyboard__field .keyboard {
+    transform: translateY(100%);
+}
+
 /* input field */
 
 .formula__input {
@@ -401,13 +432,6 @@
 	margin-bottom: 8px;
     border-bottom: 1px solid var(--blocked-element);
     padding: 4px 10px;
-}
-
-#checkbox__keyboard {
-    display: none;
-}
-#checkbox__keyboard:checked ~ .keyboard {
-    transform: translateY(100%);
 }
 
 @keyframes blink {

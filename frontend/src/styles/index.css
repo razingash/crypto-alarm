@@ -15,11 +15,13 @@
     --active-element: #326efcff;
     --internal-link-element: #008CFF;
     --darkened-text: #b2b2b2;
+    --variable-color: #00afff;
 }
 
 body {
     background: var(--background);
     margin: 0;
+    height: 100vh;
 }
 
 .svg__list {
@@ -86,6 +88,7 @@ body {
     margin: 0 5%;
 }
 .header__item {
+    position: relative;
     display: flex;
     flex-grow: 1;
     justify-content: center;
@@ -93,15 +96,19 @@ body {
     align-items: center;
     z-index: 1;
     cursor: pointer;
-}
-.header__dropdown__close {
-    display: none;
-}
-.header__link {
     text-decoration: none;
     -webkit-user-select: none;
     user-select: none;
     color: #fff;
+}
+.link_active svg {
+    fill: var(--lines);
+}
+.header__item div {
+    margin-left: 30px;
+}
+.header__dropdown__close {
+    display: none;
 }
 
 .section__main {
@@ -138,6 +145,14 @@ body {
     margin-left: 20px;
 }
 
+.svg__header {
+    position: absolute;
+    top: 0;
+    width: 24px;
+    height: 24px;
+    fill: #fff;
+    display: none;
+}
 .svg__pwa {
     width: 30px;
     height: 20px;
@@ -242,6 +257,7 @@ body {
 }
 .button__save {
     color: var(--lines);
+    background: none;
 }
 .button__save:hover {
     box-shadow: 0 0 0 2px rgb(0, 255, 55), 0 2px 4px rgba(0, 255, 55, 0.3), 0 4px 8px rgba(0, 255, 55, 0.3), 0 0 16px rgb(0, 255, 55);
@@ -291,11 +307,12 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    top: 36px;
+    position: absolute;
+    top: 0;
     bottom: 0;
     left: 0;
     right: 0;
-    position: absolute;
+    z-index: -1;
 }
 .loading__spinner {
     animation: rotate 2s linear infinite;
@@ -312,9 +329,6 @@ body {
     fill: none;
 }
 
-#mainframe {
-    position: relative;
-}
 #menu__toggle{
     display: none;
 }
@@ -341,6 +355,7 @@ body {
 
 @media (max-width: 768px){
     #menu__toggle:checked ~ .header__items {
+        overflow: auto;
         transform: translateX(0);
         opacity: 1;
     }
@@ -348,6 +363,10 @@ body {
         overflow: hidden;
     }
     .menu__button {
+        display: block;
+        user-select: none;
+    }
+    .svg__header {
         display: block;
     }
     .header__dropdown__close {
@@ -359,12 +378,6 @@ body {
         border-bottom: 2px solid var(--internal-link-element);
         padding-bottom: 7px;
         justify-content: flex-end;
-    }
-    .section__header {
-
-    }
-    .header__field {
-
     }
     .header__items {
         position: fixed;
@@ -379,7 +392,7 @@ body {
         height: 100vh;
         margin: 0;
         gap: 10px;
-        padding-top: 37px;
+        padding: 37px 0 40px 0;
         transform: translateX(-100%);
         transition: 0.7s ease, opacity 0.4s ease;
         opacity: 0;
@@ -390,9 +403,10 @@ body {
         width: 100%;
         justify-content: flex-start;
         height: auto;
-    }
-    .header__link {
         padding: 4px 20px;
+    }
+    .header__item:nth-child(2) {
+        margin-top: 10px;
     }
     .section__main {
         margin: 20px 10px 20px 10px;

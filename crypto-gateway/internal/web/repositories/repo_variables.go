@@ -28,373 +28,16 @@ type Variable struct {
 	UpdatedAt   string `json:"updated_at"`
 }
 
+type VariableKeyboard struct {
+	ID         int64  `json:"id"`
+	Symbol     string `json:"symbol"`
+	Formula    string `json:"formula"`
+	FormulaRaw string `json:"formula_raw"`
+}
+
 func GetVariables(limit int, page int, variableID string) ([]Variable, bool, error) {
 	var variables []Variable
 	var hasNext bool
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s doesn't exist", variableID)
-		}
-
-		return variables, false, nil
-	}
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s not found", variableID)
-		}
-
-		return variables, false, nil
-	}
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s not found", variableID)
-		}
-
-		return variables, false, nil
-	}
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s not found", variableID)
-		}
-
-		return variables, false, nil
-	}
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s not found", variableID)
-		}
-
-		return variables, false, nil
-	}
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s not found", variableID)
-		}
-
-		return variables, false, nil
-	}
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s not found", variableID)
-		}
-
-		return variables, false, nil
-	}
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s not found", variableID)
-		}
-
-		return variables, false, nil
-	}
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s not found", variableID)
-		}
-
-		return variables, false, nil
-	}
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s not found", variableID)
-		}
-
-		return variables, false, nil
-	}
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s not found", variableID)
-		}
-
-		return variables, false, nil
-	}
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s not found", variableID)
-		}
-
-		return variables, false, nil
-	}
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s not found", variableID)
-		}
-
-		return variables, false, nil
-	}
-
-	if variableID != "" {
-		rows, err := db.DB.Query(context.Background(), `
-		SELECT 
-			id, symbol, name, COALESCE(description, ''), formula, formula_raw,
-			TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'),
-			TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS')
-		FROM crypto_variables
-		WHERE id = $1
-	`, variableID)
-		if err != nil {
-			return nil, false, err
-		}
-		defer rows.Close()
-
-		variables, _, err := scanVariables(rows)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(variables) == 0 {
-			return nil, false, fmt.Errorf("variable with id %s not found", variableID)
-		}
-
-		return variables, false, nil
-	}
 
 	if variableID != "" {
 		rows, err := db.DB.Query(context.Background(), `
@@ -449,6 +92,32 @@ func GetVariables(limit int, page int, variableID string) ([]Variable, bool, err
 	}
 
 	return variables, hasNext, nil
+}
+
+func GetVariablesForKeyboard() ([]VariableKeyboard, error) {
+	var variables []VariableKeyboard
+	rows, err := db.DB.Query(context.Background(), `
+		SELECT id, symbol, formula, formula_raw
+		FROM crypto_variables
+		ORDER BY id
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var v VariableKeyboard
+		err := rows.Scan(
+			&v.ID, &v.Symbol, &v.Formula, &v.FormulaRaw,
+		)
+		if err != nil {
+			return nil, err
+		}
+		variables = append(variables, v)
+	}
+
+	return variables, nil
 }
 
 func CreateVariable(symbol, name, description, formula, formulaRaw string) (int64, error) {

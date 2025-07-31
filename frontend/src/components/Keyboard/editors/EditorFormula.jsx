@@ -29,6 +29,8 @@ const EditorFormula = ({rawFormulas, setRawFormula, deleteCondition, activeFormu
 
     return (
         <>
+            <input type={"checkbox"} id={"editor"} defaultChecked={false}/>
+            <label htmlFor={"editor"} className={"editor"}>
             {rawFormulas.map((rawFormula, index) => (
                 <div className={"condition__container"} key={index} onClick={() => setActiveFormulaIndex(index)}>
                     <svg className={"svg__trash_can"} onClick={() => deleteCondition(index)}>
@@ -37,6 +39,7 @@ const EditorFormula = ({rawFormulas, setRawFormula, deleteCondition, activeFormu
                     <FormulaInput formula={rawFormula}/>
                 </div>
             ))}
+            </label>
             <Keyboard onKeyPress={handleKeyPress}/>
         </>
     );

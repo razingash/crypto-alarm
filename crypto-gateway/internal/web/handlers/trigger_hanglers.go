@@ -75,6 +75,14 @@ func Keyboard(c fiber.Ctx) error {
 	keyboard["api"] = apiData
 	keyboard["currencies"] = currencies
 
+	variables, err := repositories.GetVariablesForKeyboard()
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	keyboard["variables"] = variables
+
 	return c.JSON(keyboard)
 }
 

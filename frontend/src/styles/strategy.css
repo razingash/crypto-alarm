@@ -3,15 +3,20 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 30px;
+    gap: 15px;
     background: var(--container-background);
     padding: 20px;
     border-radius: 4px;
     max-height: calc(100vh - 255px - 90px);
+    height: 100%;
     overflow-y: auto;
+    position: relative;
 }
 
 .container__new_formula {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     max-width: 200px;
     width: 100%;
 }
@@ -30,7 +35,6 @@
 
 .field__new_formula_errors {
     width: 100%;
-    min-height: 2em;
 }
 
 /* Strategies */
@@ -178,7 +182,7 @@
 #strategy__checkbox:checked ~ .button__remove, #strategy__checkbox:checked ~ .button__change {
   display: none;
 }
-#strategy__checkbox:checked ~ .button__cancle, #strategy__checkbox:checked ~ .button__save {
+#strategy__checkbox:checked ~ .button__cancle, #strategy__checkbox:checked ~ .button__save_1 {
   display: flex;
 }
 
@@ -240,6 +244,169 @@
     transform: translateX(19px);
 }
 
+/* variables */
+.field__variables {
+    gap: 20px;
+}
+
+.variables__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    justify-content: center;
+}
+
+.variables__list {
+    display: flex;
+    flex-direction: column;
+    row-gap: 25px;
+}
+
+.variable__item {
+    display: flex;
+    flex-direction: column;
+    row-gap: 6px;
+}
+
+.variable__header {
+    display: flex;
+    gap: 10px 20px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.variable__symbol {
+    text-decoration: none;
+    color: var(--variable-color);
+    border-bottom: 2px solid var(--container-border-1);
+    width: 100px;
+}
+.variable__formula__symbol {
+    border-bottom: 2px solid var(--container-border-1);
+    width: 100px;
+    direction: rtl;
+}
+.variable__formula__symbol svg:nth-child(1) {
+    display: none;
+}
+
+.svg__switch_variable {
+    width: 20px;
+    height: 20px;
+    fill: #fff;
+    cursor: pointer;
+}
+.svg__switch_variable:hover {
+    fill: var(--lines);
+}
+.variable__name {
+
+}
+
+.varialbe__description {
+    color: var(--darkened-text);
+    margin-top: 2px;
+}
+
+.variable__formula__container {
+    border-top: 1px solid;
+    border-radius: 3px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease;
+}
+
+.variable__formula {
+    border-right: 1px solid;
+    border-left: 1px solid;
+    border-bottom: 1px solid;
+    border-radius: 3px;
+    padding: 6px;
+    transition: transform 0.5s ease;
+    transform: translateY(-100%);
+}
+
+.checkbox__variable_formula {
+    display: none;
+}
+.checkbox__variable_formula:checked ~ .variable__formula__container {
+    max-height: 500px;
+    opacity: 1;
+}
+.checkbox__variable_formula:checked ~ .variable__formula__container .variable__formula {
+    transform: translateY(0);
+}
+.checkbox__variable_formula:checked ~ .variable__header .variable__formula__symbol svg:nth-child(1) {
+    display: inline;
+}
+.checkbox__variable_formula:checked ~ .variable__header .variable__formula__symbol svg:nth-child(2) {
+    display: none;
+}
+
+/*повторение*/
+.button__cancle, .button__save_1, #variable__checkbox {
+    display: none;
+}
+#variable__checkbox:checked ~ .button__remove, #variable__checkbox:checked ~ .button__change {
+  display: none;
+}
+#variable__checkbox:checked ~ .button__cancle, #variable__checkbox:checked ~ .button__save_1 {
+  display: flex;
+}
+
+/* new-variables page */
+.new_variable__list {
+    display: flex;
+    flex-direction: column;
+    row-gap: 11px;
+}
+.new_variable__list:last-child {
+    border-bottom: 1px solid var(--container-border-1);
+}
+
+.new_variable__meaning {
+    color: #fff !important;
+}
+
+.new_varialbe__tip {
+    color: var(--darkened-text);
+}
+
+.input__variable {
+    font-size: 16px;
+    width: fit-content;
+    max-width: 100%;
+    padding-left: 3px;
+}
+
+/* variabple page */
+.input__variable_change {
+    font-size: 16px;
+    width: fit-content;
+    max-width: 100%;
+    padding-left: 3px;
+    border-radius: initial;
+}
+
+.variable__container {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+}
+
+.variable__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px 20px;
+}
+
+.variable__column {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
 @media (max-width: 1150px) {
     .chart_additional_data {
         bottom: 18px;
@@ -258,10 +425,19 @@
     }
     .field__new_formula {
         padding: 10px 0;
-        border-bottom: 1px solid #cecece;
+        border-bottom: 1px solid var(--blocked-element);
         max-height: calc(100vh - 255px - 70px);
     }
     .field__new_formula_errors {
         max-height: initial;
+    }
+}
+
+@media (max-width: 350px) {
+    .variable__row {
+        flex-direction: column;
+    }
+    .input__variable_change {
+        width: 100%;
     }
 }
