@@ -35,6 +35,11 @@ type VariableKeyboard struct {
 	FormulaRaw string `json:"formula_raw"`
 }
 
+type Token struct {
+	Type  string
+	Value string
+}
+
 func GetVariables(limit int, page int, variableID string) ([]Variable, bool, error) {
 	var variables []Variable
 	var hasNext bool
@@ -120,63 +125,224 @@ func GetVariablesForKeyboard() ([]VariableKeyboard, error) {
 	return variables, nil
 }
 
-func CreateVariable(symbol, name, description, formula, formulaRaw string) (int64, error) {
-	var id int64
-	query := `
+// не учитывает циклические переменные, но это легко будет добавить используя tokens
+func CreateVariable(symbol, name, description, formula, formulaRaw string, tokens []Token) (int64, error) {
+	ctx := context.Background()
+	tx, err := db.DB.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback(ctx)
+		} else {
+			_ = tx.Commit(ctx)
+		}
+	}()
+
+	var variableID int64
+	err = tx.QueryRow(ctx, `
         INSERT INTO crypto_variables (symbol, name, description, formula, formula_raw)
         VALUES ($1, $2, $3, $4, $5)
-        RETURNING id;
-    `
-	err := db.DB.QueryRow(context.Background(), query, symbol, name, description, formula, formulaRaw).Scan(&id)
-	return id, err
+        RETURNING id
+    `, symbol, name, description, formula, formulaRaw).Scan(&variableID)
+	if err != nil {
+		return 0, err
+	}
+
+	varSet := make(map[string]struct{})
+	for _, token := range tokens {
+		if token.Type == "USER_VARIABLE" {
+			varSet[token.Value] = struct{}{}
+		}
+	}
+	if len(varSet) == 0 {
+		return variableID, nil
+	}
+
+	paramNames := make([]string, 0, len(varSet))
+	args := make([]interface{}, 0, len(varSet))
+	i := 1
+	for name := range varSet {
+		paramNames = append(paramNames, fmt.Sprintf("$%d", i))
+		args = append(args, name)
+		i++
+	}
+
+	query := fmt.Sprintf(`
+		SELECT cp.id, cp.parameter, cp.crypto_api_id
+		FROM crypto_params cp
+		WHERE cp.parameter IN (%s)
+	`, strings.Join(paramNames, ", "))
+	rows, err := tx.Query(ctx, query, args...)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	type paramInfo struct {
+		paramID int
+		apiID   int
+	}
+	unique := make(map[string]paramInfo)
+
+	for rows.Next() {
+		var p paramInfo
+		var paramName string
+		if err := rows.Scan(&p.paramID, &paramName, &p.apiID); err != nil {
+			return 0, err
+		}
+		key := fmt.Sprintf("%d_%d", p.paramID, p.apiID)
+		unique[key] = p
+	}
+	if err = rows.Err(); err != nil {
+		return 0, err
+	}
+
+	if len(unique) == 0 {
+		return variableID, nil
+	}
+
+	valueStrings := make([]string, 0, len(unique))
+	valueArgs := make([]interface{}, 0, len(unique)*3)
+	idx := 1
+	for _, p := range unique {
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d)", idx, idx+1, idx+2))
+		valueArgs = append(valueArgs, p.apiID, variableID, p.paramID)
+		idx += 3
+	}
+
+	insertQuery := fmt.Sprintf(`
+		INSERT INTO crypto_variables_api (api_id, variable_id, parameter_id)
+		VALUES %s
+		ON CONFLICT DO NOTHING
+	`, strings.Join(valueStrings, ", "))
+
+	_, err = tx.Exec(ctx, insertQuery, valueArgs...)
+	if err != nil {
+		return 0, err
+	}
+
+	return variableID, nil
 }
 
-func UpdateVariable(id int, input *UpdateVariableStruct) error {
+func UpdateVariable(id int, input *UpdateVariableStruct, tokens []Token) (bool, error) {
+	ctx := context.Background()
+	tx, err := db.DB.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback(ctx)
+		} else {
+			_ = tx.Commit(ctx)
+		}
+	}()
+
 	setParts := []string{}
-	args := []any{}
-	argPos := 1
+	args := []interface{}{}
+	pos := 1
 
 	if input.Symbol != nil {
-		setParts = append(setParts, fmt.Sprintf("symbol = $%d", argPos))
+		setParts = append(setParts, fmt.Sprintf("symbol = $%d", pos))
 		args = append(args, *input.Symbol)
-		argPos++
+		pos++
 	}
 	if input.Name != nil {
-		setParts = append(setParts, fmt.Sprintf("name = $%d", argPos))
+		setParts = append(setParts, fmt.Sprintf("name = $%d", pos))
 		args = append(args, *input.Name)
-		argPos++
+		pos++
 	}
 	if input.Description != nil {
-		setParts = append(setParts, fmt.Sprintf("description = $%d", argPos))
+		setParts = append(setParts, fmt.Sprintf("description = $%d", pos))
 		args = append(args, *input.Description)
-		argPos++
+		pos++
 	}
 	if input.Formula != nil && input.FormulaRaw != nil {
-		setParts = append(setParts, fmt.Sprintf("formula = $%d, formula_raw = $%d", argPos, argPos+1))
+		setParts = append(setParts,
+			fmt.Sprintf("formula = $%d", pos),
+			fmt.Sprintf("formula_raw = $%d", pos+1),
+		)
 		args = append(args, *input.Formula, *input.FormulaRaw)
-		argPos += 2
+		pos += 2
 	}
 
-	if len(setParts) == 0 {
-		return nil
+	if len(setParts) > 0 {
+		setParts = append(setParts, "updated_at = now()")
+		query := fmt.Sprintf("UPDATE crypto_variables SET %s WHERE id = $%d",
+			strings.Join(setParts, ", "), pos,
+		)
+		args = append(args, id)
+
+		if _, err = tx.Exec(ctx, query, args...); err != nil {
+			return false, err
+		}
 	}
 
-	setParts = append(setParts, "updated_at = now()")
+	varSet := map[string]struct{}{}
+	for _, t := range tokens {
+		if t.Type == "USER_VARIABLE" {
+			varSet[t.Value] = struct{}{}
+		}
+	}
 
-	query := fmt.Sprintf(`UPDATE crypto_variables SET %s WHERE id = $%d`, strings.Join(setParts, ", "), argPos)
-	args = append(args, id)
+	if len(varSet) > 0 {
+		if _, err = tx.Exec(ctx,
+			`DELETE FROM crypto_variables_api WHERE variable_id = $1`, id,
+		); err != nil {
+			return false, err
+		}
 
-	_, err := db.DB.Exec(context.Background(), query, args...)
-	return err
+		names := make([]string, 0, len(varSet))
+		for name := range varSet {
+			names = append(names, name)
+		}
+
+		_, err = tx.Exec(ctx, `
+            INSERT INTO crypto_variables_api (api_id, variable_id, parameter_id)
+            SELECT DISTINCT
+                cp.crypto_api_id,
+                $2::bigint        AS variable_id,
+                cp.id              AS parameter_id
+            FROM crypto_params cp
+            WHERE cp.parameter = ANY($1::text[])
+            ON CONFLICT DO NOTHING
+        `, names, id)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return true, nil
 }
 
 func DeleteVariableById(variableID int) error {
-	_, err := db.DB.Exec(context.Background(), `DELETE FROM crypto_variables WHERE id = $1`, variableID)
+	var count int
+	err := db.DB.QueryRow(context.Background(), `
+		SELECT COUNT(*) 
+		FROM crypto_strategy_variable 
+		WHERE crypto_variable_id = $1
+	`, variableID).Scan(&count)
 
 	if err != nil {
 		fmt.Println(err)
 		return fmt.Errorf("database error")
 	}
+
+	if count > 0 {
+		return fmt.Errorf("cannot delete variable: used in %d strategies", count)
+	}
+
+	_, err = db.DB.Exec(context.Background(), `
+		DELETE FROM crypto_variables 
+		WHERE id = $1
+	`, variableID)
+
+	if err != nil {
+		return fmt.Errorf("database error")
+	}
+
 	return nil
 }
 
@@ -194,4 +360,58 @@ func scanVariables(rows pgx.Rows) ([]Variable, bool, error) {
 		result = append(result, v)
 	}
 	return result, true, nil
+}
+
+// returns all the variables used to substitute them into the graph formulas
+func GetUsedVariables() (map[string]string, error) {
+	rows, err := db.DB.Query(context.Background(), `
+		SELECT cv.symbol, cs.formula_raw
+		FROM crypto_strategy_variable csv
+		JOIN crypto_strategy cs ON cs.id = csv.strategy_id
+		JOIN crypto_variables cv ON cv.id = csv.crypto_variable_id
+	`)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[string]string)
+	for rows.Next() {
+		var symbol string
+		var formulaRaw string
+		if err := rows.Scan(&symbol, &formulaRaw); err != nil {
+			return nil, err
+		}
+		result[symbol] = formulaRaw
+	}
+
+	return result, nil
+}
+
+func GetStrategyUsedVariables(strategyID int) (map[string]string, error) {
+	rows, err := db.DB.Query(context.Background(), `
+		SELECT cv.symbol, cs.formula_raw
+		FROM crypto_strategy_variable csv
+		JOIN crypto_strategy cs ON cs.id = csv.strategy_id
+		JOIN crypto_variables cv ON cv.id = csv.crypto_variable_id
+		WHERE cs.id = $1
+	`, strategyID)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[string]string)
+	for rows.Next() {
+		var symbol string
+		var formulaRaw string
+		if err := rows.Scan(&symbol, &formulaRaw); err != nil {
+			return nil, err
+		}
+		result[symbol] = formulaRaw
+	}
+
+	return result, nil
 }

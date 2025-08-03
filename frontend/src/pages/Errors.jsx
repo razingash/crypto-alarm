@@ -121,8 +121,8 @@ const Errors = () => {
                                     <div className={"details__level"}>{applicationError.level}</div>
                                     <div className={"details__date"}>{formatTimestamp(applicationError.timestamp)}</div>
                                     <label className={"details__info"} htmlFor={`details__info_${index2}`}>
-                                        <div className={"details__message"}>{applicationError.event}</div>
-                                        <div className={"details__error"}>{applicationError.event}</div>
+                                        <div className={"details__message"}>{applicationError.message}</div>
+                                        <div className={"details__error"}>{applicationError.error}</div>
                                     </label>
                                 </div>
                                 </React.Fragment>

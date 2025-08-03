@@ -233,7 +233,7 @@ body {
 }
 
 /*buttons*/
-.button__remove, .button__save, .button__cancle, .button__change {
+.button__remove, .button__save, .button__save_1, .button__cancle, .button__change {
     display: flex;
     justify-content: center;
     width: 60px;
@@ -255,11 +255,11 @@ body {
 .button__change:hover {
     box-shadow: 0 0 0 2px rgb(0, 140, 255), 0 2px 4px rgba(0, 140, 255, 0.3), 0 4px 8px rgba(0, 140, 255, 0.3), 0 0 16px rgb(0, 140, 255);
 }
-.button__save {
+.button__save, .button__save_1 {
     color: var(--lines);
     background: none;
 }
-.button__save:hover {
+.button__save:hover, .button__save_1:hover {
     box-shadow: 0 0 0 2px rgb(0, 255, 55), 0 2px 4px rgba(0, 255, 55, 0.3), 0 4px 8px rgba(0, 255, 55, 0.3), 0 0 16px rgb(0, 255, 55);
 }
 .button__cancle:hover {

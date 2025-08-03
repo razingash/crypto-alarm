@@ -12,20 +12,16 @@ import (
 )
 
 const (
-	NUMBER     = "NUMBER"
-	OPERATOR   = "OPERATOR"
-	VARIABLE   = "VARIABLE"
-	FUNCTION   = "FUNCTION"
-	LPAREN     = "LPAREN"
-	RPAREN     = "RPAREN"
-	COMPARISON = "COMPARISON"
-	UNKNOWN    = "UNKNOWN"
+	NUMBER        = "NUMBER"
+	OPERATOR      = "OPERATOR"
+	VARIABLE      = "VARIABLE"
+	USER_VARIABLE = "USER_VARIABLE"
+	FUNCTION      = "FUNCTION"
+	LPAREN        = "LPAREN"
+	RPAREN        = "RPAREN"
+	COMPARISON    = "COMPARISON"
+	UNKNOWN       = "UNKNOWN"
 )
-
-type Token struct {
-	Type  string
-	Value string
-}
 
 func ValidateStrategyPost(c fiber.Ctx) error {
 	var body struct {
@@ -53,6 +49,7 @@ func ValidateStrategyPost(c fiber.Ctx) error {
 	}
 
 	var allVariables []repositories.CryptoVariable
+	var userVariables []repositories.CryptoVariable
 	unique := make(map[string]struct{})
 
 	for _, condition := range body.Expressions {
@@ -62,13 +59,13 @@ func ValidateStrategyPost(c fiber.Ctx) error {
 			})
 		}
 
-		variables, err := ValidateStrategyExpression(condition.Formula)
+		variables, userDefinedVariables, err := ValidateStrategyExpression(condition.Formula)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": err.Error(),
 			})
 		}
-
+		userVariables = userDefinedVariables
 		for _, v := range variables {
 			key := v.Currency + ":" + v.Variable
 			if _, exists := unique[key]; !exists {
@@ -82,6 +79,7 @@ func ValidateStrategyPost(c fiber.Ctx) error {
 	c.Locals("description", body.Description)
 	c.Locals("expressions", body.Expressions)
 	c.Locals("variables", allVariables)
+	c.Locals("userVariables", userVariables)
 
 	return c.Next()
 }
@@ -181,34 +179,37 @@ func ValidateStrategyPatch(c fiber.Ctx) error {
 // ниже функционал для проверки синтаксиса formula из crypto_strategy
 
 // проверяет формулу на валидность
-func ValidateStrategyExpression(formula string) ([]repositories.CryptoVariable, error) {
-	tokens, variables, err := tokenize(formula)
+func ValidateStrategyExpression(formula string) ([]repositories.CryptoVariable, []repositories.CryptoVariable, error) {
+	tokens, variables, userVariables, err := tokenize(formula)
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err2 := validateTokens(tokens)
 
-	return variables, err2
+	return variables, userVariables, err2
 }
 
-// проверка на синтаксис
-func tokenize(expression string) ([]Token, []repositories.CryptoVariable, error) {
-	var tokens []Token
+// проверка на синтаксис | оптимизировать позже IsValid методы чтобы они делали bulk проверку а не цикломч
+func tokenize(expression string) ([]repositories.Token, []repositories.CryptoVariable, []repositories.CryptoVariable, error) {
+	// Difference between VARIABLE and USER_VARIABLE is that VARIABLE uses '⎽' while USER_VARIABLE uses '_'
+	var tokens []repositories.Token
 	var variables []repositories.CryptoVariable
+	var userVariables []repositories.CryptoVariable
 
 	tokenPatterns := []struct {
 		Type    string
 		Pattern string
 	}{
-		{NUMBER, `^\d+(\.\d+)?`},                  // Числа
-		{OPERATOR, `^[+\-*/^]`},                   // Операторы
-		{COMPARISON, `^(<=|>=|==|<|>)`},           // Операторы сравнения
-		{VARIABLE, `^([a-zA-Z]+)_([a-zA-Z0-9]+)`}, // Переменные в формате crypto_variable
-		{FUNCTION, `^(sqrt|abs)`},                 // Функции
-		{LPAREN, `^\(`},                           // Левая скобка
-		{RPAREN, `^\)`},                           // Правая скобка
+		{NUMBER, `^\d+(\.\d+)?`},                       // Числа
+		{OPERATOR, `^[+\-*/^]`},                        // Операторы
+		{COMPARISON, `^(<=|>=|==|<|>)`},                // Операторы сравнения
+		{FUNCTION, `^(sqrt|abs)`},                      // Функции
+		{USER_VARIABLE, `^([a-zA-Z]+)⎽([a-zA-Z0-9]+)`}, // пользовательские переменные | тут '⎽' а не '_'
+		{VARIABLE, `^([a-zA-Z]+)_([a-zA-Z0-9]+)`},      // Переменные в формате crypto_variable
+		{LPAREN, `^\(`},                                // Левая скобка
+		{RPAREN, `^\)`},                                // Правая скобка
 	}
 
 	for len(expression) > 0 {
@@ -217,16 +218,48 @@ func tokenize(expression string) ([]Token, []repositories.CryptoVariable, error)
 			re := regexp.MustCompile(pattern.Pattern)
 			match := re.FindString(expression)
 			if match != "" {
-				if pattern.Type == VARIABLE {
-					parts := strings.Split(match, "_")
+				if pattern.Type == USER_VARIABLE {
+					parts := strings.Split(match, "⎽")
 					if len(parts) != 2 { // неправильная переменная
-						return nil, nil, fmt.Errorf("incorrect variable")
+						return nil, nil, nil, fmt.Errorf("incorrect user defined variable")
 					}
 
 					isValid, err := repositories.IsValidCryptoCurrency(parts[0])
 					if err != nil {
-						fmt.Println(err)
-						return nil, nil, fmt.Errorf("database error")
+						return nil, nil, nil, fmt.Errorf("database error")
+					}
+					if !isValid {
+						fmt.Println("недопустимая пользовательская переменная:", match)
+						/*
+							3 - переменной нет в базе данных
+							4 - переменная не актуальна
+						*/
+						return nil, nil, nil, fmt.Errorf("user defined variable %v is most likely outdated", VARIABLE)
+					}
+
+					isValid, err = repositories.IsValidUserVariable(parts[1])
+					if err != nil {
+						return nil, nil, nil, fmt.Errorf("database error")
+					}
+					if !isValid {
+						fmt.Println("недопустимая пользовательская переменная:", match)
+						/*
+							3 - переменной нет в базе данных
+							4 - переменная не актуальна
+						*/
+						return nil, nil, nil, fmt.Errorf("user variable %v doesn't exist", VARIABLE)
+					}
+					userVariables = append(userVariables, repositories.CryptoVariable{Currency: parts[0], Variable: parts[1]})
+				}
+				if pattern.Type == VARIABLE {
+					parts := strings.Split(match, "_")
+					if len(parts) != 2 { // неправильная переменная
+						return nil, nil, nil, fmt.Errorf("incorrect variable")
+					}
+
+					isValid, err := repositories.IsValidCryptoCurrency(parts[0])
+					if err != nil {
+						return nil, nil, nil, fmt.Errorf("database error")
 					}
 					if !isValid {
 						fmt.Println("недопустимая переменная:", match)
@@ -234,13 +267,12 @@ func tokenize(expression string) ([]Token, []repositories.CryptoVariable, error)
 							3 - переменной нет в базе данных
 							4 - переменная не актуальна
 						*/
-						return nil, nil, fmt.Errorf("variable %v is outdated", VARIABLE)
+						return nil, nil, nil, fmt.Errorf("variable %v is most likely outdated", VARIABLE)
 					}
 
 					isValid, err = repositories.IsValidVariable(parts[1])
 					if err != nil {
-						fmt.Println(err)
-						return nil, nil, fmt.Errorf("database error")
+						return nil, nil, nil, fmt.Errorf("database error")
 					}
 					if !isValid {
 						fmt.Println("недопустимая переменная:", match)
@@ -248,12 +280,12 @@ func tokenize(expression string) ([]Token, []repositories.CryptoVariable, error)
 							3 - переменной нет в базе данных
 							4 - переменная не актуальна
 						*/
-						return nil, nil, fmt.Errorf("variable %v is outdated", VARIABLE)
+						return nil, nil, nil, fmt.Errorf("variable %v doesn't exist", VARIABLE)
 					}
 					variables = append(variables, repositories.CryptoVariable{Currency: parts[0], Variable: parts[1]})
 				}
 
-				tokens = append(tokens, Token{Type: pattern.Type, Value: match})
+				tokens = append(tokens, repositories.Token{Type: pattern.Type, Value: match})
 				expression = expression[len(match):]
 				matched = true
 				break
@@ -261,16 +293,16 @@ func tokenize(expression string) ([]Token, []repositories.CryptoVariable, error)
 		}
 
 		if !matched { // неизвестный символ
-			return nil, nil, fmt.Errorf("unknown symbol")
+			return nil, nil, nil, fmt.Errorf("unknown symbol")
 		}
 	}
 
-	return tokens, variables, nil
+	return tokens, variables, userVariables, nil
 }
 
 // проверка на правильность
-func validateTokens(tokens []Token) error {
-	stack := []Token{}
+func validateTokens(tokens []repositories.Token) error {
+	stack := []repositories.Token{}
 	lastTokenType := ""
 	comparisonFound := false
 

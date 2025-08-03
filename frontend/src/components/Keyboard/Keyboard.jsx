@@ -124,15 +124,17 @@ const Keyboard = ({onKeyPress, isNewVariable}) => {
     };
 
     const handleUserVariable = (variable) => {
-        const v = `{\\color{#00afff}\\text{${variable}}}`
-        handleKeyClick(v)
+        if (selectedCurrency) {
+            const v = `\\text{\\textcolor{#00afff}{${selectedCurrency}}⎽${variable}}`;
+            handleKeyClick(v)
+        }
     }
     const handleVariable = (variable) => {
         if (selectedCurrency) {
             const v = `\\text{\\textcolor{orange}{${selectedCurrency}}\\_${variable}}`
             handleKeyClick(v)
         }
-        if (isNewVariable) {
+        if (isNewVariable) { // не то делает
             const v = `\\text{${variable}}`
             handleKeyClick(v)
         }
@@ -165,9 +167,10 @@ const Keyboard = ({onKeyPress, isNewVariable}) => {
                              onClick={() => setSelectedIndex(-1)}>Currency
                         </div>
                         }
+                        {!isNewVariable &&
                         <div className={`label__item ${selectedIndex === -2 ? "choosed_label" : ""}`}
                              onClick={() => setSelectedIndex(-2)}>Variables
-                        </div>
+                        </div>}
                         {availableApi.length !== 0 ? (
                             Object.keys(availableApi).map((key, index) => (
                                 <div key={key} className={`label__item ${selectedIndex === index+1 ? "choosed_label" : ""}`}
@@ -291,7 +294,7 @@ const Keyboard = ({onKeyPress, isNewVariable}) => {
                     </div>
                     </>
                 )}
-                {selectedIndex === -2 && (
+                {!isNewVariable && selectedIndex === -2 && (
                     <div className="dynamic_keyboard__list">
                         {variables.map(item => (
                             <div key={item.id} className="dynamic_keyboard__item" onClick={() => handleUserVariable(item.symbol)}>{item.symbol}</div>

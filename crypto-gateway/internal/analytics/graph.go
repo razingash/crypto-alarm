@@ -79,6 +79,7 @@ func (dg *DependencyGraph) AddFormula(formula string, formulaID int) error {
 		return fmt.Errorf("formula must contain a comparison operator (>, <, ==, >=, <=)")
 	}
 
+	formula = strings.ReplaceAll(formula, "⎽", "_")
 	expr, err := govaluate.NewEvaluableExpression(formula)
 	if err != nil {
 		return fmt.Errorf("parsing formula failed: %w", err)

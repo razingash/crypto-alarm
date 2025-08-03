@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -47,8 +48,14 @@ func ValidateVariablePost(c fiber.Ctx) error {
 			"error": "Formula and formula_raw cannot be empty",
 		})
 	}
+	if strings.Contains(body.Name, "_") {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Formula name cannot contain '_', you can use camelCase to name them",
+		})
+	}
 
-	if err := ValidateVariable(body.Formula); err != nil {
+	tokens, err := ValidateVariable(body.Formula)
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -59,6 +66,7 @@ func ValidateVariablePost(c fiber.Ctx) error {
 	c.Locals("description", body.Description)
 	c.Locals("formula", body.Formula)
 	c.Locals("formula_raw", body.FormulaRaw)
+	c.Locals("tokens", tokens)
 
 	return c.Next()
 }
@@ -107,13 +115,16 @@ func ValidateVariablePatch(c fiber.Ctx) error {
 			"error": "Formula and formula_raw must be provided together",
 		})
 	}
+	var tokens []repositories.Token
 	if body.Formula != nil && body.FormulaRaw != nil {
 		if *body.Formula == "" || *body.FormulaRaw == "" {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "Formula and formula_raw cannot be empty",
 			})
 		}
-		if err := ValidateVariable(*body.Formula); err != nil {
+		ts, err := ValidateVariable(*body.Formula)
+		tokens = ts
+		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": err.Error(),
 			})
@@ -122,37 +133,39 @@ func ValidateVariablePatch(c fiber.Ctx) error {
 
 	c.Locals("variable_id", variableId)
 	c.Locals("input", body)
+	c.Locals("tokens", tokens)
 
 	return c.Next()
 }
 
-func ValidateVariable(variable string) error {
+func ValidateVariable(variable string) ([]repositories.Token, error) {
 	tokens, err := tokenizeVariable(variable)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err2 := validateVariableTokens(tokens)
 
-	return err2
+	return tokens, err2
 }
 
 // проверка на синтаксис
-func tokenizeVariable(expression string) ([]Token, error) {
-	var tokens []Token
+func tokenizeVariable(expression string) ([]repositories.Token, error) {
+	var tokens []repositories.Token
 
 	tokenPatterns := []struct {
 		Type    string
 		Pattern string
 	}{
-		{NUMBER, `^\d+(\.\d+)?`},              // Числа
-		{OPERATOR, `^[+\-*/^]`},               // Операторы
-		{COMPARISON, `^(<=|>=|==|<|>)`},       // Операторы сравнения ЗАПРЕЩЕНЫ
-		{VARIABLE, `^[a-zA-Z_][a-zA-Z0-9_]*`}, // Переменные бинанс - цифры, буквы и '_' на всякий случай
-		{FUNCTION, `^(sqrt|abs)`},             // Функции
-		{LPAREN, `^\(`},                       // Левая скобка
-		{RPAREN, `^\)`},                       // Правая скобка
+		{NUMBER, `^\d+(\.\d+)?`},                 // Числа
+		{OPERATOR, `^[+\-*/^]`},                  // Операторы
+		{COMPARISON, `^(<=|>=|==|<|>)`},          // Операторы сравнения ЗАПРЕЩЕНЫ
+		{FUNCTION, `^(sqrt|abs)`},                // Функции
+		{USER_VARIABLE, `^[a-zA-Z][a-zA-Z0-9]*`}, // пользовательские переменные, изначально не содержат криптовалюты и являются универсальными
+		{VARIABLE, `^[a-zA-Z_][a-zA-Z0-9_]*`},    // Переменные бинанс - цифры, буквы и '_' на всякий случай
+		{LPAREN, `^\(`},                          // Левая скобка
+		{RPAREN, `^\)`},                          // Правая скобка
 	}
 
 	for len(expression) > 0 {
@@ -161,7 +174,7 @@ func tokenizeVariable(expression string) ([]Token, error) {
 			re := regexp.MustCompile(pattern.Pattern)
 			match := re.FindString(expression)
 			if match != "" {
-				tokens = append(tokens, Token{Type: pattern.Type, Value: match})
+				tokens = append(tokens, repositories.Token{Type: pattern.Type, Value: match})
 				expression = expression[len(match):]
 				matched = true
 				break
@@ -177,8 +190,8 @@ func tokenizeVariable(expression string) ([]Token, error) {
 }
 
 // проверка на правильность
-func validateVariableTokens(tokens []Token) error {
-	stack := []Token{}
+func validateVariableTokens(tokens []repositories.Token) error {
+	stack := []repositories.Token{}
 	lastTokenType := ""
 
 	for i, token := range tokens {

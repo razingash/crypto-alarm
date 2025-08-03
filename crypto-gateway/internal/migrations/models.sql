@@ -56,15 +56,14 @@ CREATE TABLE crypto_variables (
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now()
 );
-
-CREATE TABLE crypto_variable_params (
+CREATE TABLE crypto_variables_api (
     id BIGSERIAL PRIMARY KEY,
-    crypto_variable_id BIGINT NOT NULL REFERENCES crypto_variables(id) ON DELETE CASCADE,
-    crypto_param_id BIGINT NOT NULL REFERENCES crypto_params(id) ON DELETE CASCADE,
-    UNIQUE (crypto_variable_id, crypto_param_id)
+    api_id integer NOT NULL REFERENCES crypto_api(id) ON DELETE CASCADE,
+    variable_id integer NOT NULL REFERENCES crypto_variables(id) ON DELETE CASCADE,
+    parameter_id integer NOT NULL REFERENCES crypto_params(id) ON DELETE CASCADE
 );
 
--- переменная может хранить в себе другие переменные.
+-- переменная может хранить в себе другие переменные.(пока нет)
 CREATE TABLE crypto_variable_links (
     id BIGSERIAL PRIMARY KEY,
     source_variable_id BIGINT NOT NULL REFERENCES crypto_variables(id) ON DELETE CASCADE,
@@ -111,6 +110,13 @@ CREATE TABLE crypto_strategy (
     is_shutted_off boolean NOT NULL DEFAULT FALSE,
     last_triggered timestamp without time zone,
     cooldown integer NOT NULL DEFAULT 3600
+);
+
+CREATE TABLE crypto_strategy_variable (
+    id BIGSERIAL PRIMARY KEY,
+    strategy_id integer NOT NULL REFERENCES crypto_strategy(id) ON DELETE CASCADE,
+    crypto_variable_id integer NOT NULL REFERENCES crypto_variables(id) ON DELETE CASCADE,
+    crypto_currency_id integer NOT NULL REFERENCES crypto_currencies(id) ON DELETE CASCADE
 );
 
 CREATE TABLE crypto_strategy_formula (

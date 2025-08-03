@@ -25,14 +25,15 @@ const FormulaInput = ({ formula }) => {
         if (typeof formula === "object"){ // если список, значит редактор, если нет то строка(строка только для отображения)
             return formulaToLatex(formula)
         }
-        const regex = /\b([a-zA-Z_][a-zA-Z0-9_]*)\b|(\d+\.\d+|\d+)|(<=|>=|==|!=)|([+\-*/^()=<>,])/g;
+        const regex = /\b([a-zA-Z_⎽]+(?:[_⎽][a-zA-Z_⎽]+)*)\b|(\d+\.\d+|\d+)|(<=|>=|==|!=)|([+\-*/^()=<>,])/g;
+        //const regex = /\b([a-zA-Z_][a-zA-Z0-9_]*)\b|(\d+\.\d+|\d+)|(<=|>=|==|!=)|([+\-*/^()=<>,])/g;
         let tokens = [];
 
         let match;
         while ((match = regex.exec(formula)) !== null) {
             tokens.push(match[0]);
         }
-
+        console.log(tokens)
         return formulaToLatex(tokens);
     };
 
@@ -43,7 +44,10 @@ const FormulaInput = ({ formula }) => {
 
         for (let i = 0; i < tokens.length; i++) {
             const token = tokens[i];
-            if (/^[a-zA-Z_]+_[a-zA-Z_]+$/.test(token)) {
+            if (/^[a-zA-Z⎽]+⎽[a-zA-Z⎽]+$/.test(token)) {
+                const [firstPart, secondPart] = token.split("⎽");
+                latex.push(`\\text{\\textcolor{#00afff}{${firstPart}}⎽${secondPart}}`);
+            } else if (/^[a-zA-Z_]+_[a-zA-Z_]+$/.test(token)) {
                 const [firstPart, secondPart] = token.split("_");
                 latex.push(`\\text{\\textcolor{orange}{${firstPart}}\\_${secondPart}}`);
             } else if (token === "abs") {

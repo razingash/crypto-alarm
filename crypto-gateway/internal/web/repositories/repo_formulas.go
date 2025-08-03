@@ -5,6 +5,7 @@ import (
 	"crypto-gateway/internal/web/db"
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -44,6 +45,7 @@ type UserFormula struct {
 	Cooldown      int    `json:"cooldown"`
 }
 
+// both user-defined and ordinary
 type CryptoVariable struct {
 	Currency string
 	Variable string
@@ -75,12 +77,28 @@ func IsValidCryptoCurrency(name string) (bool, error) {
 
 func IsValidVariable(name string) (bool, error) {
 	var isAvailable bool
-
 	err := db.DB.QueryRow(context.Background(), `
 		SELECT EXISTS (
 			SELECT 1 
 			FROM crypto_params 
 			WHERE parameter = $1 AND is_active = true
+		)
+	`, name).Scan(&isAvailable)
+
+	if err != nil {
+		return false, err
+	}
+
+	return isAvailable, nil
+}
+
+func IsValidUserVariable(name string) (bool, error) {
+	var isAvailable bool
+	err := db.DB.QueryRow(context.Background(), `
+		SELECT EXISTS (
+			SELECT 1 
+			FROM crypto_variables 
+			WHERE symbol = $1
 		)
 	`, name).Scan(&isAvailable)
 
@@ -115,16 +133,44 @@ func GetFormulaById(formulaID int) string {
 	return formula
 }
 
-// заглушка, удалить позже
-func GetStrategyFormulasById(strategyID int) map[int]string {
-	rows, err := db.DB.Query(context.Background(), `
+// получает формулы, без переменных
+func GetStrategyFullFormulasById(strategyID int) map[int]string {
+	ctx := context.Background()
+
+	variables := make(map[string]string)
+	rowsVars, err := db.DB.Query(ctx, `
+		SELECT cv.symbol, cv.formula
+		FROM crypto_strategy_variable csv
+		JOIN crypto_variables cv ON csv.crypto_variable_id = cv.id
+		WHERE csv.strategy_id = $1
+	`, strategyID)
+	if err != nil {
+		fmt.Printf("failed to query variables for strategy %v: %v\n", strategyID, err)
+		return nil
+	}
+	defer rowsVars.Close()
+
+	for rowsVars.Next() {
+		var symbol, formula string
+		if err := rowsVars.Scan(&symbol, &formula); err != nil {
+			fmt.Printf("failed to scan variable: %v\n", err)
+			continue
+		}
+		variables[symbol] = formula
+	}
+	if err := rowsVars.Err(); err != nil {
+		fmt.Printf("error after scanning variables: %v\n", err)
+		return nil
+	}
+
+	rows, err := db.DB.Query(ctx, `
 		SELECT tf.id, tf.formula
 		FROM crypto_strategy_formula csf
 		JOIN trigger_formula tf ON csf.formula_id = tf.id
-		WHERE csf.strategy_id = $1;
+		WHERE csf.strategy_id = $1
 	`, strategyID)
 	if err != nil {
-		fmt.Printf("failed to query formulas for strategy %v: %v", strategyID, err.Error())
+		fmt.Printf("failed to query formulas for strategy %v: %v\n", strategyID, err)
 		return nil
 	}
 	defer rows.Close()
@@ -134,13 +180,20 @@ func GetStrategyFormulasById(strategyID int) map[int]string {
 		var id int
 		var formula string
 		if err := rows.Scan(&id, &formula); err != nil {
-			fmt.Println("failed to scan row: %w", err)
+			fmt.Printf("failed to scan formula row: %v\n", err)
+			continue
 		}
-		result[id] = formula
-	}
 
+		finalFormula := formula
+		for symbol, replacement := range variables {
+			re := regexp.MustCompile(`\b` + regexp.QuoteMeta(symbol) + `\b`)
+			finalFormula = re.ReplaceAllString(finalFormula, replacement)
+		}
+
+		result[id] = finalFormula
+	}
 	if err := rows.Err(); err != nil {
-		fmt.Println(err.Error())
+		fmt.Printf("error after scanning formulas: %v\n", err)
 		return nil
 	}
 
@@ -775,7 +828,9 @@ func GetStrategyHistory(strategyID int, limit int, page int, prevCursor int) (bo
 	return hasNext, rawRows, nil
 }
 
-func SaveStrategy(name, description string, expressions []StrategyExpression, variables []CryptoVariable) (int, error) {
+func SaveStrategy(
+	name, description string, expressions []StrategyExpression, variables []CryptoVariable, userVariables []CryptoVariable,
+) (int, error) {
 	tx, err := db.DB.Begin(context.Background())
 	if err != nil {
 		return 0, err
@@ -836,6 +891,107 @@ func SaveStrategy(name, description string, expressions []StrategyExpression, va
 				VALUES ($1, $2)
 				ON CONFLICT DO NOTHING
 			`, triggerComponentID, formulaId)
+			if err != nil {
+				return 0, err
+			}
+		}
+	}
+
+	// сохранение переменных... позже попробовать упростить userVariables
+	if len(userVariables) > 0 {
+		variableSet := make(map[string]struct{})
+		currencySet := make(map[string]struct{})
+		for _, v := range userVariables {
+			variableSet[v.Variable] = struct{}{}
+			currencySet[v.Currency] = struct{}{}
+		}
+
+		variableNames := make([]interface{}, 0, len(variableSet))
+		variablePlaceholders := make([]string, 0, len(variableSet))
+		i := 1
+		for name := range variableSet {
+			variablePlaceholders = append(variablePlaceholders, fmt.Sprintf("$%d", i))
+			variableNames = append(variableNames, name)
+			i++
+		}
+
+		variableQuery := fmt.Sprintf(`
+			SELECT id, symbol FROM crypto_variables
+			WHERE symbol IN (%s)
+		`, strings.Join(variablePlaceholders, ", "))
+		rows, err := tx.Query(context.Background(), variableQuery, variableNames...)
+		if err != nil {
+			return 0, err
+		}
+		defer rows.Close()
+
+		symbolToVarId := make(map[string]int)
+		for rows.Next() {
+			var id int
+			var symbol string
+			if err := rows.Scan(&id, &symbol); err != nil {
+				return 0, err
+			}
+			symbolToVarId[symbol] = id
+		}
+		if err := rows.Err(); err != nil {
+			return 0, err
+		}
+
+		currencyNames := make([]interface{}, 0, len(currencySet))
+		currencyPlaceholders := make([]string, 0, len(currencySet))
+		j := 1
+		for c := range currencySet {
+			currencyPlaceholders = append(currencyPlaceholders, fmt.Sprintf("$%d", j))
+			currencyNames = append(currencyNames, c)
+			j++
+		}
+		currencyQuery := fmt.Sprintf(`
+			SELECT id, currency FROM crypto_currencies
+			WHERE currency IN (%s)
+		`, strings.Join(currencyPlaceholders, ", "))
+		currencyRows, err := tx.Query(context.Background(), currencyQuery, currencyNames...)
+		if err != nil {
+			return 0, err
+		}
+		defer currencyRows.Close()
+
+		currencyToId := make(map[string]int)
+		for currencyRows.Next() {
+			var id int
+			var name string
+			if err := currencyRows.Scan(&id, &name); err != nil {
+				return 0, err
+			}
+			currencyToId[name] = id
+		}
+		if err := currencyRows.Err(); err != nil {
+			return 0, err
+		}
+
+		var variableInserts []string
+		var insertArgs []interface{}
+		argIndex := 1
+
+		for _, variable := range userVariables {
+			varId, ok1 := symbolToVarId[variable.Variable]
+			currencyId, ok2 := currencyToId[variable.Currency]
+			if !ok1 || !ok2 {
+				continue
+			}
+
+			variableInserts = append(variableInserts, fmt.Sprintf("($%d, $%d, $%d)", argIndex, argIndex+1, argIndex+2))
+			insertArgs = append(insertArgs, strategyId, varId, currencyId)
+			argIndex += 3
+		}
+
+		if len(variableInserts) > 0 {
+			insertQuery := fmt.Sprintf(`
+				INSERT INTO crypto_strategy_variable (strategy_id, crypto_variable_id, crypto_currency_id)
+				VALUES %s
+				ON CONFLICT DO NOTHING
+			`, strings.Join(variableInserts, ", "))
+			_, err := tx.Exec(context.Background(), insertQuery, insertArgs...)
 			if err != nil {
 				return 0, err
 			}

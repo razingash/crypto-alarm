@@ -67,27 +67,27 @@ func GetActiveStrategies(ctx context.Context) (map[int]map[int]string, error) {
 
 // получает необходимые апи, к которым нужно делать запрос в зависимости от актальности формул и компонентов
 func GetActualComponents(ctx context.Context) (map[string]ActualComponentInfo, error) {
+	result := make(map[string]ActualComponentInfo)
+
 	rows, err := db.DB.Query(ctx, `
         SELECT ca.api, ca.cooldown, COUNT(*) AS count
-		FROM crypto_api ca
-		JOIN trigger_component tc ON ca.id = tc.api_id
-		JOIN crypto_params cp ON tc.parameter_id = cp.id
-		JOIN trigger_formula_component tfc ON tfc.component_id = tc.id
-		JOIN trigger_formula tf ON tf.id = tfc.formula_id
-		JOIN crypto_strategy_formula csf ON csf.formula_id = tf.id
-		JOIN crypto_strategy cs ON cs.id = csf.strategy_id
-		WHERE ca.is_actual = true
-		  AND cp.is_active = true
-		  AND cs.is_active = true
-		GROUP BY ca.api, ca.cooldown
+        FROM crypto_api ca
+        JOIN trigger_component tc       ON ca.id = tc.api_id
+        JOIN crypto_params cp           ON tc.parameter_id    = cp.id
+        JOIN trigger_formula_component tfc ON tfc.component_id  = tc.id
+        JOIN trigger_formula tf         ON tf.id               = tfc.formula_id
+        JOIN crypto_strategy_formula csf ON csf.formula_id     = tf.id
+        JOIN crypto_strategy cs         ON cs.id               = csf.strategy_id
+        WHERE ca.is_actual = true
+          AND cp.is_active = true
+          AND cs.is_active = true
+        GROUP BY ca.api, ca.cooldown
     `)
-
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	result := make(map[string]ActualComponentInfo)
 	for rows.Next() {
 		var api string
 		var cooldown, count int
@@ -96,37 +96,102 @@ func GetActualComponents(ctx context.Context) (map[string]ActualComponentInfo, e
 		}
 		result[api] = ActualComponentInfo{Cooldown: cooldown, Count: count}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	rows2, err := db.DB.Query(ctx, `
+        SELECT ca.api, ca.cooldown, COUNT(*) AS count
+        FROM crypto_api ca
+        JOIN crypto_variables_api cva ON ca.id  = cva.api_id
+        JOIN crypto_params cp ON cp.id = cva.parameter_id
+        JOIN crypto_strategy_variable csv ON csv.crypto_variable_id = cva.variable_id
+        JOIN crypto_strategy cs ON cs.id = csv.strategy_id
+        WHERE ca.is_actual = true
+          AND cp.is_active = true
+          AND cs.is_active = true
+        GROUP BY ca.api, ca.cooldown
+    `)
+	if err != nil {
+		return nil, err
+	}
+	defer rows2.Close()
+
+	for rows2.Next() {
+		var api string
+		var cooldown, count int
+		if err := rows2.Scan(&api, &cooldown, &count); err != nil {
+			return nil, err
+		}
+		if prev, ok := result[api]; ok {
+			prev.Count += count
+			result[api] = prev
+		} else {
+			result[api] = ActualComponentInfo{Cooldown: cooldown, Count: count}
+		}
+	}
+	if err := rows2.Err(); err != nil {
+		return nil, err
+	}
+
 	return result, nil
 }
 
 // получает список необходимых параметров для конкретного эндпоинта
 func GetNeededFieldsFromEndpoint(ctx context.Context, endpoint string) (map[string][]string, error) {
+	result := make(map[string][]string)
+
 	rows, err := db.DB.Query(ctx, `
         SELECT cc.currency, cp.parameter
+        FROM crypto_params cp
+        JOIN trigger_component tc ON tc.parameter_id = cp.id
+        JOIN crypto_currencies cc ON tc.currency_id = cc.id
+        JOIN crypto_api ca ON ca.id = tc.api_id
+        JOIN trigger_formula_component tfc ON tfc.component_id = tc.id
+        JOIN trigger_formula tf ON tf.id = tfc.formula_id
+        JOIN crypto_strategy_formula csf ON csf.formula_id = tf.id
+        JOIN crypto_strategy cs ON cs.id = csf.strategy_id
+        WHERE ca.api = $1
+          AND ca.is_actual = true
+          AND cs.is_active = true
+          AND cs.is_shutted_off = false
+          AND cp.is_active = true;
+    `, endpoint)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var symbol, param string
+		if err := rows.Scan(&symbol, &param); err != nil {
+			return nil, err
+		}
+		result[symbol] = append(result[symbol], param)
+	}
+
+	rows2, err := db.DB.Query(ctx, `
+        SELECT cc.currency, cp.parameter
 		FROM crypto_params cp
-		JOIN trigger_component tc ON tc.parameter_id = cp.id
-		JOIN crypto_currencies cc ON tc.currency_id = cc.id
-		JOIN crypto_api ca ON ca.id = tc.api_id
-		JOIN trigger_formula_component tfc ON tfc.component_id = tc.id
-		JOIN trigger_formula tf ON tf.id = tfc.formula_id
-		JOIN crypto_strategy_formula csf ON csf.formula_id = tf.id
-		JOIN crypto_strategy cs ON cs.id = csf.strategy_id
+		JOIN crypto_variables_api cva ON cva.parameter_id = cp.id
+		JOIN crypto_api ca ON ca.id = cva.api_id
+		JOIN crypto_strategy_variable csv ON csv.crypto_variable_id = cva.variable_id
+		JOIN crypto_strategy cs ON cs.id = csv.strategy_id
+		JOIN crypto_currencies cc ON csv.crypto_currency_id = cc.id
 		WHERE ca.api = $1
 		  AND ca.is_actual = true
 		  AND cs.is_active = true
 		  AND cs.is_shutted_off = false
 		  AND cp.is_active = true;
     `, endpoint)
-
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows2.Close()
 
-	result := make(map[string][]string)
-	for rows.Next() {
+	for rows2.Next() {
 		var symbol, param string
-		if err := rows.Scan(&symbol, &param); err != nil {
+		if err := rows2.Scan(&symbol, &param); err != nil {
 			return nil, err
 		}
 		result[symbol] = append(result[symbol], param)

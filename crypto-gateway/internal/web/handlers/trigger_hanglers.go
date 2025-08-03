@@ -91,8 +91,9 @@ func StrategyPost(c fiber.Ctx) error {
 	description := c.Locals("description").(string)
 	expressions := c.Locals("expressions").([]repositories.StrategyExpression)
 	variables := c.Locals("variables").([]repositories.CryptoVariable)
+	userVariables := c.Locals("userVariables").([]repositories.CryptoVariable)
 
-	id, err := repositories.SaveStrategy(name, description, expressions, variables)
+	id, err := repositories.SaveStrategy(name, description, expressions, variables, userVariables)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "error during saving formula",

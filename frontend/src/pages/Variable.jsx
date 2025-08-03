@@ -17,7 +17,7 @@ const Variable = () => {
     const [fetchVariable, isVariableLoading, variableError] = useFetching(async () => {
         return await VariablesService.getVariables({id: id})
     }, 0, 1000)
-    const [removeVariable, , ] = useFetching(async () => {
+    const [removeVariable, isRemovingLoading, removeFormulaError] = useFetching(async () => {
         return await VariablesService.deleteVariable(id)
     }, 0, 1000)
     const [updateVariableData, , ] = useFetching(async (newData) => {
@@ -42,10 +42,10 @@ const Variable = () => {
         if (!isConfirmed) return;
 
         const response = await removeVariable();
-        if (response && response.status === 200) {
+        if (response?.status === 200) {
             navigate("/variables");
         } else {
-            alert(`Error: Failed to remove variable ${response}`);
+            alert(`Error: Failed to remove variable - ${response?.error || 'Unknown error'}`);
         }
     };
 

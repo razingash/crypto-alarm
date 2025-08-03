@@ -90,8 +90,9 @@ func (o *BinanceAPIOrchestrator) LoadActiveStrategies(ctx context.Context) {
 		return
 	}
 
-	for strategyID, formulas := range strategies {
-		if err := o.DependencyGraph.AddStrategy(strategyID, formulas); err != nil {
+	for strategyID, _ := range strategies {
+		// _ -formulas unused | обновить тесты надо будет чтобы AddStrategy принимал только id стратегии
+		if err := o.DependencyGraph.AddStrategy(strategyID, repositories.GetStrategyFullFormulasById(strategyID)); err != nil {
 			appmetrics.AnalyticsServiceLogging(4, fmt.Sprintf("Failed to add strategy %v to graph in LoadActiveStrategies", strategyID), err)
 		}
 	}
@@ -230,14 +231,14 @@ func (o *BinanceAPIOrchestrator) updateTickerCurrentPrice(ctx context.Context, c
 				continue
 			}
 			o.checkBinanceResponse(response)
-
 			currencies, err := GetNeededFieldsFromEndpoint(ctx, "/v3/ticker/price")
+			fmt.Println(1, currencies)
 			if err != nil {
 				appmetrics.AnalyticsServiceLogging(4, "in updateTickerCurrentPrice - GetNeededFieldsFromEndpoint returned Error", err)
 			}
 			dataForGraph := extractDataFromTickerCurrentPrice(response, currencies)
 			triggeredStrategies := o.DependencyGraph.UpdateVariablesTopologicalKahn(dataForGraph)
-			fmt.Println(0, triggeredStrategies)
+
 			if len(triggeredStrategies) > 0 {
 				result, variableValues := o.DependencyGraph.GetStrategiesVariables(triggeredStrategies)
 				AddTriggerHistory(ctx, result, variableValues)
