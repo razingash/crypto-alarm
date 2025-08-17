@@ -139,6 +139,14 @@ CREATE TABLE trigger_push_subscription (
     created_at timestamp without time zone NOT NULL DEFAULT now()
 );
 
+CREATE TABLE diagrams (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    data JSON,
+    created_at TIMESTAMP DEFAULT now(),
+    updated_at TIMESTAMP DEFAULT now()
+);
+
 CREATE TABLE settings (
     id BIGSERIAL PRIMARY KEY,
     name varchar(150) NOT NULL,

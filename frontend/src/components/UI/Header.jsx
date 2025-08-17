@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Link, NavLink} from "react-router-dom";
+import {NavLink} from "react-router-dom";
 import {useStore} from "../../utils/store";
 
 const Header = () => {
@@ -67,6 +67,9 @@ const Header = () => {
                             <use xlinkHref={"#icon_newspaper"}></use>
                         </svg>
                         <div>Logs</div>
+                    </NavLink>
+                    <NavLink to={"/workspaces"} className={({ isActive }) => `header__item ${isActive ? "link_active" : ""}`} onClick={handleLinkClick}>
+                        <div>Workspaces</div>
                     </NavLink>
                     <NavLink to={"/strategies"} className={({ isActive }) => `header__item ${isActive ? "link_active" : ""}`} onClick={handleLinkClick}>
                         <svg className={"svg__header"}>

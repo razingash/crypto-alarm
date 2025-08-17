@@ -1,6 +1,8 @@
 import {lazy} from "react";
 
 const Main = lazy(() => import("../pages/Main"));
+const Workspace = lazy(() => import("../pages/Workspace"));
+const Workspaces = lazy(() => import("../pages/Workspaces"));
 const Errors = lazy(() => import("../pages/Errors"));
 const Logs = lazy(() => import("../pages/Logs"));
 const NewStrategy = lazy(() => import("../pages/NewStrategy"))
@@ -14,6 +16,8 @@ const NewVariable = lazy(() => import("../pages/NewVariable"));
 
 export const publicRotes = [
     {path: "/", component: <Main/>, key: "main"},
+    {path: "/workspaces", component: <Workspaces/>, key: "workspaces"},
+    {path: "/workspaces/:id/", component: <Workspace/>, key: "workspace"},
     {path: "/errors", component: <Errors/>, key: "logs"},
     {path: "/logs", component: <Logs/>, key: "logs"},
     {path: "/new-strategy/", component: <NewStrategy/>, key: "new-strategy"},

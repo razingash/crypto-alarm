@@ -333,6 +333,12 @@ body {
     display: none;
 }
 
+.svg__save_to_db {
+    fill: var(--lines);
+    width: 25px;
+    height: 25px;
+}
+
 @keyframes rotate {
     100% {
         transform:rotate(360deg);
