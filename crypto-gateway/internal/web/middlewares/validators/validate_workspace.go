@@ -2,6 +2,7 @@ package validators
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -48,4 +49,40 @@ func ValidateDiagramPatch(c fiber.Ctx) error {
 	c.Locals("diagram", body.Diagram)
 
 	return c.Next()
+}
+
+func ValidateDiagramPatchNode(c fiber.Ctx) error {
+	diagramID, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid diagram id",
+		})
+	}
+
+	var body map[string]interface{}
+	if err := json.Unmarshal(c.Body(), &body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid JSON",
+		})
+	}
+
+	if attach, ok := body["attachStrategy"].(map[string]interface{}); ok {
+		nodeID, _ := attach["nodeId"].(string)
+		strategyID, _ := attach["strategyId"].(string)
+		if nodeID == "" || strategyID == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "nodeId and strategyId are required",
+			})
+		}
+
+		c.Locals("diagramID", diagramID)
+		c.Locals("nodeID", nodeID)
+		c.Locals("strategyID", strategyID)
+		c.Locals("action", "attachStrategy")
+		return c.Next()
+	}
+
+	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		"error": "unsupported action",
+	})
 }

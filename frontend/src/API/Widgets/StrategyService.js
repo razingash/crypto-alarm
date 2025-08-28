@@ -1,6 +1,6 @@
-import apiClient from "../hooks/useApiInterceptor";
+import apiClient from "../../hooks/useApiInterceptor";
 import axios from "axios";
-import {cleanKatexExpression, rawFormulaToFormula} from "../components/Keyboard/editors/editor";
+import {cleanKatexExpression, rawFormulaToFormula} from "../../components/Keyboard/editors/editor";
 
 export default class StrategyService {
     static async getKeyboard() { // получает данные для клавиатуры

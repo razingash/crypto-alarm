@@ -22,21 +22,18 @@ CREATE TABLE crypto_api (
     is_accessible boolean NOT NULL DEFAULT TRUE,
     last_updated timestamp without time zone NOT NULL DEFAULT now()
 );
-
 CREATE TABLE crypto_api_history (
     id BIGSERIAL PRIMARY KEY,
     crypto_api_id integer NOT NULL REFERENCES crypto_api(id) ON DELETE CASCADE,
     weight smallint NOT NULL,
     created_at timestamp without time zone NOT NULL DEFAULT now()
 );
-
 CREATE TABLE crypto_currencies (
     id BIGSERIAL PRIMARY KEY,
     currency varchar(100) NOT NULL,
     is_available boolean NOT NULL DEFAULT TRUE,
     last_updated timestamp without time zone NOT NULL DEFAULT now()
 );
-
 CREATE TABLE crypto_params (
     id BIGSERIAL PRIMARY KEY,
     crypto_api_id integer NOT NULL REFERENCES crypto_api(id) ON DELETE CASCADE,
@@ -110,6 +107,23 @@ CREATE TABLE crypto_strategy (
     is_shutted_off boolean NOT NULL DEFAULT FALSE,
     last_triggered timestamp without time zone,
     cooldown integer NOT NULL DEFAULT 3600
+);
+
+-- универсальный оркестратор
+CREATE TABLE module_orchestrator (
+    id BIGSERIAL PRIMARY KEY,
+    --name VARCHAR(150),
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+-- предполагается, что для конкретного сигнала source_type должен быть один, если нужно учитывать данные сразу с
+-- двух источников - например Binance и Bybit, тогда нужно будет делать систему из оркестраторов
+CREATE TABLE orchestrator_inputs (
+    id BIGSERIAL PRIMARY KEY,
+    orchestrator_id BIGINT NOT NULL REFERENCES module_orchestrator(id) ON DELETE CASCADE,
+    source_type VARCHAR(100) NOT NULL,  -- 'binance', 'nasdaq', 'custom'| определяет из какой таблицы брать source_id
+    source_id BIGINT NOT NULL, -- является ссылкой на id в необходимой таблице
+    formula TEXT NOT NULL
 );
 
 CREATE TABLE crypto_strategy_variable (

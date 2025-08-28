@@ -57,6 +57,10 @@ body {
     max-height: calc(100vh - 92px);
 }
 
+.field__full {
+    height: calc(100vh - 92px);
+}
+
 .header__field {
     display: flex;
     flex-grow: 1;
@@ -177,6 +181,14 @@ body {
     fill: #ff3737;
 }
 
+.span__default {
+    display: flex;
+    width: 100%;
+    height: 1px;
+    margin-bottom: 12px;
+    background: linear-gradient(to left, rgba(255, 99, 71, 0) 0%, rgb(27 198 255) 50%, rgba(255, 99, 71, 0) 100%);
+}
+
 .area__chart {
     display: flex;
     align-items: center;
@@ -285,7 +297,7 @@ body {
 .input__default {
     background: none;
     border: 1px solid var(--container-border-1);
-    font-size: 18px;
+    font-size: 16px;
     max-width: 150px;
     font-family: sans-serif;
     color: #fff;

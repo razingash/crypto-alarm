@@ -3,7 +3,7 @@ import {useParams} from "react-router-dom";
 import FormulaInput from "../components/Keyboard/FormulaInput";
 import { useNavigate } from "react-router-dom";
 import {useFetching} from "../hooks/useFetching";
-import StrategyService from "../API/StrategyService";
+import StrategyService from "../API/Widgets/StrategyService";
 import '../styles/strategy.css'
 import ChartLinear from "../components/UI/ChartLinear";
 import {getModifiedFields, transformData} from "../utils/utils";
@@ -247,7 +247,7 @@ const Strategy = () => {
                     <div className={"button__remove"} onClick={handleRemoveFormula}>remove</div>
                     <div className={"button__save_1"} onClick={handleSaveChanges}>save</div>
                     <label className={"button__change"} htmlFor="strategy__checkbox">change</label>
-                    <label className={"button__cancle"} htmlFor="strategy__checkbox">cancle</label>
+                    <label id={"btn-cancle"} className={"button__cancle"} htmlFor="strategy__checkbox">cancle</label>
                 </div>
                 <span className={"line-1"}></span>
                 {strategy.conditions.map((condition, index) => (

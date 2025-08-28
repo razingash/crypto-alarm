@@ -176,7 +176,7 @@
     justify-content: space-between;
 }
 
-.button__cancle, .button__save, #strategy__checkbox {
+#btn-save, #btn-cancle, #strategy__checkbox {
     display: none;
 }
 #strategy__checkbox:checked ~ .button__remove, #strategy__checkbox:checked ~ .button__change {
@@ -345,7 +345,7 @@
 }
 
 /*повторение*/
-.button__cancle, .button__save_1, #variable__checkbox {
+.button__save_1, #variable__checkbox {
     display: none;
 }
 #variable__checkbox:checked ~ .button__remove, #variable__checkbox:checked ~ .button__change {

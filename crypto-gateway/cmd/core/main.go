@@ -61,6 +61,7 @@ func main() {
 	routes.SetupMetricsRoutes(app)
 	routes.SetupVariableRoutes(app)
 	routes.SetupWorkspaceRoutes(app)
+	routes.SetupWorkspaceWidgetRoutes(app)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

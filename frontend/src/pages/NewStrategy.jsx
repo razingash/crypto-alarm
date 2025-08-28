@@ -2,11 +2,16 @@ import "../styles/strategy.css"
 import EditorFormula from "../components/Keyboard/editors/EditorFormula";
 import {useEffect, useState} from "react";
 import {useFetching} from "../hooks/useFetching";
-import StrategyService from "../API/StrategyService";
+import StrategyService from "../API/Widgets/StrategyService";
 import {useNavigate} from "react-router-dom";
+import WorkspaceService from "../API/WorkspaceService";
+import { useSearchParams } from "react-router-dom";
 
 const NewStrategy = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const workflowId = searchParams.get("workflowId");
+    const nodeId = searchParams.get("nodeId");
     const [rawFormula, setRawFormula] = useState([["\\textunderscore"]]);
     const [activeFormulaIndex, setActiveFormulaIndex] = useState(0);
     const [formulaName, setFormulaName] = useState('');
@@ -14,6 +19,9 @@ const NewStrategy = () => {
 
     const [fetchNewFormula, , newFormulaError] = useFetching(async (rawFormula, name) => {
         return await StrategyService.createStrategy(rawFormula, name)
+    }, 0, 1000)
+    const [fetchAttachedStrategy, ,] = useFetching(async (data) => {
+        return await WorkspaceService.updateDiagramNodes(workflowId, data)
     }, 0, 1000)
 
     useEffect(() => {
@@ -29,7 +37,15 @@ const NewStrategy = () => {
 
         const response = await fetchNewFormula(rawFormula, formulaName);
         if (response && response.status === 200) {
-            navigate(`/strategies/${response.data.id}`);
+            const newStrategyId = response.data.id;
+
+            const resp = await fetchAttachedStrategy({
+                attachStrategy: { nodeId, strategyId: newStrategyId.toString() }
+            });
+
+            if (resp?.status === 200) {
+                navigate(`/strategies/${newStrategyId}`);
+            }
         }
     };
 

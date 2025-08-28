@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import "../styles/strategy.css"
 import {useFetching} from "../hooks/useFetching";
-import StrategyService from "../API/StrategyService";
+import StrategyService from "../API/Widgets/StrategyService";
 import {useObserver} from "../hooks/useObserver";
 import {Link} from "react-router-dom";
 import FormulaInput from "../components/Keyboard/FormulaInput";

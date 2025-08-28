@@ -13,19 +13,23 @@ const Analytics = lazy(() => import("../pages/Analytics"));
 const Variables = lazy(() => import("../pages/Variables"));
 const Variable = lazy(() => import("../pages/Variable"));
 const NewVariable = lazy(() => import("../pages/NewVariable"));
+const Orchestrator = lazy(() => import("../pages/modules/Orchestrator"));
 
 export const publicRotes = [
     {path: "/", component: <Main/>, key: "main"},
-    {path: "/workspaces", component: <Workspaces/>, key: "workspaces"},
-    {path: "/workspaces/:id/", component: <Workspace/>, key: "workspace"},
     {path: "/errors", component: <Errors/>, key: "logs"},
     {path: "/logs", component: <Logs/>, key: "logs"},
-    {path: "/new-strategy/", component: <NewStrategy/>, key: "new-strategy"},
-    {path: "/strategies/", component: <UserStrategies/>, key: "strategies"},
-    {path: "/strategies/:id/", component: <Strategy/>, key: "strategy"},
     {path: "/settings/", component: <Settigns/>, key: "settings"},
     {path: "/analytics/", component: <Analytics/>, key: "analytics"},
     {path: "/new-variable/", component: <NewVariable/>, key: "new-variable"},
     {path: "/variables/", component: <Variables/>, key: "variables"},
     {path: "/variables/:id/", component: <Variable/>, key: "variable"},
+    {path: "/workspaces", component: <Workspaces/>, key: "workspaces"},
+    {path: "/workspaces/:id/", component: <Workspace/>, key: "workspace"},
+    //modules
+    {path: "/new-strategy/", component: <NewStrategy/>, key: "new-strategy"},
+    {path: "/strategies/", component: <UserStrategies/>, key: "strategies"},
+    {path: "/strategies/:id/", component: <Strategy/>, key: "strategy"},
+    {path: "/orchestrator/new/", component: <Orchestrator/>, key: "new-orchestrator"},
+    {path: "/orchestrator/:id/", component: <Orchestrator/>, key: "orchestrator"},
 ]

@@ -13,5 +13,6 @@ func SetupWorkspaceRoutes(app *fiber.App) {
 	group.Get("/diagram", handlers.DiagramGet)
 	group.Post("/diagram", handlers.DiagramPost, validators.ValidateDiagramPost)
 	group.Patch("/diagram/:id", handlers.DiagramPatch, validators.ValidateDiagramPatch)
+	group.Patch("/diagram/:id/nodes", handlers.DiagramPatchNode, validators.ValidateDiagramPatchNode)
 	group.Delete("/diagram/:id", handlers.DiagramDelete)
 }

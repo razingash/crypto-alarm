@@ -3,10 +3,11 @@ import {Graph} from "@antv/x6";
 import "../styles/workspace.css"
 import {useFetching} from "../hooks/useFetching";
 import WorkspaceService from "../API/WorkspaceService";
-import {useParams} from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
 
 const Workspace = () => {
     const {id} = useParams();
+    const navigate = useNavigate();
     const containerRef = useRef(null);
     const [graph, setGraph] = useState(null);
     const [showMenu, setShowMenu] = useState(false);
@@ -173,7 +174,7 @@ const Workspace = () => {
              'node:change:position',
              'edge:change:source',
              'edge:change:target',
-         ];
+        ];
 
         events.forEach(evt => graph.on(evt, checkChanges));
 
@@ -239,10 +240,11 @@ const Workspace = () => {
             setHasStrategy(true);
         }
 
-        if (type === "trigger") {
+        if (type === "trigger") { // скорее всего будет удален
             graphInstance.addNode({
                 ...baseConfig,
                 label: "Trigger",
+                data: {type:"trigger"},
                 shape: "rect",
                 attrs: {
                     body: {fill: "var(--container-background)", stroke: "#FAAD14", rx: 4, ry: 4},
@@ -283,6 +285,7 @@ const Workspace = () => {
             graphInstance.addNode({
                 ...baseConfig,
                 label: "Orchestrator",
+                data: {type:"orchestrator"},
                 shape: "polygon",
                 attrs: {
                     body: {
@@ -336,6 +339,7 @@ const Workspace = () => {
             graphInstance.addNode({
                 ...baseConfig,
                 label: "Notification",
+                data: {type: "notification"},
                 shape: "circle",
                 attrs: {
                     body: {fill: "var(--container-background)", stroke: "#EB2F96"},
@@ -364,6 +368,54 @@ const Workspace = () => {
         setShowMenu(false);
     };
 
+    const modifyStrategy = () => {
+        const node = nodeMenu.node;
+        if (!node) return;
+
+        const strategyId = node.getData()?.strategyId;
+        if (strategyId) {
+            navigate(`/strategies/${strategyId}`);
+        } else {
+            navigate(`/new-strategy?workflowId=${id}&nodeId=${node.id}`);
+        }
+    }
+
+    const modifyOrchestrator = () => {
+        const node = nodeMenu.node;
+        if (!node) return;
+
+        const strategyId = node.getData()?.strategyId;
+        if (strategyId) {
+            navigate(`/orchestrator/${strategyId}`);
+        } else {
+            navigate(`/orchestrator/new?workflowId=${id}&nodeId=${node.id}`);
+        }
+    }
+
+    const modifyWidget = () => {
+        const node = nodeMenu.node;
+        if (!node) return;
+
+        const type = node.getData()?.type;
+
+        switch (type) {
+            case "strategy":
+                modifyStrategy(node);
+                break;
+            case "orchestrator":
+                modifyOrchestrator(node);
+                break;
+            case "trigger":
+                //modifyTrigger(node);
+                break;
+            case "notification":
+                //modifyNotification(node);
+                break;
+            default:
+                console.warn("Неизвестный тип виджета:", type);
+        }
+    };
+
     return (
         <div className={"section__main"}>
             <div className={"field__workspace field__scrollable"}>
@@ -388,7 +440,7 @@ const Workspace = () => {
                                 </svg>
                             </div>
                         </div>
-                        <div className={"widget__extension"} onClick={() => {alert("Переход на страницу узла " + nodeMenu.node.id)}}>
+                        <div className={"widget__extension"} onClick={() => modifyWidget()}>
                             <svg className={"svg__widget_extension"}>
                                 <use xlinkHref={"#icon_gear"}></use>
                             </svg>

@@ -1,0 +1,67 @@
+
+.default__checkbox {
+    display: none;
+}
+
+.associacions {
+    display: flex;
+    flex-direction: column;
+    margin: 10px 0;
+}
+
+.associacion__formula {
+    display: flex;
+    align-items: center;
+    margin: -8px 0;
+}
+
+.signals__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.signal__item {
+    display: flex;
+    flex-direction: column;
+    direction: ltr;
+    gap: 8px;
+}
+
+.input__signal, .input__signal_outp {
+    width: 700px;
+    background: none;
+    border: 1px solid var(--container-border-1);
+    font-size: 16px;
+    font-family: sans-serif;
+    color: #fff;
+    border-radius: 3px;
+}
+
+.input__signal_outp {
+    max-width: 200px;
+}
+
+.signal__tip {
+    width: 80px;
+    margin-right: 20px;
+}
+
+.cell__row {
+    display: flex;
+}
+
+.cell__center {
+    display: flex;
+    justify-content: center;
+}
+
+.default__footer {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+.default__footer > div {
+    width: auto;
+}

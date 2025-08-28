@@ -14,4 +14,7 @@ export default class WorkspaceService {
     static async updateDiagram(pk, data) {
         return await apiClient.patch(`/workspace/diagram/${pk}`, data)
     }
+    static async updateDiagramNodes(pk, data) {
+        return await apiClient.patch(`/workspace/diagram/${pk}/nodes`, data)
+    }
 }

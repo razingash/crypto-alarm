@@ -2,7 +2,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {defaultKeyboard} from "../../utils/utils";
 import AdaptiveLoading from "../UI/AdaptiveLoading";
 import {useFetching} from "../../hooks/useFetching";
-import StrategyService from "../../API/StrategyService";
+import StrategyService from "../../API/Widgets/StrategyService";
 
 // в теории можно также поделить клавиатуру на две версии чтобы не было лишних переменных, но на практике минусов больше
 const Keyboard = ({onKeyPress, isNewVariable}) => {

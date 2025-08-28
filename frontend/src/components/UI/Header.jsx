@@ -77,12 +77,6 @@ const Header = () => {
                         </svg>
                         <div>Strategies</div>
                     </NavLink>
-                    <NavLink to={"/new-strategy"} className={({ isActive }) => `header__item ${isActive ? "link_active" : ""}`} onClick={handleLinkClick}>
-                        <svg className={"svg__header"}>
-                            <use xlinkHref={"#icon_rook"}></use>
-                        </svg>
-                        <div>New strategy</div>
-                    </NavLink>
                     <NavLink to={"/variables"} className={({ isActive }) => `header__item ${isActive ? "link_active" : ""}`} onClick={handleLinkClick}>
                         <svg className={"svg__header"}>
                             <use xlinkHref={"#icon_oprosnik"}></use>
