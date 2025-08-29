@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"crypto-gateway/config"
-	"crypto-gateway/internal/analytics"
 	"crypto-gateway/internal/appmetrics"
+	"crypto-gateway/internal/modules/strategy/service"
+	"crypto-gateway/internal/modules/strategy/web"
 	"crypto-gateway/internal/web/db"
 	"crypto-gateway/internal/web/routes"
 	"log"
@@ -18,7 +19,7 @@ import (
 )
 
 func main() {
-	analytics.StartTime = time.Now().Unix()
+	service.StartTime = time.Now().Unix()
 	config.LoadConfig()
 	app := fiber.New()
 
@@ -42,21 +43,21 @@ func main() {
 
 	db.InitDB()
 
-	analytics.Collector = appmetrics.NewLoadMetricsCollector(60)
-	analytics.StController = analytics.NewBinanceAPIController(5700)
-	analytics.StBinanceApi = analytics.NewBinanceAPI(analytics.StController)
-	analytics.StOrchestrator = analytics.NewBinanceAPIOrchestrator(analytics.StBinanceApi)
-	analytics.AverageLoadMetrics = analytics.NewAverageLoadMetricsManager(analytics.Collector)
+	service.Collector = appmetrics.NewLoadMetricsCollector(60)
+	service.StController = service.NewBinanceAPIController(5700)
+	service.StBinanceApi = service.NewBinanceAPI(service.StController)
+	service.StOrchestrator = service.NewBinanceAPIOrchestrator(service.StBinanceApi)
+	service.AverageLoadMetrics = service.NewAverageLoadMetricsManager(service.Collector)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	analytics.StOrchestrator.Start(ctx)
-	analytics.SetupInitialSettings(ctx)
+	service.StOrchestrator.Start(ctx)
+	service.SetupInitialSettings(ctx)
 	appmetrics.AvailabilityMetricEvent(1, 1, "webserwer UP")
 
 	routes.SetupNotificationRoutes(app)
-	routes.SetupTriggersRoutes(app)
+	web.SetupTriggersRoutes(app)
 	routes.SetupSettingsRoutes(app)
 	routes.SetupMetricsRoutes(app)
 	routes.SetupVariableRoutes(app)

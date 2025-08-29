@@ -1,27 +1,27 @@
-package handlers
+package web
 
 import (
 	"context"
-	"crypto-gateway/internal/analytics"
+	"crypto-gateway/internal/modules/strategy/repo"
+	"crypto-gateway/internal/modules/strategy/service"
 	"crypto-gateway/internal/web/db"
-	"crypto-gateway/internal/web/repositories"
 	"fmt"
 )
 
 // всю эту фигню после тестов убрать, это лишний слой, + запросы в бд можно не делать(про запросы актуально только в deleteStrategyFromGraph)
 func deleteStrategyFromGraph(strategyID int) {
-	analytics.StOrchestrator.DependencyGraph.RemoveStrategy(strategyID)
-	analytics.StOrchestrator.LaunchNeededAPI(context.Background())
+	service.StOrchestrator.DependencyGraph.RemoveStrategy(strategyID)
+	service.StOrchestrator.LaunchNeededAPI(context.Background())
 }
 
 func updateStrategyInGraph(strategyID int) {
-	analytics.StOrchestrator.DependencyGraph.RemoveStrategy(strategyID)
-	analytics.StOrchestrator.DependencyGraph.AddStrategy(strategyID, repositories.GetStrategyFullFormulasById(strategyID))
-	analytics.StOrchestrator.LaunchNeededAPI(context.Background())
+	service.StOrchestrator.DependencyGraph.RemoveStrategy(strategyID)
+	service.StOrchestrator.DependencyGraph.AddStrategy(strategyID, repo.GetStrategyFullFormulasById(strategyID))
+	service.StOrchestrator.LaunchNeededAPI(context.Background())
 }
 
 // при обновлении переменной вызывать данную функцию
-func updateStrategiesRelatedToVariable(variableId int) {
+func UpdateStrategiesRelatedToVariable(variableId int) {
 	ctx := context.Background()
 	rows, err := db.DB.Query(ctx, `
 		SELECT cs.id
@@ -42,12 +42,12 @@ func updateStrategiesRelatedToVariable(variableId int) {
 			continue
 		}
 
-		analytics.StOrchestrator.DependencyGraph.RemoveStrategy(strategyID)
-		analytics.StOrchestrator.DependencyGraph.AddStrategy(strategyID, repositories.GetStrategyFullFormulasById(strategyID))
+		service.StOrchestrator.DependencyGraph.RemoveStrategy(strategyID)
+		service.StOrchestrator.DependencyGraph.AddStrategy(strategyID, repo.GetStrategyFullFormulasById(strategyID))
 	}
 	if err := rows.Err(); err != nil {
 		fmt.Printf("error after scanning strategy ids: %v\n", err)
 	}
 
-	analytics.StOrchestrator.LaunchNeededAPI(ctx)
+	service.StOrchestrator.LaunchNeededAPI(ctx)
 }

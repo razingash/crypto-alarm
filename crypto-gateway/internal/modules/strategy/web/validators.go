@@ -1,6 +1,7 @@
-package validators
+package web
 
 import (
+	"crypto-gateway/internal/modules/strategy/repo"
 	"crypto-gateway/internal/web/repositories"
 	"encoding/json"
 	"fmt"
@@ -25,9 +26,9 @@ const (
 
 func ValidateStrategyPost(c fiber.Ctx) error {
 	var body struct {
-		Name        string                            `json:"name"`
-		Description string                            `json:"description"`
-		Expressions []repositories.StrategyExpression `json:"conditions"`
+		Name        string                    `json:"name"`
+		Description string                    `json:"description"`
+		Expressions []repo.StrategyExpression `json:"conditions"`
 	}
 
 	if err := json.Unmarshal(c.Body(), &body); err != nil {
@@ -48,8 +49,8 @@ func ValidateStrategyPost(c fiber.Ctx) error {
 		})
 	}
 
-	var allVariables []repositories.CryptoVariable
-	var userVariables []repositories.CryptoVariable
+	var allVariables []repo.CryptoVariable
+	var userVariables []repo.CryptoVariable
 	unique := make(map[string]struct{})
 
 	for _, condition := range body.Expressions {
@@ -179,7 +180,7 @@ func ValidateStrategyPatch(c fiber.Ctx) error {
 // ниже функционал для проверки синтаксиса formula из crypto_strategy
 
 // проверяет формулу на валидность
-func ValidateStrategyExpression(formula string) ([]repositories.CryptoVariable, []repositories.CryptoVariable, error) {
+func ValidateStrategyExpression(formula string) ([]repo.CryptoVariable, []repo.CryptoVariable, error) {
 	tokens, variables, userVariables, err := tokenize(formula)
 
 	if err != nil {
@@ -192,11 +193,11 @@ func ValidateStrategyExpression(formula string) ([]repositories.CryptoVariable, 
 }
 
 // проверка на синтаксис | оптимизировать позже IsValid методы чтобы они делали bulk проверку а не цикломч
-func tokenize(expression string) ([]repositories.Token, []repositories.CryptoVariable, []repositories.CryptoVariable, error) {
+func tokenize(expression string) ([]repositories.Token, []repo.CryptoVariable, []repo.CryptoVariable, error) {
 	// Difference between VARIABLE and USER_VARIABLE is that VARIABLE uses '⎽' while USER_VARIABLE uses '_'
 	var tokens []repositories.Token
-	var variables []repositories.CryptoVariable
-	var userVariables []repositories.CryptoVariable
+	var variables []repo.CryptoVariable
+	var userVariables []repo.CryptoVariable
 
 	tokenPatterns := []struct {
 		Type    string
@@ -224,7 +225,7 @@ func tokenize(expression string) ([]repositories.Token, []repositories.CryptoVar
 						return nil, nil, nil, fmt.Errorf("incorrect user defined variable")
 					}
 
-					isValid, err := repositories.IsValidCryptoCurrency(parts[0])
+					isValid, err := repo.IsValidCryptoCurrency(parts[0])
 					if err != nil {
 						return nil, nil, nil, fmt.Errorf("database error")
 					}
@@ -237,7 +238,7 @@ func tokenize(expression string) ([]repositories.Token, []repositories.CryptoVar
 						return nil, nil, nil, fmt.Errorf("user defined variable %v is most likely outdated", VARIABLE)
 					}
 
-					isValid, err = repositories.IsValidUserVariable(parts[1])
+					isValid, err = repo.IsValidUserVariable(parts[1])
 					if err != nil {
 						return nil, nil, nil, fmt.Errorf("database error")
 					}
@@ -249,7 +250,7 @@ func tokenize(expression string) ([]repositories.Token, []repositories.CryptoVar
 						*/
 						return nil, nil, nil, fmt.Errorf("user variable %v doesn't exist", VARIABLE)
 					}
-					userVariables = append(userVariables, repositories.CryptoVariable{Currency: parts[0], Variable: parts[1]})
+					userVariables = append(userVariables, repo.CryptoVariable{Currency: parts[0], Variable: parts[1]})
 				}
 				if pattern.Type == VARIABLE {
 					parts := strings.Split(match, "_")
@@ -257,7 +258,7 @@ func tokenize(expression string) ([]repositories.Token, []repositories.CryptoVar
 						return nil, nil, nil, fmt.Errorf("incorrect variable")
 					}
 
-					isValid, err := repositories.IsValidCryptoCurrency(parts[0])
+					isValid, err := repo.IsValidCryptoCurrency(parts[0])
 					if err != nil {
 						return nil, nil, nil, fmt.Errorf("database error")
 					}
@@ -270,7 +271,7 @@ func tokenize(expression string) ([]repositories.Token, []repositories.CryptoVar
 						return nil, nil, nil, fmt.Errorf("variable %v is most likely outdated", VARIABLE)
 					}
 
-					isValid, err = repositories.IsValidVariable(parts[1])
+					isValid, err = repo.IsValidVariable(parts[1])
 					if err != nil {
 						return nil, nil, nil, fmt.Errorf("database error")
 					}
@@ -282,7 +283,7 @@ func tokenize(expression string) ([]repositories.Token, []repositories.CryptoVar
 						*/
 						return nil, nil, nil, fmt.Errorf("variable %v doesn't exist", VARIABLE)
 					}
-					variables = append(variables, repositories.CryptoVariable{Currency: parts[0], Variable: parts[1]})
+					variables = append(variables, repo.CryptoVariable{Currency: parts[0], Variable: parts[1]})
 				}
 
 				tokens = append(tokens, repositories.Token{Type: pattern.Type, Value: match})
@@ -362,4 +363,48 @@ func validateTokens(tokens []repositories.Token) error {
 	}
 
 	return nil
+}
+
+type StrategyValidator struct {
+	Name        func(interface{}) string
+	Description func(interface{}) string
+	IsNotified  func(interface{}) string
+	IsActive    func(interface{}) string
+	IsHistoryOn func(interface{}) string
+	Cooldown    func(interface{}) string
+	Conditions  func(value interface{}) string
+}
+
+func ValidateBool(value interface{}) string {
+	_, ok := value.(bool)
+	if !ok {
+		return "value must be a boolean"
+	}
+	return ""
+}
+
+func ValidateCooldown(value interface{}) string {
+	num, ok := value.(float64)
+	if !ok {
+		return "cooldown must be a number"
+	}
+
+	cooldown := int(num)
+	if cooldown < 1 {
+		return "cooldown must be at least 1 second"
+	}
+	if cooldown > 604800 {
+		return "cooldown must not exceed 604800 seconds (7 days)"
+	}
+	return ""
+}
+
+func ValidateText(minLength, maxLength int) func(value interface{}) string {
+	return func(value interface{}) string {
+		str, ok := value.(string)
+		if !ok || len(str) < minLength || len(str) > maxLength {
+			return fmt.Sprintf("field should be in the range from %d to %d characters", minLength, maxLength)
+		}
+		return ""
+	}
 }

@@ -1,7 +1,8 @@
-package handlers
+package web
 
 import (
 	"context"
+	"crypto-gateway/internal/modules/strategy/repo"
 	"crypto-gateway/internal/web/db"
 	"crypto-gateway/internal/web/repositories"
 	"fmt"
@@ -89,11 +90,11 @@ func Keyboard(c fiber.Ctx) error {
 func StrategyPost(c fiber.Ctx) error {
 	name := c.Locals("name").(string)
 	description := c.Locals("description").(string)
-	expressions := c.Locals("expressions").([]repositories.StrategyExpression)
-	variables := c.Locals("variables").([]repositories.CryptoVariable)
-	userVariables := c.Locals("userVariables").([]repositories.CryptoVariable)
+	expressions := c.Locals("expressions").([]repo.StrategyExpression)
+	variables := c.Locals("variables").([]repo.CryptoVariable)
+	userVariables := c.Locals("userVariables").([]repo.CryptoVariable)
 
-	id, err := repositories.SaveStrategy(name, description, expressions, variables, userVariables)
+	id, err := repo.SaveStrategy(name, description, expressions, variables, userVariables)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "error during saving formula",
@@ -109,7 +110,7 @@ func StrategyPatch(c fiber.Ctx) error {
 	strategyID := c.Locals("strategyID").(int)
 	data := c.Locals("updateData").(map[string]interface{})
 
-	err := repositories.UpdateStrategy(strategyID, data)
+	err := repo.UpdateStrategy(strategyID, data)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -128,7 +129,7 @@ func StrategyPatch(c fiber.Ctx) error {
 				}
 			}
 
-			err = repositories.UpdateStrategyConditions(strategyID, conditions)
+			err = repo.UpdateStrategyConditions(strategyID, conditions)
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"error": err.Error(),
@@ -167,7 +168,7 @@ func StrategyDelete(c fiber.Ctx) error {
 
 	formulaIDstr := c.Query("formula_id")
 	if formulaIDstr == "" {
-		err := repositories.DeleteStrategyById(strategyID)
+		err := repo.DeleteStrategyById(strategyID)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": err.Error(),
@@ -180,7 +181,7 @@ func StrategyDelete(c fiber.Ctx) error {
 				"error": "Invalid formula ID",
 			})
 		}
-		err := repositories.DeleteFormulaById(formulaID)
+		err := repo.DeleteFormulaById(formulaID)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "Invalid formula ID",
@@ -221,7 +222,7 @@ func StrategyHistoryGet(c fiber.Ctx) error {
 		page = 1
 	}
 
-	hasNext, rawRows, err := repositories.GetStrategyHistory(strategyID, limit, page, prevCursor)
+	hasNext, rawRows, err := repo.GetStrategyHistory(strategyID, limit, page, prevCursor)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -273,7 +274,7 @@ func StrategyGet(c fiber.Ctx) error {
 
 	strategyID := c.Query("id")
 
-	strategies, hasNext, err := repositories.GetStrategiesWithFormulas(limit, page, strategyID)
+	strategies, hasNext, err := repo.GetStrategiesWithFormulas(limit, page, strategyID)
 	if err != nil {
 		fmt.Println(err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -283,7 +284,7 @@ func StrategyGet(c fiber.Ctx) error {
 
 	if strategyID == "" {
 		if strategies == nil {
-			strategies = []repositories.Strategy{}
+			strategies = []repo.Strategy{}
 		}
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"data":     strategies,

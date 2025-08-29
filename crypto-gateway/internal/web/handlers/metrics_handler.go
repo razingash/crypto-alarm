@@ -3,8 +3,8 @@ package handlers
 import (
 	"bufio"
 	"context"
-	"crypto-gateway/internal/analytics"
 	"crypto-gateway/internal/appmetrics"
+	"crypto-gateway/internal/modules/strategy/service"
 	"crypto-gateway/internal/web/db"
 	"encoding/json"
 	"fmt"
@@ -192,9 +192,9 @@ func GetStaticMetrics(c fiber.Ctx) error {
 		TotalCPU:         runtime.NumCPU(),
 		UsedCPU:          runtime.GOMAXPROCS(0),
 		TotalMemoryMB:    vmStat.Total / 1024 / 1024,
-		MaxBinanceWeight: analytics.StController.MaxWeight,
-		StartTime:        analytics.StartTime,
-		IsLoadMetricsOn:  analytics.AverageLoadMetrics.IsOn,
+		MaxBinanceWeight: service.StController.MaxWeight,
+		StartTime:        service.StartTime,
+		IsLoadMetricsOn:  service.AverageLoadMetrics.IsOn,
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -228,12 +228,12 @@ func SendRuntimeMetricsWS(conn *websocket.Conn) {
 			CPUUsagePercent:    totalCPUPercent[0],
 			CPUAllocation:      (cpuPercent / 100.0) * float64(cpuCores),
 			// NumGC:              m.NumGC, // циклы сборщика мусора, позже добавить
-			BinanceOverload: analytics.StController.CurrentWeight,
+			BinanceOverload: service.StController.CurrentWeight,
 		}
 
 		loadAvg := []appmetrics.LoadAverages{}
-		if analytics.AverageLoadMetrics.IsOn {
-			loadAvg = analytics.Collector.Values()
+		if service.AverageLoadMetrics.IsOn {
+			loadAvg = service.Collector.Values()
 		}
 
 		payload := RuntimePayload{

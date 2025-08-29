@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"crypto-gateway/internal/modules/strategy/web"
 	"crypto-gateway/internal/web/repositories"
 	"strconv"
 
@@ -75,7 +76,7 @@ func VariablePatch(c fiber.Ctx) error {
 		})
 	}
 	if isFormulaUpdated {
-		go updateStrategiesRelatedToVariable(variableId)
+		go web.UpdateStrategiesRelatedToVariable(variableId)
 	}
 	return c.SendStatus(fiber.StatusOK)
 }

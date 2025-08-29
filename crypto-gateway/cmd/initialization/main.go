@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"crypto-gateway/config"
-	"crypto-gateway/internal/analytics"
 	"crypto-gateway/internal/appmetrics"
+	"crypto-gateway/internal/modules/strategy/service"
 	"crypto-gateway/internal/web/db"
 	"encoding/json"
 	"fmt"
@@ -46,8 +46,8 @@ func fillCryptoModels() error {
 	ctx := context.Background()
 	db.InitDB()
 
-	controller := analytics.NewBinanceAPIController(5700)
-	binAPI := analytics.NewBinanceAPI(controller)
+	controller := service.NewBinanceAPIController(5700)
+	binAPI := service.NewBinanceAPI(controller)
 
 	data, err := getInitialDataParams(ctx, binAPI)
 	if err != nil {
@@ -75,7 +75,7 @@ func fillCryptoModels() error {
 
 // receives the keys to the datasets regarding the API Binance to initialize them in the database
 // and use in the keyboard on the client side
-func getInitialDataParams(ctx context.Context, binAPI *analytics.BinanceAPI) (map[string]map[string]interface{}, error) {
+func getInitialDataParams(ctx context.Context, binAPI *service.BinanceAPI) (map[string]map[string]interface{}, error) {
 	data := make(map[string]map[string]interface{})
 
 	for ep, weight := range baseEndpointsWeights {
@@ -169,7 +169,7 @@ func initializeCryptoModels(ctx context.Context, pool *pgxpool.Pool, dataset map
 }
 
 // getValidCurrencies — формирует список пересечения доступных валют чтобы использовать только те которые наверняка поддерживаются
-func getValidCurrencies(ctx context.Context, pool *pgxpool.Pool, binAPI *analytics.BinanceAPI) error {
+func getValidCurrencies(ctx context.Context, pool *pgxpool.Pool, binAPI *service.BinanceAPI) error {
 	symbolSets := make([][]string, 3)
 	eps := []string{"/v3/ticker/price", "/v3/ticker/24hr", "/v3/exchangeInfo"}
 

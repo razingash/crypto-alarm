@@ -1,4 +1,4 @@
-package analytics
+package service
 
 import (
 	"crypto-gateway/internal/appmetrics"

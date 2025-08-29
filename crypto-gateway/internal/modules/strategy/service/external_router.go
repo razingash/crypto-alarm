@@ -1,8 +1,9 @@
-package analytics
+package service
 
 import (
 	"context"
 	"crypto-gateway/internal/appmetrics"
+	"crypto-gateway/internal/modules/strategy/repo"
 	"fmt"
 	"io"
 	"log"
@@ -20,13 +21,13 @@ type BinanceAPI struct {
 
 func NewBinanceAPI(controller *BinanceAPIController) *BinanceAPI {
 	ctx := context.Background()
-	recordedEndpoints, err := GetRecordedEndpoints(ctx)
+	recordedEndpoints, err := repo.GetRecordedEndpoints(ctx)
 	if err != nil {
 		log.Printf("failed to load recorded endpoints: %v", err)
 		recordedEndpoints = []string{}
 	}
 
-	actualEndpointsWeight, err2 := GetActualEndpointsWeight(ctx)
+	actualEndpointsWeight, err2 := repo.GetActualEndpointsWeight(ctx)
 
 	if err2 != nil {
 		log.Printf("failed to load actual endpoint weights: %v", err)
@@ -75,7 +76,7 @@ func (api *BinanceAPI) checkAndUpdateEndpointWeights(resp *http.Response, endpoi
 		if deltaWeight > 0 { // костыль для багов с моей стороны
 			if deltaWeight != endpoints[endpoint] {
 				ctx := context.Background()
-				if err := SaveEndpointWeight(ctx, endpoint, deltaWeight); err != nil {
+				if err := repo.SaveEndpointWeight(ctx, endpoint, deltaWeight); err != nil {
 					log.Printf("failed to save weight: %v", err)
 				}
 			}

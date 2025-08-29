@@ -1,6 +1,7 @@
 package validators
 
 import (
+	"crypto-gateway/internal/modules/strategy/web"
 	"crypto-gateway/internal/web/repositories"
 	"encoding/json"
 	"fmt"
@@ -158,14 +159,14 @@ func tokenizeVariable(expression string) ([]repositories.Token, error) {
 		Type    string
 		Pattern string
 	}{
-		{NUMBER, `^\d+(\.\d+)?`},                 // Числа
-		{OPERATOR, `^[+\-*/^]`},                  // Операторы
-		{COMPARISON, `^(<=|>=|==|<|>)`},          // Операторы сравнения ЗАПРЕЩЕНЫ
-		{FUNCTION, `^(sqrt|abs)`},                // Функции
-		{USER_VARIABLE, `^[a-zA-Z][a-zA-Z0-9]*`}, // пользовательские переменные, изначально не содержат криптовалюты и являются универсальными
-		{VARIABLE, `^[a-zA-Z_][a-zA-Z0-9_]*`},    // Переменные бинанс - цифры, буквы и '_' на всякий случай
-		{LPAREN, `^\(`},                          // Левая скобка
-		{RPAREN, `^\)`},                          // Правая скобка
+		{web.NUMBER, `^\d+(\.\d+)?`},                 // Числа
+		{web.OPERATOR, `^[+\-*/^]`},                  // Операторы
+		{web.COMPARISON, `^(<=|>=|==|<|>)`},          // Операторы сравнения ЗАПРЕЩЕНЫ
+		{web.FUNCTION, `^(sqrt|abs)`},                // Функции
+		{web.USER_VARIABLE, `^[a-zA-Z][a-zA-Z0-9]*`}, // пользовательские переменные, изначально не содержат криптовалюты и являются универсальными
+		{web.VARIABLE, `^[a-zA-Z_][a-zA-Z0-9_]*`},    // Переменные бинанс - цифры, буквы и '_' на всякий случай
+		{web.LPAREN, `^\(`},                          // Левая скобка
+		{web.RPAREN, `^\)`},                          // Правая скобка
 	}
 
 	for len(expression) > 0 {
@@ -196,25 +197,25 @@ func validateVariableTokens(tokens []repositories.Token) error {
 
 	for i, token := range tokens {
 		switch token.Type {
-		case NUMBER, VARIABLE:
+		case web.NUMBER, web.VARIABLE:
 			// Два числа переменные подряд недопустимы
-			if lastTokenType == NUMBER || lastTokenType == VARIABLE {
+			if lastTokenType == web.NUMBER || lastTokenType == web.VARIABLE {
 				return fmt.Errorf("incorrect sequence of symbols")
 			}
-		case OPERATOR:
+		case web.OPERATOR:
 			//Оператор не может стоять в начале или после другого оператора
-			if i == 0 || lastTokenType == OPERATOR || lastTokenType == LPAREN || lastTokenType == COMPARISON {
+			if i == 0 || lastTokenType == web.OPERATOR || lastTokenType == web.LPAREN || lastTokenType == web.COMPARISON {
 				return fmt.Errorf("incorrect sequence of symbols")
 			}
-		case COMPARISON:
+		case web.COMPARISON:
 			// Оператор сравнения должен отсутсвовать(по крайней мере пока нет булевых переменных)
 			return fmt.Errorf("variable shouldn't have a comparison operator")
-		case FUNCTION:
+		case web.FUNCTION:
 			// Функция требует открывающую скобку сразу после
 			//stack = append(stack, token)
-		case LPAREN:
+		case web.LPAREN:
 			stack = append(stack, token)
-		case RPAREN:
+		case web.RPAREN:
 			if len(stack) == 0 {
 				return fmt.Errorf("incorrect brackets")
 			}
@@ -222,10 +223,10 @@ func validateVariableTokens(tokens []repositories.Token) error {
 		}
 
 		lastTokenType = token.Type
-		if (lastTokenType == RPAREN) &&
+		if (lastTokenType == web.RPAREN) &&
 			i+1 < len(tokens) {
 			nextToken := tokens[i+1]
-			if nextToken.Type == NUMBER || nextToken.Type == VARIABLE || nextToken.Type == FUNCTION || nextToken.Type == LPAREN {
+			if nextToken.Type == web.NUMBER || nextToken.Type == web.VARIABLE || nextToken.Type == web.FUNCTION || nextToken.Type == web.LPAREN {
 				return fmt.Errorf("missing operator between ')' and next token")
 			}
 		}

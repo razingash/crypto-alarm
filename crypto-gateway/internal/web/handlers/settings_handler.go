@@ -2,7 +2,8 @@ package handlers
 
 import (
 	"context"
-	"crypto-gateway/internal/analytics"
+	"crypto-gateway/internal/modules/strategy/repo"
+	"crypto-gateway/internal/modules/strategy/service"
 	"crypto-gateway/internal/web/repositories"
 
 	"github.com/gofiber/fiber/v3"
@@ -34,9 +35,9 @@ func GetSettings(c fiber.Ctx) error {
 }
 
 func PatchUpdateSettings(c fiber.Ctx) error {
-	updates := c.Locals("updates").(analytics.PatchSettingsRequest)
+	updates := c.Locals("updates").(service.PatchSettingsRequest)
 
-	updatedIds, err := analytics.UpdateSettings(updates)
+	updatedIds, err := service.UpdateSettings(updates)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Failed to update endpoints",
@@ -45,9 +46,9 @@ func PatchUpdateSettings(c fiber.Ctx) error {
 
 	go func() {
 		for _, id := range updatedIds {
-			api, cooldown := repositories.GetApiAndCooldownByID(id)
-			analytics.StOrchestrator.AdjustAPITaskCooldown(context.Background(), api, cooldown)
-			analytics.StOrchestrator.LaunchNeededAPI(context.Background())
+			api, cooldown := repo.GetApiAndCooldownByID(id)
+			service.StOrchestrator.AdjustAPITaskCooldown(context.Background(), api, cooldown)
+			service.StOrchestrator.LaunchNeededAPI(context.Background())
 		}
 	}()
 

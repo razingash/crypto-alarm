@@ -1,8 +1,9 @@
-package analytics
+package service
 
 import (
 	"context"
 	"crypto-gateway/internal/appmetrics"
+	"crypto-gateway/internal/modules/strategy/repo"
 	"crypto-gateway/internal/web/repositories"
 	"encoding/json"
 	"fmt"
@@ -83,7 +84,7 @@ func (o *BinanceAPIOrchestrator) Start(ctx context.Context) error {
 func (o *BinanceAPIOrchestrator) LoadActiveStrategies(ctx context.Context) {
 	fmt.Println("Loading active strategies into Graph...")
 
-	strategies, err := GetActiveStrategies(ctx)
+	strategies, err := repo.GetActiveStrategies(ctx)
 	if err != nil {
 		appmetrics.AnalyticsServiceLogging(4, "Error while loading active strategies", err)
 		log.Printf("ошибка загрузки активных стратегий: %v\n", err)
@@ -92,7 +93,7 @@ func (o *BinanceAPIOrchestrator) LoadActiveStrategies(ctx context.Context) {
 
 	for strategyID, _ := range strategies {
 		// _ -formulas unused | обновить тесты надо будет чтобы AddStrategy принимал только id стратегии
-		if err := o.DependencyGraph.AddStrategy(strategyID, repositories.GetStrategyFullFormulasById(strategyID)); err != nil {
+		if err := o.DependencyGraph.AddStrategy(strategyID, repo.GetStrategyFullFormulasById(strategyID)); err != nil {
 			appmetrics.AnalyticsServiceLogging(4, fmt.Sprintf("Failed to add strategy %v to graph in LoadActiveStrategies", strategyID), err)
 		}
 	}
@@ -102,7 +103,7 @@ func (o *BinanceAPIOrchestrator) LoadActiveStrategies(ctx context.Context) {
 func (o *BinanceAPIOrchestrator) LaunchNeededAPI(ctx context.Context) {
 	fmt.Println("Launching needed API tasks...")
 
-	data, err := GetActualComponents(ctx)
+	data, err := repo.GetActualComponents(ctx)
 	fmt.Println(data)
 	if err != nil {
 		appmetrics.AnalyticsServiceLogging(4, "GetActualComponents returned error in LaunchNeededAPI function", err)
@@ -231,7 +232,7 @@ func (o *BinanceAPIOrchestrator) updateTickerCurrentPrice(ctx context.Context, c
 				continue
 			}
 			o.checkBinanceResponse(response)
-			currencies, err := GetNeededFieldsFromEndpoint(ctx, "/v3/ticker/price")
+			currencies, err := repo.GetNeededFieldsFromEndpoint(ctx, "/v3/ticker/price")
 			fmt.Println(1, currencies)
 			if err != nil {
 				appmetrics.AnalyticsServiceLogging(4, "in updateTickerCurrentPrice - GetNeededFieldsFromEndpoint returned Error", err)
@@ -241,7 +242,7 @@ func (o *BinanceAPIOrchestrator) updateTickerCurrentPrice(ctx context.Context, c
 
 			if len(triggeredStrategies) > 0 {
 				result, variableValues := o.DependencyGraph.GetStrategiesVariables(triggeredStrategies)
-				AddTriggerHistory(ctx, result, variableValues)
+				repo.AddTriggerHistory(ctx, result, variableValues)
 				repositories.SendPushNotifications(triggeredStrategies, "TEST MESSAGE IN ORCHESTRATOR")
 			}
 		}
@@ -265,7 +266,7 @@ func (o *BinanceAPIOrchestrator) updatePriceChange24h(ctx context.Context, coold
 			}
 			o.checkBinanceResponse(response)
 
-			fields, err := GetNeededFieldsFromEndpoint(ctx, "/v3/ticker/24hr")
+			fields, err := repo.GetNeededFieldsFromEndpoint(ctx, "/v3/ticker/24hr")
 			if err != nil {
 				appmetrics.AnalyticsServiceLogging(4, "in updatePriceChange24h - GetNeededFieldsFromEndpoint returned Error", err)
 			}
@@ -274,7 +275,7 @@ func (o *BinanceAPIOrchestrator) updatePriceChange24h(ctx context.Context, coold
 			triggeredStrategies := o.DependencyGraph.UpdateVariablesTopologicalKahn(dataForGraph)
 			if len(triggeredStrategies) > 0 {
 				result, variableValues := o.DependencyGraph.GetStrategiesVariables(triggeredStrategies)
-				AddTriggerHistory(ctx, result, variableValues)
+				repo.AddTriggerHistory(ctx, result, variableValues)
 				repositories.SendPushNotifications(triggeredStrategies, "TEST MESSAGE IN ORCHESTRATOR")
 			}
 		}
