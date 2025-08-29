@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx"
 )
@@ -14,15 +15,21 @@ import (
 type Orchestrator struct {
 	ID        int64               `json:"id"`
 	IsActive  *bool               `json:"is_active"`
-	CreatedAt *string             `json:"created_at"`
+	CreatedAt time.Time           `json:"created_at"`
 	Inputs    []OrchestratorInput `json:"inputs"`
 }
 
 type OrchestratorInput struct {
+	ID      *int64               `json:"id"`
+	Formula string               `json:"formula"`
+	Tag     string               `json:"tag"`
+	Sources []OrchestratorSource `json:"sources"`
+}
+
+type OrchestratorSource struct {
 	ID         *int64 `json:"id"`
 	SourceType string `json:"source_type"`
-	SourceID   *int64 `json:"source_id"`
-	Formula    string `json:"formula"`
+	SourceID   int64  `json:"source_id"`
 }
 
 type Diagram struct {
@@ -50,10 +57,9 @@ type DiagramData struct {
 }
 
 type StrategyFormula struct {
-	StrategyID int64  `json:"strategy_id"`
-	FormulaID  int64  `json:"formula_id"`
-	Formula    string `json:"formula"`
-	FormulaRaw string `json:"formula_raw"`
+	CryptoStrategyFormulaID int64  `json:"csf_id"`
+	Formula                 string `json:"formula"`
+	FormulaRaw              string `json:"formula_raw"`
 }
 
 func CreateOrchestrator(inputs []OrchestratorInput) (int64, error) {
@@ -64,17 +70,16 @@ func CreateOrchestrator(inputs []OrchestratorInput) (int64, error) {
 	}
 	defer func() {
 		if err != nil {
-			tx.Rollback(ctx)
+			_ = tx.Rollback(ctx)
 		}
 	}()
 
 	var orchestratorID int64
 	row := tx.QueryRow(ctx, `
-    	INSERT INTO module_orchestrator DEFAULT VALUES RETURNING id
-	`)
-
-	if err := row.Scan(&orchestratorID); err != nil {
-		return 0, err
+        INSERT INTO module_orchestrator DEFAULT VALUES RETURNING id
+    `)
+	if scanErr := row.Scan(&orchestratorID); scanErr != nil {
+		return 0, scanErr
 	}
 
 	if orchestratorID == 0 {
@@ -82,17 +87,29 @@ func CreateOrchestrator(inputs []OrchestratorInput) (int64, error) {
 	}
 
 	for _, input := range inputs {
-		_, err := tx.Exec(ctx, `
-            INSERT INTO orchestrator_inputs (orchestrator_id, source_type, source_id, formula)
-            VALUES ($1, $2, $3, $4)
-        `, orchestratorID, input.SourceType, input.SourceID, input.Formula)
-		if err != nil {
-			return 0, err
+		var inputID int64
+		row := tx.QueryRow(ctx, `
+            INSERT INTO orchestrator_inputs (orchestrator_id, formula, tag)
+            VALUES ($1, $2, $3)
+            RETURNING id
+        `, orchestratorID, input.Formula, input.Tag)
+		if scanErr := row.Scan(&inputID); scanErr != nil {
+			return 0, scanErr
+		}
+
+		for _, src := range input.Sources {
+			_, execErr := tx.Exec(ctx, `
+                INSERT INTO orchestrator_input_sources (input_id, source_type, source_id)
+                VALUES ($1, $2, $3)
+            `, inputID, src.SourceType, src.SourceID)
+			if execErr != nil {
+				return 0, execErr
+			}
 		}
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return 0, err
+	if commitErr := tx.Commit(ctx); commitErr != nil {
+		return 0, commitErr
 	}
 
 	return orchestratorID, nil
@@ -107,12 +124,16 @@ func GetOrchestratorByID(ctx context.Context, id int64) (*Orchestrator, error) {
         WHERE id = $1
     `, id)
 
-	if err := row.Scan(&orchestrator.ID, &orchestrator.IsActive, &orchestrator.CreatedAt); err != nil {
-		return nil, fmt.Errorf("orchestrator not found")
+	err := row.Scan(&orchestrator.ID, &orchestrator.IsActive, &orchestrator.CreatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("orchestrator not found")
+		}
+		return nil, err
 	}
 
 	rows, err := db.DB.Query(ctx, `
-        SELECT id, source_type, source_id, formula
+        SELECT id, formula, tag
         FROM orchestrator_inputs
         WHERE orchestrator_id = $1
     `, id)
@@ -124,9 +145,31 @@ func GetOrchestratorByID(ctx context.Context, id int64) (*Orchestrator, error) {
 	inputs := make([]OrchestratorInput, 0)
 	for rows.Next() {
 		var input OrchestratorInput
-		if err := rows.Scan(&input.ID, &input.SourceType, &input.SourceID, &input.Formula); err != nil {
+		if err := rows.Scan(&input.ID, &input.Formula, &input.Tag); err != nil {
 			return nil, err
 		}
+
+		srcRows, err := db.DB.Query(ctx, `
+            SELECT id, source_type, source_id
+            FROM orchestrator_input_sources
+            WHERE input_id = $1
+        `, *input.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		sources := make([]OrchestratorSource, 0)
+		for srcRows.Next() {
+			var src OrchestratorSource
+			if err := srcRows.Scan(&src.ID, &src.SourceType, &src.SourceID); err != nil {
+				srcRows.Close()
+				return nil, err
+			}
+			sources = append(sources, src)
+		}
+		srcRows.Close()
+
+		input.Sources = sources
 		inputs = append(inputs, input)
 	}
 
@@ -167,7 +210,7 @@ func GetOrchestratorParts(workflowID int64, nodeID string) ([]StrategyFormula, e
 	}
 
 	rows, err := db.DB.Query(ctx, `
-		SELECT csf.strategy_id, tf.id, tf.formula, tf.formula_raw
+		SELECT csf.id, tf.formula, tf.formula_raw
 		FROM crypto_strategy_formula csf
 		JOIN trigger_formula tf ON tf.id = csf.formula_id
 		WHERE csf.strategy_id = ANY($1)
@@ -180,7 +223,7 @@ func GetOrchestratorParts(workflowID int64, nodeID string) ([]StrategyFormula, e
 	var result []StrategyFormula
 	for rows.Next() {
 		var f StrategyFormula
-		if err := rows.Scan(&f.StrategyID, &f.FormulaID, &f.Formula, &f.FormulaRaw); err != nil {
+		if err := rows.Scan(&f.CryptoStrategyFormulaID, &f.Formula, &f.FormulaRaw); err != nil {
 			return nil, err
 		}
 		result = append(result, f)
@@ -220,40 +263,72 @@ func UpdateOrchestrator(ctx context.Context, orchestratorID int64, req Orchestra
 	}
 	defer rows.Close()
 
-	existingIDs := map[int64]bool{}
+	existingInputs := map[int64]bool{}
 	for rows.Next() {
 		var id int64
 		if err := rows.Scan(&id); err != nil {
 			return err
 		}
-		existingIDs[id] = true
+		existingInputs[id] = true
 	}
 
-	incomingIDs := map[int64]bool{}
+	incomingInputs := map[int64]bool{}
 	for _, input := range req.Inputs {
 		if input.ID != nil && *input.ID != 0 {
 			_, err = tx.Exec(ctx, `
                 UPDATE orchestrator_inputs
-                SET source_type = $1, source_id = $2, formula = $3
-                WHERE id = $4 AND orchestrator_id = $5
-            `, input.SourceType, input.SourceID, input.Formula, *input.ID, orchestratorID)
+                SET formula = $1, tag = $2
+                WHERE id = $3 AND orchestrator_id = $4
+            `, input.Formula, input.Tag, *input.ID, orchestratorID)
 			if err != nil {
 				return err
 			}
-			incomingIDs[*input.ID] = true
-		} else {
+			incomingInputs[*input.ID] = true
+
 			_, err = tx.Exec(ctx, `
-                INSERT INTO orchestrator_inputs (orchestrator_id, source_type, source_id, formula)
-                VALUES ($1, $2, $3, $4)
-            `, orchestratorID, input.SourceType, input.SourceID, input.Formula)
+                DELETE FROM orchestrator_input_sources
+                WHERE input_id = $1
+            `, *input.ID)
 			if err != nil {
 				return err
+			}
+
+			for _, src := range input.Sources {
+				_, err = tx.Exec(ctx, `
+                    INSERT INTO orchestrator_input_sources (input_id, source_type, source_id)
+                    VALUES ($1, $2, $3)
+                `, *input.ID, src.SourceType, src.SourceID)
+				if err != nil {
+					return err
+				}
+			}
+
+		} else {
+			row := tx.QueryRow(ctx, `
+                INSERT INTO orchestrator_inputs (orchestrator_id, formula, tag)
+                VALUES ($1, $2, $3)
+                RETURNING id
+            `, orchestratorID, input.Formula, input.Tag)
+
+			var newInputID int64
+			if err := row.Scan(&newInputID); err != nil {
+				return err
+			}
+
+			for _, src := range input.Sources {
+				_, err = tx.Exec(ctx, `
+                    INSERT INTO orchestrator_input_sources (input_id, source_type, source_id)
+                    VALUES ($1, $2, $3)
+                `, newInputID, src.SourceType, src.SourceID)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
 
-	for id := range existingIDs {
-		if !incomingIDs[id] {
+	for id := range existingInputs {
+		if !incomingInputs[id] {
 			_, err = tx.Exec(ctx, `
                 DELETE FROM orchestrator_inputs
                 WHERE id = $1 AND orchestrator_id = $2

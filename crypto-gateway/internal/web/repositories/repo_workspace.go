@@ -116,7 +116,58 @@ func UpdateDiagram(id int, name *string, data *string) error {
 	return err
 }
 
-func AttachStrategyToNode(diagramID int, nodeID string, strategyID string) error {
+func AttachEntityToNode(diagramID int, nodeID string, value string, key string) error {
+	ctx := context.Background()
+
+	var diagramStr string
+	if err := db.DB.QueryRow(ctx, "SELECT data FROM diagrams WHERE id=$1", diagramID).Scan(&diagramStr); err != nil {
+		return err
+	}
+
+	var diagram map[string]interface{}
+	if err := json.Unmarshal([]byte(diagramStr), &diagram); err != nil {
+		return err
+	}
+
+	cells, ok := diagram["cells"].([]interface{})
+	if !ok {
+		return fmt.Errorf("invalid diagram format: no cells")
+	}
+
+	found := false
+	for _, cell := range cells {
+		node, ok := cell.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if node["id"] == nodeID {
+			data, _ := node["data"].(map[string]interface{})
+			if data == nil {
+				data = map[string]interface{}{}
+			}
+
+			data[key] = fmt.Sprintf("%v", value)
+
+			node["data"] = data
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("node with id %s not found", nodeID)
+	}
+
+	updatedJSON, err := json.Marshal(diagram)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.DB.Exec(ctx, "UPDATE diagrams SET data=$1, updated_at=now() WHERE id=$2", string(updatedJSON), diagramID)
+	return err
+}
+
+func AttachOrchestratorToNode(diagramID int, nodeID string, orchestratorID string) error {
 	var diagramStr string
 	err := db.DB.QueryRow(
 		context.Background(),
@@ -148,7 +199,7 @@ func AttachStrategyToNode(diagramID int, nodeID string, strategyID string) error
 			if data == nil {
 				data = map[string]interface{}{}
 			}
-			data["strategyId"] = strategyID
+			data["orchestratorId"] = orchestratorID
 			node["data"] = data
 			found = true
 			break

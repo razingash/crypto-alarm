@@ -40,7 +40,7 @@ const NewStrategy = () => {
             const newStrategyId = response.data.id;
 
             const resp = await fetchAttachedStrategy({
-                attachStrategy: { nodeId, strategyId: newStrategyId.toString() }
+                attachStrategy: { nodeId, itemID: newStrategyId.toString() }
             });
 
             if (resp?.status === 200) {

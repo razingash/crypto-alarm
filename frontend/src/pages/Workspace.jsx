@@ -384,9 +384,9 @@ const Workspace = () => {
         const node = nodeMenu.node;
         if (!node) return;
 
-        const strategyId = node.getData()?.strategyId;
-        if (strategyId) {
-            navigate(`/orchestrator/${strategyId}`);
+        const orchestratorId = node.getData()?.orchestratorId;
+        if (orchestratorId) {
+            navigate(`/orchestrator/${orchestratorId}?workflowId=${id}&nodeId=${node.id}`);
         } else {
             navigate(`/orchestrator/new?workflowId=${id}&nodeId=${node.id}`);
         }

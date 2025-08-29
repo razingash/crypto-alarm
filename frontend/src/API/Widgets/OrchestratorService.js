@@ -1,8 +1,8 @@
 import apiClient from "../../hooks/useApiInterceptor";
 
 export default class OrchestratorService {
-    static async create() {
-        const response = await apiClient.post(`/workspace/widgets/orchestrator`)
+    static async create(searchParams, data) {
+        const response = await apiClient.post(`/workspace/widgets/orchestrator?${searchParams}`, data)
         return response.data
     }
     static async update(pk, params) {

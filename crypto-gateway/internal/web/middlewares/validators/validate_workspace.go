@@ -66,23 +66,35 @@ func ValidateDiagramPatchNode(c fiber.Ctx) error {
 		})
 	}
 
-	if attach, ok := body["attachStrategy"].(map[string]interface{}); ok {
-		nodeID, _ := attach["nodeId"].(string)
-		strategyID, _ := attach["strategyId"].(string)
-		if nodeID == "" || strategyID == "" {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "nodeId and strategyId are required",
-			})
-		}
-
-		c.Locals("diagramID", diagramID)
-		c.Locals("nodeID", nodeID)
-		c.Locals("strategyID", strategyID)
-		c.Locals("action", "attachStrategy")
-		return c.Next()
+	var actionKey string
+	if _, ok := body["attachStrategy"]; ok {
+		actionKey = "attachStrategy"
+	} else if _, ok := body["attachOrchestrator"]; ok {
+		actionKey = "attachOrchestrator"
+	} else {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "unsupported action",
+		})
 	}
 
-	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-		"error": "unsupported action",
-	})
+	attach, ok := body[actionKey].(map[string]interface{})
+	if !ok {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid action format",
+		})
+	}
+
+	nodeID, _ := attach["nodeId"].(string)
+	itemID, _ := attach["itemID"].(string)
+	if nodeID == "" || itemID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "nodeId and itemID are required",
+		})
+	}
+
+	c.Locals("diagramID", diagramID)
+	c.Locals("nodeID", nodeID)
+	c.Locals("itemID", itemID)
+	c.Locals("action", actionKey)
+	return c.Next()
 }

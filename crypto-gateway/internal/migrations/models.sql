@@ -121,9 +121,15 @@ CREATE TABLE module_orchestrator (
 CREATE TABLE orchestrator_inputs (
     id BIGSERIAL PRIMARY KEY,
     orchestrator_id BIGINT NOT NULL REFERENCES module_orchestrator(id) ON DELETE CASCADE,
+    formula TEXT NOT NULL,
+    tag VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE orchestrator_input_sources (
+    id BIGSERIAL PRIMARY KEY,
+    input_id BIGINT NOT NULL REFERENCES orchestrator_inputs(id) ON DELETE CASCADE,
     source_type VARCHAR(100) NOT NULL,  -- 'binance', 'nasdaq', 'custom'| определяет из какой таблицы брать source_id
-    source_id BIGINT NOT NULL, -- является ссылкой на id в необходимой таблице
-    formula TEXT NOT NULL
+    source_id BIGINT NOT NULL -- является ссылкой на id в необходимой таблице
 );
 
 CREATE TABLE crypto_strategy_variable (

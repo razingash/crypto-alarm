@@ -62,7 +62,6 @@ func OrchestratorPartsGet(c fiber.Ctx) error {
 	}
 
 	return c.JSON(cell)
-
 }
 
 func OrchestratorPatch(c fiber.Ctx) error {

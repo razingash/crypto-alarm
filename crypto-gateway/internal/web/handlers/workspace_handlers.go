@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"crypto-gateway/internal/web/repositories"
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -84,18 +85,26 @@ func DiagramPatchNode(c fiber.Ctx) error {
 	action := c.Locals("action").(string)
 	diagramID := c.Locals("diagramID").(int)
 	nodeID := c.Locals("nodeID").(string)
-
+	fmt.Println(action)
 	switch action {
 	case "attachStrategy":
-		strategyID := c.Locals("strategyID").(string)
-		err := repositories.AttachStrategyToNode(diagramID, nodeID, strategyID)
+		strategyID := c.Locals("itemID").(string)
+		err := repositories.AttachEntityToNode(diagramID, nodeID, strategyID, "strategyId")
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "failed to attach strategy",
 			})
 		}
 		return c.SendStatus(fiber.StatusOK)
-
+	case "attachOrchestrator":
+		orchestratorId := c.Locals("itemID").(string)
+		err := repositories.AttachEntityToNode(diagramID, nodeID, orchestratorId, "orchestratorId")
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "failed to attach strategy",
+			})
+		}
+		return c.SendStatus(fiber.StatusOK)
 	default:
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "unknown action",
