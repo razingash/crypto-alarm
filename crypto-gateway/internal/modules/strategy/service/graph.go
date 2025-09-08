@@ -16,6 +16,13 @@ import (
 	"github.com/Knetic/govaluate"
 )
 
+/*
+!!!
+	 NumericCache должен быть актуальным, govaluate немного мешает этому
+
+*/
+
+// граф общий
 type DependencyGraph struct {
 	Graph           map[string][]int                          // переменная -> формулы
 	Strategies      map[int][]int                             // ID стратегии -> список формул[ID формулы: формула]
@@ -24,6 +31,7 @@ type DependencyGraph struct {
 	Variables       map[string]float64                        // переменная -> значение
 	Cache           map[string]float64                        // кэш для промежуточных результатов - числовой
 	TriggerCache    map[int]bool                              // кэш для формул: ID формулы -> булевое значение
+	NumericCache    map[int]float64                           // кэш для формул: ID формулы -> результат
 	SubexprCompiled map[string]*govaluate.EvaluableExpression // подвыражение -> компилированные подвыражения (сомнительная херня, можно сделать её списком ведь разницы нет?)
 	SubexprWeights  map[string]int                            // подвыражение -> кол-во повторов
 }
@@ -461,7 +469,7 @@ func (dg *DependencyGraph) EvaluateSubexpression(subexpr string) (float64, error
 		if err != nil {
 			return 0, fmt.Errorf("invalid subexpression: %v", err)
 		}
-		dg.SubexprCompiled[subexpr] = expr // кэшируем компиляцию
+		dg.SubexprCompiled[subexpr] = expr
 	}
 
 	varsValues := make(map[string]interface{})

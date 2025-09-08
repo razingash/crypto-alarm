@@ -1,7 +1,7 @@
 package web
 
 import (
-	"crypto-gateway/internal/modules/ochestrator/repo"
+	"crypto-gateway/internal/modules/orchestrator/repo"
 	"encoding/json"
 	"errors"
 	"fmt"

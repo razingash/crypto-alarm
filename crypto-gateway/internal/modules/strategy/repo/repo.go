@@ -29,37 +29,6 @@ type ConfigUpdate struct {
 	IsActive bool `json:"is_active"`
 }
 
-func GetActiveStrategies(ctx context.Context) (map[int]map[int]string, error) {
-	rows, err := db.DB.Query(ctx, `
-		SELECT cs.id AS strategy_id, tf.id AS formula_id, tf.formula
-		FROM crypto_strategy cs
-		JOIN crypto_strategy_formula csf ON cs.id = csf.strategy_id
-		JOIN trigger_formula tf ON csf.formula_id = tf.id
-		WHERE cs.is_active = true;
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	result := make(map[int]map[int]string)
-
-	for rows.Next() {
-		var strategyID int
-		var formulaID int
-		var formula string
-		if err := rows.Scan(&strategyID, &formulaID, &formula); err != nil {
-			return nil, err
-		}
-		if _, ok := result[strategyID]; !ok {
-			result[strategyID] = make(map[int]string)
-		}
-		result[strategyID][formulaID] = formula
-	}
-
-	return result, nil
-}
-
 // получает необходимые апи, к которым нужно делать запрос в зависимости от актальности формул и компонентов
 func GetActualComponents(ctx context.Context) (map[string]ActualComponentInfo, error) {
 	result := make(map[string]ActualComponentInfo)

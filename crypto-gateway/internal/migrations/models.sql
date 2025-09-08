@@ -163,6 +163,7 @@ CREATE TABLE diagrams (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     data JSON,
+    isActive BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT now(),
     updated_at TIMESTAMP DEFAULT now()
 );

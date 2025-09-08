@@ -7,7 +7,6 @@ import (
 	"crypto-gateway/internal/web/repositories"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"sync"
 	"time"
@@ -64,38 +63,16 @@ func getBinanceStatusOnStartUp() bool {
 	*/
 }
 
-// Запуск фоновых задач. первая задача должна быть проверка доступности апи бинанса
-func (o *BinanceAPIOrchestrator) Start(ctx context.Context) error {
-	if o.isBinanceOnline {
-		o.checkBinanceResponse([]int{})
-	} else {
-		o.checkBinanceResponse(nil)
-	}
-
-	o.LoadActiveStrategies(ctx)
-	if o.isBinanceOnline {
-		o.LaunchNeededAPI(ctx)
-	}
-
-	return nil
-}
-
-// выбирает стратегии из crypto_strategy у которых is_active=true и добавляет их в граф
-func (o *BinanceAPIOrchestrator) LoadActiveStrategies(ctx context.Context) {
-	fmt.Println("Loading active strategies into Graph...")
-
-	strategies, err := repo.GetActiveStrategies(ctx)
+// загружает стратегию относительно активной диаграммы
+func (o *BinanceAPIOrchestrator) LoadNeededStrategy(ctx context.Context, id string) {
+	fmt.Println("Loading strategies into Graph from an active diagram...")
+	strategyID, err := strconv.Atoi(id)
 	if err != nil {
-		appmetrics.AnalyticsServiceLogging(4, "Error while loading active strategies", err)
-		log.Printf("ошибка загрузки активных стратегий: %v\n", err)
-		return
+		panic(err)
 	}
 
-	for strategyID, _ := range strategies {
-		// _ -formulas unused | обновить тесты надо будет чтобы AddStrategy принимал только id стратегии
-		if err := o.DependencyGraph.AddStrategy(strategyID, repo.GetStrategyFullFormulasById(strategyID)); err != nil {
-			appmetrics.AnalyticsServiceLogging(4, fmt.Sprintf("Failed to add strategy %v to graph in LoadActiveStrategies", strategyID), err)
-		}
+	if err := o.DependencyGraph.AddStrategy(strategyID, repo.GetStrategyFullFormulasById(strategyID)); err != nil {
+		appmetrics.AnalyticsServiceLogging(4, fmt.Sprintf("Failed to add strategy %v to graph in LoadActiveStrategies", strategyID), err)
 	}
 }
 

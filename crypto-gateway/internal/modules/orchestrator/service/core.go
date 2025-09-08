@@ -8,7 +8,7 @@ import (
 )
 
 // возвращает результат булевого выражения
-func analyzeSygnal(formula string) (error, bool) {
+func analyzeSignal(formula string) (error, bool) {
 	// формулы вида (true AND false) AND NOT true
 	exprStr := strings.ReplaceAll(formula, "AND", "&&")
 	exprStr = strings.ReplaceAll(exprStr, "OR", "||")

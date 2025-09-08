@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto-gateway/config"
 	"crypto-gateway/internal/appmetrics"
+	startup "crypto-gateway/internal/engine/init"
+	orchestrator "crypto-gateway/internal/modules/orchestrator/web"
 	"crypto-gateway/internal/modules/strategy/service"
-	"crypto-gateway/internal/modules/strategy/web"
+	strategy "crypto-gateway/internal/modules/strategy/web"
 	"crypto-gateway/internal/web/db"
 	"crypto-gateway/internal/web/routes"
 	"log"
@@ -43,26 +45,25 @@ func main() {
 
 	db.InitDB()
 
-	service.Collector = appmetrics.NewLoadMetricsCollector(60)
-	service.StController = service.NewBinanceAPIController(5700)
-	service.StBinanceApi = service.NewBinanceAPI(service.StController)
-	service.StOrchestrator = service.NewBinanceAPIOrchestrator(service.StBinanceApi)
-	service.AverageLoadMetrics = service.NewAverageLoadMetricsManager(service.Collector)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	service.StOrchestrator.Start(ctx)
-	service.SetupInitialSettings(ctx)
+	err := startup.StartEngine(ctx) // core system
+	if err != nil {
+		appmetrics.ApplicationErrorsLogging(4, "Error during engine startup", err)
+		log.Printf("Error during engine startup: %v", err)
+	}
+
 	appmetrics.AvailabilityMetricEvent(1, 1, "webserwer UP")
 
 	routes.SetupNotificationRoutes(app)
-	web.SetupTriggersRoutes(app)
 	routes.SetupSettingsRoutes(app)
 	routes.SetupMetricsRoutes(app)
 	routes.SetupVariableRoutes(app)
 	routes.SetupWorkspaceRoutes(app)
-	routes.SetupWorkspaceWidgetRoutes(app)
+
+	strategy.SetupTriggersRoutes(app)
+	orchestrator.SetupWorkspaceWidgetRoutes(app)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
