@@ -3,7 +3,7 @@ import FormulaInput from "../../components/Keyboard/FormulaInput";
 import "../../styles/modules.css"
 import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {useFetching} from "../../hooks/useFetching";
-import OrchestratorService from "../../API/Widgets/OrchestratorService";
+import OrchestratorService from "../../API/modules/OrchestratorService";
 import WorkspaceService from "../../API/WorkspaceService";
 
 const Orchestrator = () => {
@@ -93,7 +93,6 @@ const Orchestrator = () => {
                 attachOrchestrator: { nodeId, itemID: response.pk.toString() }
             });
             if (resp?.status === 200) {
-                console.error(resp)
                 navigate(`/orchestrator/${response.pk}?${searchParams}`);
             }
         }
@@ -103,8 +102,9 @@ const Orchestrator = () => {
         <div className={"section__main"}>
             <div className={"field__default field__scrollable field__full"}>
                 <div className={"cell__center"}>Attached Formulas</div>
-                <div className={"associacions"}>
-                    {orchestratorParts.length > 0 && orchestratorParts.map(part => (
+                {orchestratorParts.length > 0 && (
+                    <div className={"associacions"}>
+                    {orchestratorParts.map(part => (
                         <React.Fragment key={part.csf_id}>
                         <input className={"default__checkbox"} type={"checkbox"} id={`associacion_${part.csf_id}`}/>
                         <label className={"associacion__formula"} htmlFor={`associacion_${part.csf_id}`}>
@@ -114,18 +114,19 @@ const Orchestrator = () => {
                         </React.Fragment>
                     ))}
                 </div>
+                )}
                 <span className={"span__default"}></span>
-                <div className={"signals__list"}>
+                <div className={"module__list"}>
                     {inputsState.map(signal => (
-                        <div key={signal.id} className={'signal__item'}>
+                        <div key={signal.id} className={'module__item'}>
                             <div className={"cell__row"}>
-                                <div className={"signal__tip"}>Signal:</div>
-                                <input className={"input__signal"} type="text" maxLength={100} placeholder={"input signal input..."}
-                                    value={signal.formula} onChange={(e) => updateInput(signal.id, "formula", e.target.value)}
+                                <div className={"module__tip"}>Signal:</div>
+                                <input className={"input__module"} type="text" maxLength={100} placeholder={"input signal input..."}
+                                       value={signal.formula} onChange={(e) => updateInput(signal.id, "formula", e.target.value)}
                                 />
                             </div>
                             <div className={"cell__row"}>
-                                <div className={"signal__tip"}>Signal Tag:</div>
+                                <div className={"module__tip"}>Signal Tag:</div>
                                 <input className={"input__signal_outp"} type="text" maxLength={100} placeholder={"input signal output tag..."}
                                     value={signal.tag} onChange={(e) => updateInput(signal.id, "tag", e.target.value)}
                                 />

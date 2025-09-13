@@ -1,0 +1,6 @@
+[
+    {
+        "name": "notification-telegram",
+        "filepath": "notifications/telegram/table.sql"
+    }
+]

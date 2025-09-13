@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto-gateway/config"
 	"crypto-gateway/internal/appmetrics"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -13,6 +14,11 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+type Module struct {
+	Name     string `json:"name"`
+	Filepath string `json:"filepath"`
+}
 
 func main() {
 	config.LoadConfig()
@@ -65,8 +71,14 @@ func MakeMigrations() error {
 		return nil
 	}
 
+	// основные миграции
 	if err := applySQLFiles(ctx, dbpool); err != nil {
 		return fmt.Errorf("failed to apply migrations: %w", err)
+	}
+
+	// кастомные
+	if err := applyModuleSQLFiles(ctx, dbpool); err != nil {
+		return fmt.Errorf("failed to apply module migrations: %w", err)
 	}
 
 	return nil
@@ -82,6 +94,28 @@ func modelsInitialized(ctx context.Context, dbpool *pgxpool.Pool) (bool, error) 
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func applyModuleSQLFiles(ctx context.Context, dbpool *pgxpool.Pool) error {
+	data, err := os.ReadFile(filepath.Join("cmd", "migrate", "modules.json"))
+	if err != nil {
+		return fmt.Errorf("failed to read modules.json: %w", err)
+	}
+
+	var modules []Module
+	if err := json.Unmarshal(data, &modules); err != nil {
+		return fmt.Errorf("failed to parse modules.json: %w", err)
+	}
+
+	for _, m := range modules {
+		absPath := filepath.Join("internal", "modules", m.Filepath)
+		log.Printf("Applying migration for module %s from %s", m.Name, absPath)
+		if err := applySQLFile(ctx, dbpool, absPath); err != nil {
+			return fmt.Errorf("error applying module %s (%s): %w", m.Name, absPath, err)
+		}
+	}
+
+	return nil
 }
 
 func applySQLFiles(ctx context.Context, dbpool *pgxpool.Pool) error {

@@ -14,6 +14,7 @@ const Variables = lazy(() => import("../pages/Variables"));
 const Variable = lazy(() => import("../pages/Variable"));
 const NewVariable = lazy(() => import("../pages/NewVariable"));
 const Orchestrator = lazy(() => import("../pages/modules/Orchestrator"));
+const NotificationTelegram = lazy(() => import("../pages/modules/NotificationTelegram"));
 
 export const publicRotes = [
     {path: "/", component: <Main/>, key: "main"},
@@ -32,4 +33,5 @@ export const publicRotes = [
     {path: "/strategies/:id/", component: <Strategy/>, key: "strategy"},
     {path: "/orchestrator/new/", component: <Orchestrator/>, key: "new-orchestrator"},
     {path: "/orchestrator/:id/", component: <Orchestrator/>, key: "orchestrator"},
+    {path: "/notification-telegram/", component: <NotificationTelegram/>, key: "notification-telegram"},
 ]

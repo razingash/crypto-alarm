@@ -392,6 +392,20 @@ const Workspace = () => {
         }
     }
 
+    const modifyNotification = () => {
+        const node = nodeMenu.node;
+        if (!node) return;
+        const elementId = node.id;
+
+        const nodeId = node.getData()?.notificationTelegramId;
+        console.log(nodeId)
+        if (nodeId) {
+            navigate(`/notification-telegram/?id=${nodeId}&workflowId=${id}&nodeId=${node.id}&elementId=${elementId}`);
+        } else {
+            navigate(`/notification-telegram/?workflowId=${id}&nodeId=${node.id}&elementId=${elementId}`);
+        }
+    }
+
     const modifyWidget = () => {
         const node = nodeMenu.node;
         if (!node) return;
@@ -409,7 +423,7 @@ const Workspace = () => {
                 //modifyTrigger(node);
                 break;
             case "notification":
-                //modifyNotification(node);
+                modifyNotification(node);
                 break;
             default:
                 console.warn("Неизвестный тип виджета:", type);

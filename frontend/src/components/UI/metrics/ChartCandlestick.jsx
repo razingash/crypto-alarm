@@ -1,7 +1,7 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import ReactECharts from "echarts-for-react";
 import {useFetching} from "../../../hooks/useFetching";
-import StrategyService from "../../../API/Widgets/StrategyService";
+import StrategyService from "../../../API/modules/StrategyService";
 import {calculateMA, selectKlinesInterval} from "../../../utils/utils";
 
 const ChartCandlestick = () => {

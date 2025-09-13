@@ -6,7 +6,7 @@ export default class OrchestratorService {
         return response.data
     }
     static async update(pk, params) {
-        const response = await apiClient.get(`/workspace/widgets/orchestrator/${pk}`, {params: params})
+        const response = await apiClient.patch(`/workspace/widgets/orchestrator/${pk}`, {params: params})
         return response.data
     }
     static async get(pk) {

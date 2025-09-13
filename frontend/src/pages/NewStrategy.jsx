@@ -2,7 +2,7 @@ import "../styles/strategy.css"
 import EditorFormula from "../components/Keyboard/editors/EditorFormula";
 import {useEffect, useState} from "react";
 import {useFetching} from "../hooks/useFetching";
-import StrategyService from "../API/Widgets/StrategyService";
+import StrategyService from "../API/modules/StrategyService";
 import {useNavigate} from "react-router-dom";
 import WorkspaceService from "../API/WorkspaceService";
 import { useSearchParams } from "react-router-dom";

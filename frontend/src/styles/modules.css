@@ -15,20 +15,20 @@
     margin: -8px 0;
 }
 
-.signals__list {
+.module__list {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.signal__item {
+.module__item {
     display: flex;
     flex-direction: column;
     direction: ltr;
     gap: 8px;
 }
 
-.input__signal, .input__signal_outp {
+.input__module, .input__signal_outp {
     width: 700px;
     background: none;
     border: 1px solid var(--container-border-1);
@@ -42,7 +42,7 @@
     max-width: 200px;
 }
 
-.signal__tip {
+.module__tip {
     width: 80px;
     margin-right: 20px;
 }
@@ -54,6 +54,7 @@
 .cell__center {
     display: flex;
     justify-content: center;
+    margin-bottom: 4px;
 }
 
 .default__footer {

@@ -5,6 +5,7 @@ import (
 	"crypto-gateway/config"
 	"crypto-gateway/internal/appmetrics"
 	startup "crypto-gateway/internal/engine/init"
+	notification_telegram "crypto-gateway/internal/modules/notifications/telegram/web"
 	orchestrator "crypto-gateway/internal/modules/orchestrator/web"
 	"crypto-gateway/internal/modules/strategy/service"
 	strategy "crypto-gateway/internal/modules/strategy/web"
@@ -64,6 +65,7 @@ func main() {
 
 	strategy.SetupTriggersRoutes(app)
 	orchestrator.SetupWorkspaceWidgetRoutes(app)
+	notification_telegram.SetupTriggersRoutes(app)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

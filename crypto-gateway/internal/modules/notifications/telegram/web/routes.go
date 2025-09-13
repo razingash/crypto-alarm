@@ -7,7 +7,7 @@ import (
 func SetupTriggersRoutes(app *fiber.App) {
 	group := app.Group("/api/v1/modules/notification-telegram")
 
-	group.Get("/:id/", TelegramNotificationGet)
+	group.Get("/", TelegramNotificationGet)
 	group.Post("/", TelegramNotificationPost, ValidateTelegramNotificationPost)
-	group.Patch("/:id/", TelegramNotificationPatch, ValidateTelegramNotificationPatch)
+	group.Patch("/", TelegramNotificationPatch, ValidateTelegramNotificationPatch)
 }

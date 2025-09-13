@@ -3,7 +3,7 @@ import {useParams} from "react-router-dom";
 import FormulaInput from "../components/Keyboard/FormulaInput";
 import { useNavigate } from "react-router-dom";
 import {useFetching} from "../hooks/useFetching";
-import StrategyService from "../API/Widgets/StrategyService";
+import StrategyService from "../API/modules/StrategyService";
 import '../styles/strategy.css'
 import ChartLinear from "../components/UI/ChartLinear";
 import {getModifiedFields, transformData} from "../utils/utils";

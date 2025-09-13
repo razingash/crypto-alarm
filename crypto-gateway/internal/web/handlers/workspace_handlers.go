@@ -81,6 +81,7 @@ func DiagramPatch(c fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
+// сделать универсальнее, конкретно, вообще убрать и перенести этот функционал к конкретным эндпоинтам
 func DiagramPatchNode(c fiber.Ctx) error {
 	action := c.Locals("action").(string)
 	diagramID := c.Locals("diagramID").(int)
@@ -101,7 +102,16 @@ func DiagramPatchNode(c fiber.Ctx) error {
 		err := repositories.AttachEntityToNode(diagramID, nodeID, orchestratorId, "orchestratorId")
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "failed to attach strategy",
+				"error": "failed to attach orchestrator",
+			})
+		}
+		return c.SendStatus(fiber.StatusOK)
+	case "attachNotificationTelegram":
+		notificationId := c.Locals("itemID").(string)
+		err := repositories.AttachEntityToNode(diagramID, nodeID, notificationId, "notificationTelegramId")
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "failed to attach telegram notification",
 			})
 		}
 		return c.SendStatus(fiber.StatusOK)

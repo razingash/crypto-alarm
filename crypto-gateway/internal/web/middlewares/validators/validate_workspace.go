@@ -67,10 +67,12 @@ func ValidateDiagramPatchNode(c fiber.Ctx) error {
 	}
 
 	var actionKey string
-	if _, ok := body["attachStrategy"]; ok {
+	if _, ok := body["attachStrategy"]; ok { // сделать универсальнее
 		actionKey = "attachStrategy"
 	} else if _, ok := body["attachOrchestrator"]; ok {
 		actionKey = "attachOrchestrator"
+	} else if _, ok := body["attachNotificationTelegram"]; ok {
+		actionKey = "attachNotificationTelegram"
 	} else {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "unsupported action",
